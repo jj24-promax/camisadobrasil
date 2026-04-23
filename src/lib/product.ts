@@ -4,8 +4,8 @@ export const PRODUCT = {
   name: "Camisa do Brasil Estilizada",
   shortName: "Brasil Estilizada",
   brandName: "Alpha Brasil",
-  priceFormatted: "R$ 67,90",
-  priceCents: 6790,
+  priceFormatted: "R$ 1,00",
+  priceCents: 100,
   currency: "BRL",
   /** ISO date para `priceValidUntil` no Schema.org (atualize ao mudar campanha). */
   schemaPriceValidUntil: "2026-12-31",

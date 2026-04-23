@@ -14,6 +14,7 @@ function ObrigadoContent() {
   const searchParams = useSearchParams();
   const vip = searchParams.get("vip") === "1";
   const card = searchParams.get("card") === "1";
+  const trackingCodeFromUrl = searchParams.get("code") || "";
   
   const [trackingCode, setTrackingCode] = useState("");
   const [trackingLinkUrl, setTrackingLinkUrl] = useState("https://rastrearlog.online");
@@ -26,16 +27,20 @@ function ObrigadoContent() {
   }, []);
 
   useEffect(() => {
-    // Lê o código guardado durante o checkout
-    const savedCode = sessionStorage.getItem("alpha_tracking_code");
-    if (savedCode) {
-      setTrackingCode(savedCode);
-    } else {
-      // Fallback apenas de segurança (se a página for acedida diretamente sem checkout)
-      const newCode = generateMockTrackingCode();
-      setTrackingCode(newCode);
-    }
-  }, []);
+    // Ordem de prioridade:
+    // 1) code na URL
+    // 2) sessionStorage (mesma aba)
+    // 3) localStorage (volta em outra aba/sessão)
+    // 4) fallback final
+    const fromSession = sessionStorage.getItem("alpha_tracking_code");
+    const fromLocal = localStorage.getItem("alpha_tracking_code");
+    const resolvedCode = trackingCodeFromUrl || fromSession || fromLocal || generateMockTrackingCode();
+
+    setTrackingCode(resolvedCode);
+    // Mantém sincronizado para não gerar novo código ao voltar à página.
+    sessionStorage.setItem("alpha_tracking_code", resolvedCode);
+    localStorage.setItem("alpha_tracking_code", resolvedCode);
+  }, [trackingCodeFromUrl]);
 
   useEffect(() => {
     // Busca os links dinâmicos no Supabase

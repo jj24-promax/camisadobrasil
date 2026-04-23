@@ -135,7 +135,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
         <div className="flex flex-col gap-5 lg:flex-row lg:flex-wrap lg:items-end lg:gap-x-8 lg:gap-y-5">
           <AdminSearchField
             label="Buscar"
-            placeholder="Nome, CPF, telefone, origem ou produto…"
+            placeholder="Nome, e-mail, CPF, telefone, origem ou produto…"
             value={search}
             onChange={setSearch}
             id="leads-search"
@@ -180,7 +180,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
           <AdminTableLoadingOverlay show={listLoading} />
           <AdminDataTable
             getRowKey={(r) => r.id}
-            tableClassName="min-w-[1280px] lg:min-w-[1320px]"
+            tableClassName="min-w-[1380px] lg:min-w-[1440px]"
             rows={items}
             emptyMessage={emptyMessage}
             footer={
@@ -211,6 +211,18 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
                 cell: (r) => <span className="font-mono text-xs font-bold text-gold-bright">{r.trackingCode || "—"}</span>,
               },
               { key: "phone", header: "Telefone", cell: (r) => <span className="whitespace-nowrap">{r.phone}</span> },
+              {
+                key: "email",
+                header: "E-mail",
+                cell: (r) => (
+                  <span
+                    className="max-w-[min(200px,28vw)] truncate text-[13px] text-foreground/90"
+                    title={r.email || undefined}
+                  >
+                    {r.email?.trim() ? r.email : "—"}
+                  </span>
+                ),
+              },
               {
                 key: "city",
                 header: "Cidade",

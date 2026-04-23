@@ -61,7 +61,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark">
       <head>
-        <Script id="meta-pixel" strategy="afterInteractive">
+        <Script id="meta-pixel" strategy="beforeInteractive">
           {`
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?

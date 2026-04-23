@@ -268,9 +268,10 @@ function StarsText({ n }: { n: number }) {
   );
 }
 
-const MAX_VISIBLE_PER_ROW = 3;
-const firstRow = reviews.slice(0, MAX_VISIBLE_PER_ROW);
-const secondRow = reviews.slice(MAX_VISIBLE_PER_ROW, MAX_VISIBLE_PER_ROW * 2);
+/** Divide em duas listas maiores para evitar repetição “colada” na tela. */
+const SPLIT_INDEX = Math.ceil(reviews.length / 2);
+const firstRow = reviews.slice(0, SPLIT_INDEX);
+const secondRow = reviews.slice(SPLIT_INDEX);
 
 function ReviewMarquee({
   reviews,
@@ -279,13 +280,14 @@ function ReviewMarquee({
   reviews: ReviewEntry[];
   reverse?: boolean;
 }) {
+  const displayReviews = reverse ? [...reviews].reverse() : reviews;
   return (
     <div
       className="relative w-full overflow-hidden"
       style={{
-        maskImage: "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
+        maskImage: "linear-gradient(to right, transparent, black 6%, black 94%, transparent)",
         WebkitMaskImage:
-          "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
+          "linear-gradient(to right, transparent, black 6%, black 94%, transparent)",
       }}
     >
       <div
@@ -294,9 +296,9 @@ function ReviewMarquee({
           reverse ? "animate-scroll-x-reverse" : "animate-scroll-x"
         )}
       >
-        {[...reviews, ...reviews].map((r, i) => (
+        {[...displayReviews, ...displayReviews].map((r, i) => (
           <figure
-            key={`${r.name}-${i}`}
+            key={`${r.name}-${r.imageSrc}-${i}`}
             className="glass-dark w-[300px] shrink-0 overflow-hidden rounded-2xl transition-all duration-300 hover:!border-white/[0.12] hover:!shadow-luxe-hover md:w-[340px]"
           >
             <div className="relative aspect-[4/3] w-full">

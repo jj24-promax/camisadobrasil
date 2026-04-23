@@ -4,7 +4,7 @@
 
 export const mockStoreProfile = {
   name: "Alpha Brasil",
-  publicUrl: "https://www.alphabrasil.store",
+  publicUrl: "https://www.alphabr.store",
   contactEmail: "contato@alphabrasil.com.br",
   whatsapp: "(11) 99999-0000",
   timezone: "America/Sao_Paulo",

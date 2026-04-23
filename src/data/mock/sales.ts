@@ -2,7 +2,7 @@ import type { Sale } from "@/types/admin";
 
 /**
  * Amostra de pedidos — em produção: `orders` com joins em `order_items` e `customers`.
- * Valores em centavos (BRL). Referência de preço unitário: alinhar a PRODUCT (teste: R$ 1,00 = 100).
+ * Valores em centavos (BRL). Referência de preço unitário: R$ 67,90 (6_790).
  */
 export const mockSales: Sale[] = [
   {

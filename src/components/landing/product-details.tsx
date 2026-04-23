@@ -113,13 +113,13 @@ export function ProductDetails() {
               onPointerDownCapture={onArtePointerDown}
             >
               <div className="absolute inset-0 z-10 bg-gradient-to-t from-navy-deep/80 via-transparent to-transparent opacity-60 transition-opacity group-hover:opacity-40" />
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="sync">
                 <motion.div
                   key={activeImage}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                   className="absolute inset-0"
                 >
                   {activeVideoFailed ? (

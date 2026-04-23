@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PREMIUM_GALLERY_IMAGES } from "@/lib/product";
 import { SectionReveal, SectionShell } from "@/components/landing/section-shell";
 import {
@@ -48,6 +48,14 @@ export function PremiumGallery() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showAllThumbs, setShowAllThumbs] = useState(false);
   const reduced = useReducedMotion();
+
+  /** Pré-carrega fotos da campanha para a troca não esperar rede após o clique. */
+  useEffect(() => {
+    for (const item of PREMIUM_GALLERY_IMAGES) {
+      const img = new window.Image();
+      img.src = item.src;
+    }
+  }, []);
 
   const activeItem = PREMIUM_GALLERY_IMAGES[active];
   const visibleThumbs = showAllThumbs
@@ -144,18 +152,14 @@ export function PremiumGallery() {
                     <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-b from-[#0a1024]/20 via-transparent to-[#02050c]/55" />
                     <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(ellipse_90%_60%_at_50%_100%,rgba(0,0,0,0.35),transparent_65%)]" />
 
-                    <AnimatePresence mode="wait" initial={false}>
+                    <AnimatePresence mode="sync" initial={false}>
                       <motion.div
                         key={active}
-                        initial={
-                          reduced
-                            ? { opacity: 0 }
-                            : { opacity: 0, scale: 1.015 }
-                        }
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={reduced ? { opacity: 0 } : { opacity: 0 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         transition={{
-                          duration: reduced ? 0.12 : 0.48,
+                          duration: reduced ? 0.08 : 0.2,
                           ease: EASE,
                         }}
                         className="absolute inset-0"
@@ -165,7 +169,8 @@ export function PremiumGallery() {
                           alt={activeItem.alt}
                           fill
                           priority={active === 0}
-                          loading={active === 0 ? undefined : "lazy"}
+                          loading="eager"
+                          fetchPriority="high"
                           quality={90}
                           sizes={MAIN_SIZES}
                           className="object-cover object-center"

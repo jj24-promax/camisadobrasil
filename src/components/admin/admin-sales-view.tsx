@@ -1,12 +1,20 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
+import { Eye } from "lucide-react";
 import { AdminBadge } from "@/components/admin/admin-badge";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
 import { AdminSearchField } from "@/components/admin/admin-search-field";
 import { AdminFilterSelect, type AdminSelectOption } from "@/components/admin/admin-filter-select";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 import { AdminTableLoadingOverlay } from "@/components/admin/admin-table-loading-overlay";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { paginateList } from "@/lib/admin/paginate-list";
 import {
   DEFAULT_SALES_PAGE_SIZE,
@@ -15,7 +23,7 @@ import {
   type SaleSortByDate,
   type SalesListFilters,
 } from "@/lib/admin/sales-list";
-import { formatBRL, formatDateTime, formatRelativeTimePt } from "@/lib/admin-format";
+import { formatBRL, formatDateTime, formatPaymentMethod, formatRelativeTimePt } from "@/lib/admin-format";
 import { cn } from "@/lib/utils";
 import type { OrderStatus, Sale } from "@/types/admin";
 
@@ -36,6 +44,7 @@ type AdminSalesViewProps = {
 };
 
 export function AdminSalesView({ sales }: AdminSalesViewProps) {
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const searchPending = search !== deferredSearch;
@@ -195,10 +204,66 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
                   </div>
                 ),
               },
+              {
+                key: "details",
+                header: "Detalhes",
+                className: "w-[110px] whitespace-nowrap",
+                cell: (r) => (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSale(r)}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-white/[0.12] px-2.5 py-1.5 text-xs font-medium text-foreground/90 transition-colors hover:border-gold/35 hover:text-gold-bright"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    Ver
+                  </button>
+                ),
+              },
             ]}
           />
         </div>
       </div>
+      <Dialog open={selectedSale !== null} onOpenChange={(open) => { if (!open) setSelectedSale(null); }}>
+        <DialogContent className="max-w-[min(92vw,640px)] border-white/[0.12] bg-[#070c14]/98 p-0">
+          {selectedSale ? (
+            <div className="space-y-5 p-5 sm:p-6">
+              <DialogHeader className="space-y-2 text-left">
+                <DialogTitle>Pedido {selectedSale.id}</DialogTitle>
+                <DialogDescription>
+                  Detalhes do pedido usando os dados atualmente registrados no Supabase.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <DetailItem label="Cliente" value={selectedSale.customer} />
+                <DetailItem label="E-mail" value={selectedSale.email || "—"} />
+                <DetailItem label="Telefone" value={selectedSale.phone || "—"} />
+                <DetailItem label="Produto" value={selectedSale.productName || "—"} />
+                <DetailItem label="Pagamento" value={formatPaymentMethod(selectedSale.paymentMethod)} />
+                <DetailItem label="Status" value={<AdminBadge variant="order" value={selectedSale.status} />} />
+                <DetailItem label="Valor total" value={formatBRL(selectedSale.amountCents)} />
+                <DetailItem label="Rastreio" value={selectedSale.trackingCode || "—"} />
+                <DetailItem label="Data do pedido" value={formatDateTime(selectedSale.date)} />
+                <DetailItem label="Quando aconteceu" value={formatRelativeTimePt(selectedSale.date)} />
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function DetailItem({
+  label,
+  value,
+}: {
+  label: string;
+  value: ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-3.5 py-3">
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/85">{label}</p>
+      <p className="text-sm text-foreground/95">{value}</p>
     </div>
   );
 }

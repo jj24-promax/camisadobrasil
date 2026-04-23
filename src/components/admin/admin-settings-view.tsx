@@ -104,7 +104,10 @@ export function AdminSettingsView({ supabaseEnvConfigured = false, initialSettin
     .join("")
     .toUpperCase();
 
-  const [state, formAction, pending] = useActionState(updateStoreSettings, { success: false });
+  const [state, formAction, pending] = useActionState(updateStoreSettings, {
+    success: false,
+    error: "",
+  });
 
   useEffect(() => {
     if (state?.success && state?.message) {

@@ -7,6 +7,9 @@ import { usePathname } from "next/navigation";
  * Dificulta cópia casual: atalhos, menu de contexto, seleção e arraste fora de formulários.
  * Exclui /admin. Não impede: DevTools pelo menu, curl, leitor sem JS, extensões.
  */
+/** Nome de classe no `<html>` (válido em CSS; exibe a mensagem no inspetor / ver código). */
+export const ANTI_CLONE_HTML_CLASS = "se-clonar-a-oferta-eu-vou-te-achar";
+
 function isFormLikeTarget(target: EventTarget | null): boolean {
   if (!target || !(target instanceof Node)) return false;
   if (!(target instanceof Element)) {
@@ -30,9 +33,9 @@ export function AntiCloneGuard() {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.documentElement.classList.toggle("anti-clone", !skip);
+    document.documentElement.classList.toggle(ANTI_CLONE_HTML_CLASS, !skip);
     return () => {
-      document.documentElement.classList.remove("anti-clone");
+      document.documentElement.classList.remove(ANTI_CLONE_HTML_CLASS);
     };
   }, [skip]);
 

@@ -49,16 +49,16 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Anti-cópia casual (reforçado por AntiCloneGuard) — mantém seleção em inputs e [data-allow-user-select] */
-  html.anti-clone {
+  /* Anti-cópia casual (classe no html definida em AntiCloneGuard) — mantém seleção em inputs e [data-allow-user-select] */
+  html.se-clonar-a-oferta-eu-vou-te-achar {
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
   }
-  html.anti-clone input,
-  html.anti-clone textarea,
-  html.anti-clone [contenteditable="true"],
-  html.anti-clone [data-allow-user-select] {
+  html.se-clonar-a-oferta-eu-vou-te-achar input,
+  html.se-clonar-a-oferta-eu-vou-te-achar textarea,
+  html.se-clonar-a-oferta-eu-vou-te-achar [contenteditable="true"],
+  html.se-clonar-a-oferta-eu-vou-te-achar [data-allow-user-select] {
     -webkit-user-select: text;
     user-select: text;
     -webkit-touch-callout: default;

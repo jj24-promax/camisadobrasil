@@ -49,6 +49,21 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Anti-cópia casual (reforçado por AntiCloneGuard) — mantém seleção em inputs e [data-allow-user-select] */
+  html.anti-clone {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  html.anti-clone input,
+  html.anti-clone textarea,
+  html.anti-clone [contenteditable="true"],
+  html.anti-clone [data-allow-user-select] {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
+
   ::selection {
     @apply bg-gold/30 text-white;
   }

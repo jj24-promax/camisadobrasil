@@ -444,7 +444,9 @@ function CheckoutContent() {
 
   const handleFinalize = async () => {
     if (paymentMethod === "card") {
-      toast.error("Pagamento por Cartão indisponível no momento! Por favor, selecione PIX.");
+      toast("Pagamento via cartão temporariamente indisponível. Finalize com PIX de forma rápida e segura.", {
+        icon: "💳",
+      });
       return;
     }
 
@@ -870,16 +872,17 @@ function CheckoutContent() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4 rounded-2xl bg-red-500/[0.05] p-6 border border-red-500/20 text-center">
-                  <div className="flex items-center justify-center gap-2 text-red-400 mb-4">
-                    <CreditCard size={20} />
-                    <p className="text-sm font-bold uppercase tracking-widest">Cartão de Crédito</p>
+                <div className="space-y-3 rounded-2xl border border-white/10 bg-[#0a111b]/95 p-6 text-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
+                  <div className="mb-2 flex items-center justify-center gap-2 text-slate-300/90">
+                    <CreditCard size={16} />
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em]">Cartão de crédito</p>
                   </div>
-                  <p className="text-base text-red-200 leading-relaxed font-semibold">
-                    Pagamento por Cartão indisponível no momento!
+                  <p className="text-[15px] font-semibold leading-relaxed text-white/95">
+                    Pagamento via cartão temporariamente indisponível
                   </p>
-                  <p className="text-sm text-red-200/80 leading-relaxed">
-                    Por favor, utilize o PIX para finalizar a sua compra.
+                  <p className="mx-auto max-w-[34ch] text-sm leading-relaxed text-slate-300/85">
+                    No momento, finalize seu pedido com <span className="font-semibold text-gold-bright">PIX</span> de
+                    forma rápida e segura.
                   </p>
                 </div>
               )}

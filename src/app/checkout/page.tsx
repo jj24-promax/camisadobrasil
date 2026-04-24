@@ -195,14 +195,23 @@ const ORDER_BUMPS = [
 
 function CheckoutContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawQ = parseInt(searchParams.get("q") || "1", 10);
+  const quantity = Number.isFinite(rawQ) && rawQ > 0 ? rawQ : 1;
+  const orderSizes = parseOrderSizes(searchParams, quantity);
+  /** Por defeito: personalização ligada. Use `?personalize=0` para desligar à entrada. */
+  const defaultPersonalizeOn = searchParams.get("personalize") !== "0";
+
   const [paymentMethod, setPaymentMethod] = useState<"pix" | "card">("pix");
   const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
   const [timeLeft, setTimeLeft] = useState(899); // 14:59
 
   /** Secção de personalização paga aberta (não implica cobrança até marcar camisas). */
-  const [personalizationMaster, setPersonalizationMaster] = useState(false);
+  const [personalizationMaster, setPersonalizationMaster] = useState(defaultPersonalizeOn);
   /** Personalização paga por camisa do pedido principal (índices 0..quantity-1). */
-  const [shirtPaidPersonalization, setShirtPaidPersonalization] = useState<boolean[]>([false]);
+  const [shirtPaidPersonalization, setShirtPaidPersonalization] = useState<boolean[]>(() =>
+    Array(quantity).fill(defaultPersonalizeOn)
+  );
   /** Nome/número grátis só na camisa extra da promo "Leve a 2ª" (índice = `quantity` em `customNames`). Não cumulativo com paga. */
   const [giftFreePersonalization, setGiftFreePersonalization] = useState(false);
 
@@ -243,11 +252,6 @@ function CheckoutContent() {
   const { confirmed: pixPaymentConfirmed, trackingAvailable: pixTrackingAvailable } =
     usePixPaymentConfirmation(pixResult?.idTransaction);
 
-  const searchParams = useSearchParams();
-  const rawQ = parseInt(searchParams.get("q") || "1", 10);
-  const quantity = Number.isFinite(rawQ) && rawQ > 0 ? rawQ : 1;
-  const orderSizes = parseOrderSizes(searchParams, quantity);
-
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
@@ -258,9 +262,15 @@ function CheckoutContent() {
   const hasSecondShirtBump = selectedBumps.includes("second_shirt");
   const personalizationSlots = quantity + (hasSecondShirtBump ? 1 : 0);
 
+  const personalizationMasterRef = useRef(personalizationMaster);
+  personalizationMasterRef.current = personalizationMaster;
+
   useEffect(() => {
     setShirtPaidPersonalization((prev) =>
-      Array.from({ length: quantity }, (_, i) => prev[i] ?? false)
+      Array.from({ length: quantity }, (_, i) => {
+        if (i < prev.length) return prev[i]!;
+        return personalizationMasterRef.current;
+      })
     );
   }, [quantity]);
 
@@ -302,6 +312,7 @@ function CheckoutContent() {
         setShirtPaidPersonalization(Array(quantity).fill(false));
         return false;
       }
+      setShirtPaidPersonalization(Array(quantity).fill(true));
       return true;
     });
   };

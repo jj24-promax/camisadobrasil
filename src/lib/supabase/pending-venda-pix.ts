@@ -84,3 +84,61 @@ export async function markPixVendaCanceledByGatewayId(
   if (error) return { ok: false, updated: 0, error: error.message };
   return { ok: true, updated: data?.length || 0 };
 }
+
+export async function getVendaContextByGatewayId(
+  idTransaction: string
+): Promise<{
+  ok: boolean;
+  error?: string;
+  data?: {
+    pedidoCodigo: string;
+    clienteNome: string;
+    valor: number;
+    produto: string;
+    createdAt: string;
+    leadEmail?: string;
+    leadPhone?: string;
+  };
+}> {
+  const id = idTransaction.trim();
+  if (!id) return { ok: false, error: "id vazio" };
+
+  const admin = createSupabaseAdminClient();
+  if (!admin) return { ok: false, error: "SUPABASE_SERVICE_ROLE_KEY não configurada" };
+
+  const { data, error } = await admin
+    .from("vendas")
+    .select("pedido_codigo, cliente_nome, valor, produto, created_at, lead_id")
+    .eq("pedido_codigo", id)
+    .maybeSingle();
+
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Venda não encontrada para este idTransaction." };
+
+  let leadEmail: string | undefined;
+  let leadPhone: string | undefined;
+  if (data.lead_id) {
+    const { data: leadRow } = await admin
+      .from("leads")
+      .select("email, telefone")
+      .eq("id", data.lead_id)
+      .maybeSingle();
+    if (leadRow) {
+      leadEmail = typeof leadRow.email === "string" ? leadRow.email.trim().toLowerCase() : undefined;
+      leadPhone = typeof leadRow.telefone === "string" ? leadRow.telefone.replace(/\D/g, "") : undefined;
+    }
+  }
+
+  return {
+    ok: true,
+    data: {
+      pedidoCodigo: String(data.pedido_codigo ?? id),
+      clienteNome: String(data.cliente_nome ?? "").trim(),
+      valor: Number(data.valor ?? 0),
+      produto: String(data.produto ?? "").trim(),
+      createdAt: new Date(String(data.created_at ?? new Date().toISOString())).toISOString(),
+      leadEmail,
+      leadPhone,
+    },
+  };
+}

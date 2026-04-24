@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { postUtmifyPaidOrder } from "@/lib/utmify-server";
 
 type IncomingBody = {
   orderId?: string;
@@ -21,16 +22,7 @@ type IncomingBody = {
   }>;
 };
 
-const DEFAULT_UTMIFY_ENDPOINT = "https://api.utmify.com.br/api-credentials/orders";
-
 export async function POST(req: Request) {
-  const apiKey = process.env.UTMIFY_API_KEY?.trim();
-  const endpoint = process.env.UTMIFY_ENDPOINT?.trim() || DEFAULT_UTMIFY_ENDPOINT;
-
-  if (!apiKey) {
-    return NextResponse.json({ ok: false, error: "UTMIFY_API_KEY não configurada." }, { status: 500 });
-  }
-
   let body: IncomingBody;
   try {
     body = (await req.json()) as IncomingBody;
@@ -52,9 +44,8 @@ export async function POST(req: Request) {
 
   const payload = {
     orderId,
-    platform: "AlphaBrasil",
     paymentMethod: body.paymentMethod ?? "pix",
-    status: "paid",
+    status: "paid" as const,
     createdAt: body.createdAt ?? new Date().toISOString(),
     approvedDate: body.approvedDate ?? new Date().toISOString(),
     customer: {
@@ -70,28 +61,13 @@ export async function POST(req: Request) {
         priceInCents: Number(p.priceInCents ?? 0) || 0,
       })) ?? [],
     trackingParameters: body.trackingParameters ?? {},
-    commission: {
-      totalPriceInCents: Math.round(totalPriceInCents),
-      gatewayFeeInCents: 0,
-      userCommissionInCents: Math.round(totalPriceInCents),
-      currency: "BRL",
-    },
+    totalPriceInCents: Math.round(totalPriceInCents),
   };
 
-  const r = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-token": apiKey,
-    },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
+  const r = await postUtmifyPaidOrder(payload);
   if (!r.ok) {
-    const text = await r.text();
     return NextResponse.json(
-      { ok: false, error: "UTMify rejeitou o postback.", status: r.status, details: text.slice(0, 1200) },
+      { ok: false, error: "UTMify rejeitou o postback.", status: r.status, details: r.error },
       { status: 502 }
     );
   }

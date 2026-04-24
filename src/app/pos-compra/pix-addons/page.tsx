@@ -12,6 +12,7 @@ import { readPosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 import { computeUpsellAddonCents, UPSELL_CARD_CENTS, UPSELL_VIP_CENTS } from "@/lib/pos-compra-upsell-pricing";
 import { posCompraObrigadoQuery } from "@/lib/pos-compra-routes";
 import { usePixPaymentConfirmation } from "@/hooks/use-pix-payment-confirmation";
+import { extractTrackingFromSearch, sendUtmifyPaidOrderOnce } from "@/lib/utmify-client";
 
 type PixState = {
   paymentCode: string;
@@ -68,7 +69,35 @@ function PixAddonsContent() {
     if (!(pixResult.idTransaction ?? "").trim()) return;
     if (!pixTrackingAvailable || !pixPaymentConfirmed) return;
     if (pixAddonAutoRedirectDoneRef.current) return;
+    const tx = (pixResult.idTransaction ?? "").trim();
+    if (!tx) return;
     pixAddonAutoRedirectDoneRef.current = true;
+    const client = readPosCompraPixClient();
+    if (client) {
+      void sendUtmifyPaidOrderOnce({
+        orderId: tx,
+        paymentMethod: "pix",
+        status: "paid",
+        createdAt: new Date().toISOString(),
+        approvedDate: new Date().toISOString(),
+        customer: {
+          name: client.name,
+          email: client.email,
+          phone: client.telefone,
+        },
+        totalPriceInCents: addonCents,
+        trackingParameters: extractTrackingFromSearch(searchParams),
+        products: [
+          {
+            name: "Adicionais pós-compra",
+            priceInCents: addonCents,
+            quantity: 1,
+          },
+        ],
+      }).catch(() => {
+        // Falha no postback não bloqueia a navegação.
+      });
+    }
     toast.success("Pagamento confirmado!");
     router.push(posCompraObrigadoQuery(vip, card));
   }, [
@@ -80,6 +109,8 @@ function PixAddonsContent() {
     vip,
     card,
     router,
+    addonCents,
+    searchParams,
   ]);
 
   const generatePix = useCallback(async () => {

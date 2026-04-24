@@ -25,6 +25,7 @@ const SalesNotifications = dynamic(() => import("@/components/landing/sales-noti
 const LandingCartDialog = dynamic(() => import("@/components/landing/landing-cart-dialog").then(m => m.LandingCartDialog), { ssr: false });
 
 export function HomePageClient() {
+  const backRedirectUrl = process.env.NEXT_PUBLIC_UTMIFY_BACK_REDIRECT_URL?.trim() ?? "";
   const [selectedSize, setSelectedSize] = useState<Size>("M");
   const [isStickyVisible, setIsStickyVisible] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -66,6 +67,26 @@ export function HomePageClient() {
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!backRedirectUrl) return;
+
+    const query = window.location.search.replace("?", "").trim();
+    const destination = `${backRedirectUrl}${backRedirectUrl.includes("?") ? "&" : "?"}${query}`;
+
+    history.pushState({}, "", location.href);
+    history.pushState({}, "", location.href);
+    history.pushState({}, "", location.href);
+
+    const onPopState = () => {
+      window.setTimeout(() => {
+        location.href = destination;
+      }, 1);
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [backRedirectUrl]);
 
   return (
     <>

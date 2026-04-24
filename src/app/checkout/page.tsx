@@ -48,6 +48,7 @@ import {
   qrDataUrlForImg,
 } from "@/lib/pix-gateway-response";
 import { savePosCompraPixClient } from "@/lib/pos-compra-pix-storage";
+import { extractTrackingFromSearch, sendUtmifyPaidOrderOnce } from "@/lib/utmify-client";
 
 // Funções de máscara para campos de formulário
 const maskCPF = (value: string) => {
@@ -403,6 +404,36 @@ function CheckoutContent() {
     estado: formData.estado.replace(/\s/g, "").toUpperCase(),
   }), [formData]);
 
+  const sendCheckoutUtmifyPaid = useCallback(async () => {
+    const tx = (pixResult?.idTransaction ?? "").trim();
+    if (!tx) return;
+    const customer = buildPosCompraClientPayload();
+    const now = new Date().toISOString();
+
+    await sendUtmifyPaidOrderOnce({
+      orderId: tx,
+      paymentMethod: "pix",
+      status: "paid",
+      createdAt: now,
+      approvedDate: now,
+      customer: {
+        name: customer.name,
+        email: customer.email,
+        phone: customer.telefone,
+      },
+      totalPriceInCents: finalTotalCents,
+      trackingParameters: extractTrackingFromSearch(searchParams),
+      products: [
+        {
+          id: PRODUCT.id,
+          name: PRODUCT.name,
+          priceInCents: finalTotalCents,
+          quantity,
+        },
+      ],
+    });
+  }, [pixResult?.idTransaction, buildPosCompraClientPayload, finalTotalCents, searchParams, quantity]);
+
   const pixAutoRedirectDoneRef = useRef(false);
   useEffect(() => {
     pixAutoRedirectDoneRef.current = false;
@@ -416,6 +447,9 @@ function CheckoutContent() {
     if (pixAutoRedirectDoneRef.current) return;
     pixAutoRedirectDoneRef.current = true;
     savePosCompraPixClient(buildPosCompraClientPayload());
+    void sendCheckoutUtmifyPaid().catch(() => {
+      // Não bloqueia o fluxo de entrega por falha de postback.
+    });
     toast.success("Pagamento confirmado!");
     router.push(POS_COMPRA.upsellVip);
   }, [
@@ -426,6 +460,7 @@ function CheckoutContent() {
     pixPaymentConfirmed,
     router,
     buildPosCompraClientPayload,
+    sendCheckoutUtmifyPaid,
   ]);
 
   const lookupCepDigits = async (digits: string) => {
@@ -519,6 +554,9 @@ function CheckoutContent() {
         return;
       }
       savePosCompraPixClient(buildPosCompraClientPayload());
+      void sendCheckoutUtmifyPaid().catch(() => {
+        // Não bloqueia o fluxo de entrega por falha de postback.
+      });
       router.push(POS_COMPRA.upsellVip);
       return;
     }

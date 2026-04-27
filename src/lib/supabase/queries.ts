@@ -1,5 +1,6 @@
 import "server-only";
 
+import { unstable_noStore as noStore } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { isSupabasePublicEnvConfigured } from "@/lib/supabase/env-check";
 import { mapClienteRow, mapLeadRow, mapVendaRow } from "@/lib/supabase/mappers";
@@ -27,6 +28,8 @@ function friendlyMessage(message: string, code?: string): string {
 }
 
 export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
+  noStore();
+
   if (!isSupabasePublicEnvConfigured()) {
     return {
       ok: false,
@@ -47,6 +50,8 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
 }
 
 export async function fetchAdminVendas(): Promise<AdminFetchResult<Sale[]>> {
+  noStore();
+
   if (!isSupabasePublicEnvConfigured()) {
     return {
       ok: false,
@@ -67,6 +72,8 @@ export async function fetchAdminVendas(): Promise<AdminFetchResult<Sale[]>> {
 }
 
 export async function fetchAdminClientes(): Promise<AdminFetchResult<Client[]>> {
+  noStore();
+
   if (!isSupabasePublicEnvConfigured()) {
     return {
       ok: false,

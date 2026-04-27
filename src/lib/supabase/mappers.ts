@@ -91,14 +91,14 @@ export function mapVendaRow(r: Record<string, unknown>): Sale {
   return {
     id: id || `PED-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     customer: str(pick(r, ["cliente_nome", "customer", "nome"])),
-    email: str(pick(r, ["email"])), // Vendas não tem email, mas fica p/ compatibilidade UI
-    phone: str(pick(r, ["telefone", "phone"])), // Vendas não tem phone
+    email: str(pick(r, ["email", "e_mail", "cliente_email", "lead_email"])),
+    phone: str(pick(r, ["telefone", "phone", "tel", "celular", "cliente_telefone", "lead_phone"])),
     amountCents: num(pick(r, ["valor", "amount_cents"])),
     status: normOrderStatus(str(pick(r, ["status_pagamento", "status"]))),
     date: isoDate(pick(r, ["created_at", "date"])),
     productName: str(pick(r, ["produto", "product_name"])),
     paymentMethod: method,
-    trackingCode: str(pick(r, ["codigo_rastreio"])),
+    trackingCode: str(pick(r, ["codigo_rastreio", "tracking_code", "tracking", "rastreio"])),
   };
 }
 

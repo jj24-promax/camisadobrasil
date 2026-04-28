@@ -113,23 +113,48 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
             <p className="mt-3 inline-flex w-fit rounded-full border border-gold/35 bg-gold/[0.12] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-gold-bright">
               Galeria: {galleryModel.name}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-3">
               {editionOptions.map((option) => {
                 const isActive = option.modelId === selectedEdition;
+                const isCanarinho = option.slug === "canarinho";
                 return (
                   <button
                     key={option.slug}
                     type="button"
                     onClick={() => onEditionChange(option.modelId)}
                     className={cn(
-                      "rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] transition-all",
+                      "group relative inline-flex min-h-[2.5rem] items-center justify-center overflow-hidden rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]",
                       isActive
-                        ? "border-gold/65 bg-gold/[0.16] text-gold-bright shadow-[0_0_16px_-10px_rgba(212,175,55,0.8)]"
-                        : "border-white/15 bg-white/[0.02] text-muted-foreground hover:border-gold/35 hover:text-gold-bright"
+                        ? cn(
+                            "border border-gold/75 text-white shadow-[0_0_0_1px_rgba(212,175,55,0.35),0_0_28px_-8px_rgba(212,175,55,0.65),0_4px_24px_-12px_rgba(0,0,0,0.5)]",
+                            isCanarinho
+                              ? "bg-gradient-to-br from-emerald-400/[0.22] via-gold/[0.18] to-gold/[0.06] ring-1 ring-emerald-300/45"
+                              : "bg-gradient-to-br from-gold/[0.28] via-gold/[0.12] to-transparent ring-1 ring-gold/50"
+                          )
+                        : "border border-white/22 bg-black/[0.35] text-muted-foreground backdrop-blur-[2px] hover:border-gold/45 hover:bg-white/[0.06] hover:text-gold-bright hover:shadow-[0_0_22px_-10px_rgba(212,175,55,0.45)] active:scale-[0.98]"
                     )}
                     aria-pressed={isActive}
                   >
-                    {option.name}
+                    {isActive ? (
+                      <>
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "pointer-events-none absolute -inset-px rounded-full opacity-95 blur-[0.5px]",
+                            isCanarinho
+                              ? "bg-[radial-gradient(ellipse_at_50%_-10%,rgba(167,243,208,0.5)_0%,rgba(212,175,55,0.15)_42%,transparent_68%)]"
+                              : "bg-[radial-gradient(ellipse_at_50%_-10%,rgba(255,223,128,0.45)_0%,rgba(212,175,55,0.2)_42%,transparent_68%)]"
+                          )}
+                        />
+                        <span
+                          aria-hidden
+                          className="pointer-events-none absolute inset-x-3 top-0 h-[42%] rounded-t-full bg-gradient-to-b from-white/25 via-white/[0.06] to-transparent opacity-60"
+                        />
+                      </>
+                    ) : null}
+                    <span className="relative z-[1] drop-shadow-[0_1px_8px_rgba(0,0,0,0.55)]">
+                      {option.name}
+                    </span>
                   </button>
                 );
               })}

@@ -12,6 +12,7 @@ import { readPosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 import { computeUpsellAddonCents, UPSELL_CARD_CENTS, UPSELL_VIP_CENTS } from "@/lib/pos-compra-upsell-pricing";
 import { posCompraObrigadoQuery } from "@/lib/pos-compra-routes";
 import { usePixPaymentConfirmation } from "@/hooks/use-pix-payment-confirmation";
+import { supabaseEdgeInvokeHeaders } from "@/lib/supabase/edge-invoke-headers";
 import { extractTrackingFromSearch, sendUtmifyPaidOrderOnce } from "@/lib/utmify-client";
 
 type PixState = {
@@ -153,7 +154,7 @@ function PixAddonsContent() {
       // Faz fetch DIRETO na Supabase Edge Function criada
       const res = await fetch("https://ulrigywayovxuyiktnlr.supabase.co/functions/v1/pix-create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: supabaseEdgeInvokeHeaders(),
         body: JSON.stringify({
           amount,
           amountCents: addonCents,

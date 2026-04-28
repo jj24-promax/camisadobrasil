@@ -41,3 +41,6 @@ tsconfig.tsbuildinfo
 # vercel
 .vercel
 .dyad/
+
+# supabase CLI
+supabase/.temp/

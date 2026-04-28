@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { supabaseEdgeInvokeHeaders } from "@/lib/supabase/edge-invoke-headers";
 
 const POLL_MS = 2000;
 
@@ -38,7 +39,7 @@ export function usePixPaymentConfirmation(transactionId: string | undefined): Pi
         // Chamada direta à Edge Function do Supabase
         const res = await fetch(
           `https://ulrigywayovxuyiktnlr.supabase.co/functions/v1/pix-status?transactionId=${encodeURIComponent(transactionId.trim())}`,
-          { cache: "no-store" }
+          { cache: "no-store", headers: supabaseEdgeInvokeHeaders(false) }
         );
         const j = (await res.json()) as { paid?: boolean; trackingAvailable?: boolean };
         if (cancelled) return;

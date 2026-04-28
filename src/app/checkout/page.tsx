@@ -49,6 +49,7 @@ import {
 } from "@/lib/pix-gateway-response";
 import { savePosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 import { extractTrackingFromSearch, sendUtmifyPaidOrderOnce } from "@/lib/utmify-client";
+import { supabaseEdgeInvokeHeaders } from "@/lib/supabase/edge-invoke-headers";
 
 // Funções de máscara para campos de formulário
 const maskCPF = (value: string) => {
@@ -613,7 +614,7 @@ function CheckoutContent() {
       // Faz fetch DIRETO na Supabase Edge Function criada passando o endereço completo no objeto address
       const res = await fetch("https://ulrigywayovxuyiktnlr.supabase.co/functions/v1/pix-create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: supabaseEdgeInvokeHeaders(),
         body: JSON.stringify({
           amount,
           amountCents: finalTotalCents,

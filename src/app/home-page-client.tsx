@@ -7,6 +7,7 @@ import { HeroSection } from "@/components/landing/hero-section";
 import { SiteNavDesktop, SiteNavMobile } from "@/components/landing/site-nav";
 import { AnnouncementBar } from "@/components/landing/announcement-bar";
 import type { Size } from "@/lib/types";
+import { type ProductModelId } from "@/lib/product";
 
 // Importações estáticas para secções (evita Hydration Mismatch e dessincronização do useId())
 import { ProductDetails } from "@/components/landing/product-details";
@@ -27,14 +28,17 @@ const LandingCartDialog = dynamic(() => import("@/components/landing/landing-car
 export function HomePageClient() {
   const backRedirectUrl = process.env.NEXT_PUBLIC_UTMIFY_BACK_REDIRECT_URL?.trim() ?? "";
   const [selectedSize, setSelectedSize] = useState<Size>("M");
+  const [selectedProduct, setSelectedProduct] = useState<ProductModelId>("edicao-sagrada");
   const [isStickyVisible, setIsStickyVisible] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [cartQty, setCartQty] = useState(1);
   const [cartSizes, setCartSizes] = useState<Size[]>(["M"]);
+  const [cartModels, setCartModels] = useState<ProductModelId[]>(["edicao-sagrada"]);
 
   const openCart = (quantity: number) => {
     setCartQty(quantity);
     setCartSizes(Array(quantity).fill(selectedSize));
+    setCartModels(Array(quantity).fill(selectedProduct));
     setCartOpen(true);
   };
 
@@ -44,6 +48,14 @@ export function HomePageClient() {
       if (q === prev.length) return prev;
       if (q > prev.length) {
         const fill = prev[prev.length - 1] ?? selectedSize;
+        return [...prev, ...Array.from({ length: q - prev.length }, () => fill)];
+      }
+      return prev.slice(0, q);
+    });
+    setCartModels((prev) => {
+      if (q === prev.length) return prev;
+      if (q > prev.length) {
+        const fill = prev[prev.length - 1] ?? selectedProduct;
         return [...prev, ...Array.from({ length: q - prev.length }, () => fill)];
       }
       return prev.slice(0, q);
@@ -120,11 +132,13 @@ export function HomePageClient() {
         <HeroSection
           selectedSize={selectedSize}
           onSizeChange={setSelectedSize}
+          selectedEdition={selectedProduct}
+          onEditionChange={setSelectedProduct}
           onBuyNow={() => openCart(1)}
         />
         <ProductDetails />
         <PromoBundle onBuyBundle={() => openCart(3)} />
-        <PremiumGallery />
+        <PremiumGallery selectedEdition={selectedProduct} onEditionChange={setSelectedProduct} />
         <SocialProof />
         <GuaranteeSection />
         <SizeChart />
@@ -145,6 +159,9 @@ export function HomePageClient() {
       <LandingCartDialog
         open={cartOpen}
         onOpenChange={setCartOpen}
+        selectedProduct={selectedProduct}
+        models={cartModels}
+        onModelsChange={setCartModels}
         quantity={cartQty}
         onQuantityChange={handleCartQtyChange}
         sizes={cartSizes}

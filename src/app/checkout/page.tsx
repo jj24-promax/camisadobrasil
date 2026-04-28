@@ -24,8 +24,8 @@ import {
   Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PRODUCT } from "@/lib/product";
-import { parseOrderSizes } from "@/lib/cart-sizes";
+import { getProductModelById } from "@/lib/product";
+import { parseOrderModels, parseOrderSizes } from "@/lib/cart-sizes";
 import { leve3Pague2DiscountCents } from "@/lib/offer-pricing";
 import { cn } from "@/lib/utils";
 import { POS_COMPRA } from "@/lib/pos-compra-routes";
@@ -200,6 +200,8 @@ function CheckoutContent() {
   const searchParams = useSearchParams();
   const rawQ = parseInt(searchParams.get("q") || "1", 10);
   const quantity = Number.isFinite(rawQ) && rawQ > 0 ? rawQ : 1;
+  const orderModels = parseOrderModels(searchParams, quantity);
+  const selectedProductModel = getProductModelById(orderModels[0] ?? searchParams.get("modelo"));
   const orderSizes = parseOrderSizes(searchParams, quantity);
   /** Por defeito: personalização ligada. Use `?personalize=0` para desligar à entrada. */
   const defaultPersonalizeOn = searchParams.get("personalize") !== "0";
@@ -331,9 +333,9 @@ function CheckoutContent() {
   useCheckoutBrowserBackRetention();
 
   const pricing = useMemo(() => {
-    const unitPrice = PRODUCT.priceCents;
-    const subtotal = unitPrice * quantity;
-    const itemDiscount = leve3Pague2DiscountCents(quantity, unitPrice);
+    const linePriceCents = orderModels.map((modelId) => Math.round(getProductModelById(modelId).price * 100));
+    const subtotal = linePriceCents.reduce((sum, cents) => sum + cents, 0);
+    const itemDiscount = quantity >= 3 ? Math.min(...linePriceCents) : 0;
     const paidPersonalizationLines = personalizationMaster
       ? shirtPaidPersonalization.filter(Boolean).length
       : 0;
@@ -367,6 +369,8 @@ function CheckoutContent() {
     shirtPaidPersonalization,
     personalizationMaster,
     personalizationBump.priceCents,
+    selectedProductModel.price,
+    orderModels,
   ]);
 
   const retention = useRetentionDiscountOnTotal(pricing.baseTotalCents);
@@ -411,6 +415,18 @@ function CheckoutContent() {
     const customer = buildPosCompraClientPayload();
     const now = new Date().toISOString();
 
+    const groupedProducts = orderModels.reduce<Record<string, { name: string; quantity: number; unitPrice: number }>>(
+      (acc, modelId) => {
+        const model = getProductModelById(modelId);
+        if (!acc[model.id]) {
+          acc[model.id] = { name: model.fullName, quantity: 0, unitPrice: Math.round(model.price * 100) };
+        }
+        acc[model.id].quantity += 1;
+        return acc;
+      },
+      {}
+    );
+
     await sendUtmifyPaidOrderOnce({
       orderId: tx,
       paymentMethod: "pix",
@@ -424,16 +440,14 @@ function CheckoutContent() {
       },
       totalPriceInCents: finalTotalCents,
       trackingParameters: extractTrackingFromSearch(searchParams),
-      products: [
-        {
-          id: PRODUCT.id,
-          name: PRODUCT.name,
-          priceInCents: finalTotalCents,
-          quantity,
-        },
-      ],
+      products: Object.entries(groupedProducts).map(([id, data]) => ({
+        id,
+        name: data.name,
+        priceInCents: data.unitPrice,
+        quantity: data.quantity,
+      })),
     });
-  }, [pixResult?.idTransaction, buildPosCompraClientPayload, finalTotalCents, searchParams, quantity]);
+  }, [pixResult?.idTransaction, buildPosCompraClientPayload, finalTotalCents, searchParams, orderModels]);
 
   const pixAutoRedirectDoneRef = useRef(false);
   useEffect(() => {
@@ -607,7 +621,12 @@ function CheckoutContent() {
           } · ${formData.bairro.trim()} · ${formData.cidade.trim()}/${estadoChk}`
         : undefined;
 
-    const productSummaryPix = `${PRODUCT.name} (${quantity} un. · Tam.: ${orderSizes.join(", ")})`;
+    const productSummaryPix = Array.from({ length: quantity }, (_, i) => {
+      const model = getProductModelById(orderModels[i]);
+      const size = orderSizes[i] ?? "M";
+      return `${model.name} (Tam. ${size})`;
+    }).join(" | ");
+    const tamanhoPrincipal = searchParams.get("tamanho")?.trim() || orderSizes[0] || "M";
 
     setPixLoading(true);
     try {
@@ -618,6 +637,9 @@ function CheckoutContent() {
         body: JSON.stringify({
           amount,
           amountCents: finalTotalCents,
+          modelId: selectedProductModel.id,
+          modelName: selectedProductModel.fullName,
+          tamanho: tamanhoPrincipal,
           productSummary: productSummaryPix,
           ...(shippingSummaryPix ? { shippingSummary: shippingSummaryPix } : {}),
           client: {
@@ -789,7 +811,7 @@ function CheckoutContent() {
                 <p className="text-xs font-bold uppercase tracking-widest text-white/90">Você está adquirindo:</p>
               </div>
               <p className="min-w-0 text-xs font-bold leading-snug text-gold-bright sm:text-right">
-                {PRODUCT.name} ({pricing.quantity} un)
+                {pricing.quantity} un. ({orderModels.map((m) => getProductModelById(m).name).join(", ")})
                 {orderSizes.length === 1
                   ? ` · Tam. ${orderSizes[0]}`
                   : orderSizes.length > 1
@@ -1217,8 +1239,36 @@ function CheckoutContent() {
 
           <aside className="h-fit min-w-0 w-full max-w-full lg:sticky lg:top-24">
             <div className="glass-dark max-w-full min-w-0 overflow-hidden rounded-[2rem] p-4 sm:p-6 md:p-8">
-              <div className="relative mb-6 aspect-square w-full overflow-hidden rounded-2xl border border-white/10 shadow-lg">
-                <Image src="/images/camisa-checkout-display.png" alt="Sua Edição Sagrada" fill sizes="(max-width: 1024px) 100vw, 400px" className="object-cover" priority />
+              <div
+                className={cn(
+                  "mb-6 grid w-full gap-2",
+                  quantity === 1 ? "grid-cols-1" : quantity === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"
+                )}
+              >
+                {Array.from({ length: quantity }, (_, i) => {
+                  const lineModel = getProductModelById(orderModels[i]);
+                  const thumbSrc = lineModel.images.checkout;
+                  return (
+                    <div
+                      key={`summary-thumb-${i}-${lineModel.id}`}
+                      className="relative aspect-square w-full min-w-0 overflow-hidden rounded-2xl border border-white/10 shadow-lg"
+                    >
+                      <Image
+                        src={thumbSrc}
+                        alt={`${lineModel.name} — camisa ${i + 1}`}
+                        fill
+                        sizes="(max-width: 640px) 45vw, 200px"
+                        className="object-cover"
+                        priority={i === 0}
+                      />
+                      {quantity > 1 ? (
+                        <span className="absolute bottom-2 left-2 rounded-md border border-white/15 bg-black/55 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-white/95 backdrop-blur-sm">
+                          Camisa {i + 1}
+                        </span>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
               <h3 className="mb-6 font-display text-lg font-bold uppercase tracking-tight text-white">Resumo da Compra</h3>
               <div className="mb-8 min-w-0 space-y-4">

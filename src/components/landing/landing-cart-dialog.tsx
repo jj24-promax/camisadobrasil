@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { Minus, Plus, ShoppingBag, Truck } from "lucide-react";
 import {
@@ -11,9 +11,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PRODUCT, PRODUCT_IMAGE_CLEAN_SRC, SIZES } from "@/lib/product";
+import { SIZES, PRODUCT_MODELS, getProductModelById, type ProductModelId } from "@/lib/product";
 import type { Size } from "@/lib/types";
-import { serializeOrderSizes } from "@/lib/cart-sizes";
+import { serializeOrderModels, serializeOrderSizes } from "@/lib/cart-sizes";
 import { leve3Pague2DiscountCents } from "@/lib/offer-pricing";
 import { useCheckoutTransition } from "@/components/navigation/checkout-transition-provider";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,9 @@ import { PurchaseTrustBlock } from "@/components/landing/purchase-trust-block";
 type LandingCartDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  selectedProduct: ProductModelId;
+  models: ProductModelId[];
+  onModelsChange: (models: ProductModelId[]) => void;
   quantity: number;
   onQuantityChange: (q: number) => void;
   sizes: Size[];
@@ -31,19 +34,28 @@ type LandingCartDialogProps = {
 export function LandingCartDialog({
   open,
   onOpenChange,
+  selectedProduct,
+  models,
+  onModelsChange,
   quantity,
   onQuantityChange,
   sizes,
   onSizesChange,
 }: LandingCartDialogProps) {
   const { requestCheckoutNavigation } = useCheckoutTransition();
+  const productModel = getProductModelById(selectedProduct);
   const safeQty = quantity < 1 ? 1 : quantity;
   const lineSizes = sizes.length === safeQty ? sizes : Array.from({ length: safeQty }, (_, i) => sizes[i] ?? "M");
+  const lineModels =
+    models.length === safeQty ? models : Array.from({ length: safeQty }, (_, i) => models[i] ?? selectedProduct);
+  const [activePreviewIndex, setActivePreviewIndex] = useState(0);
+  const clampedPreviewIndex = Math.min(activePreviewIndex, Math.max(0, safeQty - 1));
+  const displayModel = getProductModelById(lineModels[clampedPreviewIndex] ?? selectedProduct);
 
   const pricing = useMemo(() => {
-    const unitPrice = PRODUCT.priceCents;
-    const subtotal = unitPrice * safeQty;
-    const itemDiscount = leve3Pague2DiscountCents(safeQty, unitPrice);
+    const linePriceCents = lineModels.map((modelId) => Math.round(getProductModelById(modelId).price * 100));
+    const subtotal = linePriceCents.reduce((sum, cents) => sum + cents, 0);
+    const itemDiscount = safeQty >= 3 ? Math.min(...linePriceCents) : 0;
     const totalCents = subtotal - itemDiscount;
     const fmt = (cents: number) =>
       new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
@@ -53,11 +65,14 @@ export function LandingCartDialog({
       discountFormatted: fmt(itemDiscount),
       totalFormatted: fmt(totalCents),
     };
-  }, [safeQty]);
+  }, [safeQty, lineModels]);
 
   const checkoutParams = new URLSearchParams();
   checkoutParams.set("q", String(safeQty));
   checkoutParams.set("sizes", serializeOrderSizes(lineSizes));
+  checkoutParams.set("modelos", serializeOrderModels(lineModels));
+  checkoutParams.set("modelo", lineModels[0] ?? selectedProduct);
+  checkoutParams.set("tamanho", lineSizes[0] ?? "M");
 
   const bumpQty = (delta: number) => {
     onQuantityChange(Math.max(1, Math.min(99, safeQty + delta)));
@@ -67,6 +82,14 @@ export function LandingCartDialog({
     const next = [...lineSizes];
     next[index] = s;
     onSizesChange(next);
+    setActivePreviewIndex(index);
+  };
+
+  const setModelAt = (index: number, modelId: ProductModelId) => {
+    const next = [...lineModels];
+    next[index] = modelId;
+    onModelsChange(next);
+    setActivePreviewIndex(index);
   };
 
   return (
@@ -102,8 +125,8 @@ export function LandingCartDialog({
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
                 <div className="relative mx-auto aspect-square w-full max-w-[140px] shrink-0 overflow-hidden rounded-xl border border-white/10">
                   <Image
-                    src={PRODUCT_IMAGE_CLEAN_SRC}
-                    alt={PRODUCT.name}
+                    src={displayModel.images.checkout}
+                    alt={displayModel.fullName}
                     fill
                     className="object-cover"
                     sizes="140px"
@@ -112,15 +135,46 @@ export function LandingCartDialog({
                 </div>
                 <div className="min-w-0 flex-1 space-y-4">
                   <h2 className="font-display text-sm font-bold uppercase leading-snug tracking-tight text-white">
-                    {PRODUCT.name}
+                    {displayModel.fullName}
                   </h2>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/85">
+                    Pode misturar modelos por camisa abaixo
+                  </p>
 
                   <div className="space-y-4">
                     {lineSizes.map((sz, index) => (
-                      <div key={index} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                      <div
+                        key={index}
+                        className={cn(
+                          "rounded-xl border bg-white/[0.02] p-3 transition-colors",
+                          clampedPreviewIndex === index ? "border-gold/35" : "border-white/[0.06]"
+                        )}
+                      >
                         <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                          {safeQty > 1 ? `Camisa ${index + 1} — tamanho` : "Tamanho"}
+                          {safeQty > 1 ? `Camisa ${index + 1}` : "Configurar camisa"}
                         </p>
+                        <p className="mb-1 text-[9px] font-semibold uppercase tracking-widest text-gold/80">Modelo</p>
+                        <div className="mb-2 grid grid-cols-2 gap-1.5">
+                          {PRODUCT_MODELS.map((model) => {
+                            const activeModel = lineModels[index] === model.id;
+                            return (
+                              <button
+                                key={`${index}-${model.id}`}
+                                type="button"
+                                onClick={() => setModelAt(index, model.id)}
+                                className={cn(
+                                  "rounded-md border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide",
+                                  activeModel
+                                    ? "border-gold/60 bg-gold/[0.14] text-gold-bright"
+                                    : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40"
+                                )}
+                              >
+                                {model.slug === "sagrada" ? "Sagrada" : "Canarinho"}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="mb-1 text-[9px] font-semibold uppercase tracking-widest text-gold/80">Tamanho</p>
                         <div className="flex flex-wrap gap-1.5">
                           {SIZES.map((s) => (
                             <button

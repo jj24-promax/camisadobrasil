@@ -95,6 +95,33 @@ const ugcReviewPhotos: ReviewPhotoEntry[] = [
     imageSrc: "/images/testimonials/ugc/ugc-7.png",
     photoKind: "person",
   },
+  {
+    name: "André P.",
+    text: "Chegou certinha e no corpo ficou melhor ainda. Qualidade acima do esperado.",
+    rating: 5,
+    profileImageSrc: reviewPortraitMan(53),
+    imageSrc: "/images/testimonials/ugc/ugc-8.png",
+    photoKind: "person",
+    coverClassName: "object-[center_66%]",
+  },
+  {
+    name: "Murilo S.",
+    text: "A versão canarinho ficou absurda ao vivo. Tecido leve e ótimo caimento.",
+    rating: 5,
+    profileImageSrc: reviewPortraitMan(57),
+    imageSrc: "/images/testimonials/ugc/ugc-9.png",
+    photoKind: "person",
+    coverClassName: "object-[center_36%]",
+  },
+  {
+    name: "Fernanda A.",
+    text: "Vestiu super bem e a cor é linda. Já quero pedir mais uma.",
+    rating: 5,
+    profileImageSrc: reviewPortraitWoman(52),
+    imageSrc: "/images/testimonials/ugc/ugc-10.png",
+    photoKind: "person",
+    coverClassName: "object-[center_30%]",
+  },
 ];
 
 const stockReviewPhotos: ReviewPhotoEntry[] = [

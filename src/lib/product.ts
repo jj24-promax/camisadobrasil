@@ -38,6 +38,19 @@ export const HERO_PRODUCT_SLIDES = [
 
 export const HERO_PRODUCT_IMAGE_SRC = HERO_PRODUCT_POSTER_SRC;
 
+export type CampaignGalleryItem = {
+  src: string;
+  alt: string;
+  caption: string;
+};
+
+export type CampaignGalleryModel = {
+  name: string;
+  slug: "sagrada" | "canarinho";
+  modelId: ProductModelId;
+  images: CampaignGalleryItem[];
+};
+
 /** Key visual “Edição de Elite”. */
 export const PRODUCT_IMAGE_MAIN_SRC =
   "/images/camisa-brasil-edicao-elite.png" as const;
@@ -85,6 +98,33 @@ export const PRODUCT_IMAGE_SRC = PRODUCT_IMAGE_CLEAN_SRC;
 
 export const SIZES = ["P", "M", "G", "GG", "G1", "G2"] as const;
 export type Size = (typeof SIZES)[number];
+export type ProductModelId = "edicao-sagrada" | "edicao-canarinho";
+
+export type ProductModel = {
+  id: ProductModelId;
+  slug: "sagrada" | "canarinho";
+  name: string;
+  fullName: string;
+  badge: string;
+  price: number;
+  compareAtPrice: number;
+  description: string;
+  cta: string;
+  sizes: readonly Size[];
+  images: {
+    hero: {
+      kind: "video" | "image";
+      alt: string;
+      webmSrc?: string;
+      mp4Src?: string;
+      posterSrc?: string;
+      src?: string;
+    };
+    heroGallery: string[];
+    checkout: string;
+  };
+  gallery: CampaignGalleryItem[];
+};
 
 export const GALLERY_IMAGES = [
   {
@@ -135,6 +175,164 @@ export const PREMIUM_GALLERY_IMAGES = [
     alt: "Modelo de costas com a camisa Brasil Alpha — nome personalizado, número 10 e acabamento premium",
   },
 ] as const;
+
+const SAGRADA_GALLERY: CampaignGalleryItem[] = [
+      {
+        src: "/images/campaign/galeria-modelo-01.png",
+        alt: "Modelo veste a camisa Brasil Alpha — pose frontal com braços cruzados, escudo CBF, Cristo em jacquard e número 10",
+        caption: "Frontal editorial com presença premium.",
+      },
+      {
+        src: "/images/campaign/galeria-modelo-06-detalhe.png",
+        alt: "Close de peito da camisa Brasil Alpha — escudo CBF, Cristo Redentor em jacquard e número 10 em destaque",
+        caption: "Close técnico dos detalhes da Edição Sagrada.",
+      },
+      {
+        src: "/images/campaign/galeria-modelo-02.png",
+        alt: "Modelo com a camisa Brasil Alpha — enquadramento três quartos, destaque para caimento e detalhes dourados",
+        caption: "Enquadramento 3/4 com foco no caimento.",
+      },
+      {
+        src: "/images/campaign/galeria-modelo-03.png",
+        alt: "Modelo veste a camisa Brasil Alpha — vista frontal com foco na textura, no Cristo Redentor em jacquard e no número 10",
+        caption: "Textura jacquard e simbologia em destaque.",
+      },
+      {
+        src: "/images/campaign/galeria-modelo-04.png",
+        alt: "Modelo com a camisa Brasil Alpha — pose sentada, postura confiante e leitura clara da peça no corpo",
+        caption: "Lifestyle da campanha Alpha Brasil.",
+      },
+      {
+        src: "/images/campaign/galeria-modelo-05.png",
+        alt: "Modelo de costas com a camisa Brasil Alpha — nome personalizado, número 10 e acabamento premium",
+        caption: "Vista traseira e acabamento premium.",
+      },
+    ];
+
+const CANARINHO_GALLERY: CampaignGalleryItem[] = [
+      {
+        src: "/images/campaign/canarinho-01.png",
+        alt: "Modelo com camisa amarela Canarinho segurando bola, visual esportivo e vibrante",
+        caption: "Editorial esportivo da Edição Canarinho.",
+      },
+      {
+        src: "/images/campaign/canarinho-02.png",
+        alt: "Modelo com camisa Canarinho em pose frontal, escudo CBF e número 10 em destaque",
+        caption: "Frente clássica com identidade brasileira.",
+      },
+      {
+        src: "/images/campaign/canarinho-03.png",
+        alt: "Modelo em estúdio vestindo a Edição Canarinho com styling urbano",
+        caption: "Leitura de estilo para jogo e dia a dia.",
+      },
+      {
+        src: "/images/campaign/canarinho-04.png",
+        alt: "Modelo feminino vestindo a camisa Canarinho com foco no caimento",
+        caption: "Caimento real em diferentes perfis.",
+      },
+      {
+        src: "/images/campaign/canarinho-05.png",
+        alt: "Vista traseira da Edição Canarinho com nome e número personalizados",
+        caption: "Costas personalizadas da Edição Canarinho.",
+      },
+    ];
+
+export const PRODUCT_MODELS: readonly ProductModel[] = [
+  {
+    id: "edicao-sagrada",
+    slug: "sagrada",
+    name: "Edição Sagrada",
+    fullName: "Alpha Brasil — Edição Sagrada",
+    badge: "Mais vendido",
+    price: 67.9,
+    compareAtPrice: 149,
+    description: "Cristo Redentor em jacquard, visual simbólico e premium.",
+    cta: "Garantir minha Edição Sagrada",
+    sizes: SIZES,
+    images: {
+      hero: {
+        kind: "video",
+        alt: "Camisa Alpha Brasil Edição Sagrada",
+        webmSrc: HERO_VIDEO_WEBM,
+        mp4Src: HERO_VIDEO_MP4,
+        posterSrc: HERO_PRODUCT_POSTER_SRC,
+      },
+      heroGallery: [HERO_PRODUCT_POSTER_SRC],
+      checkout: "/images/camisa-checkout-display.png",
+    },
+    gallery: SAGRADA_GALLERY,
+  },
+  {
+    id: "edicao-canarinho",
+    slug: "canarinho",
+    name: "Edição Canarinho",
+    fullName: "Alpha Brasil — Edição Canarinho",
+    badge: "Novo",
+    price: 67.9,
+    compareAtPrice: 149,
+    description: "Camisa amarela vibrante, brasileira e versátil para jogos e dia a dia.",
+    cta: "Garantir minha Edição Canarinho",
+    sizes: SIZES,
+    images: {
+      hero: {
+        kind: "image",
+        alt: "Camisa Alpha Brasil Edição Canarinho amarela",
+        src: "/images/camisa-edicao-canarinho-amarela.png",
+      },
+      heroGallery: [
+        "/images/camisa-edicao-canarinho-amarela.png",
+        "/images/camisa-edicao-canarinho-modelo-2.png",
+      ],
+      checkout: "/images/camisa-detalhe-canarinho-frente.png",
+    },
+    gallery: CANARINHO_GALLERY,
+  },
+] as const;
+
+export function getProductModelById(id: string | null | undefined): ProductModel {
+  const found = PRODUCT_MODELS.find((p) => p.id === id);
+  return found ?? PRODUCT_MODELS[0];
+}
+
+export type HeroEditionId = ProductModelId;
+
+export const HERO_EDITIONS = PRODUCT_MODELS.map((model) => ({
+  id: model.id,
+  name: `${model.name} — ${model.slug === "sagrada" ? "Cristo Redentor" : "Amarela Clássica"}`,
+  badge: model.badge,
+  shortDescription: model.description,
+  ctaLabel: model.cta,
+  media:
+    model.images.hero.kind === "video"
+      ? {
+          kind: "video" as const,
+          webmSrc: model.images.hero.webmSrc ?? HERO_VIDEO_WEBM,
+          mp4Src: model.images.hero.mp4Src ?? HERO_VIDEO_MP4,
+          posterSrc: model.images.hero.posterSrc ?? HERO_PRODUCT_POSTER_SRC,
+          alt: model.images.hero.alt,
+        }
+      : {
+          kind: "image" as const,
+          src: model.images.hero.src ?? HERO_PRODUCT_POSTER_SRC,
+          alt: model.images.hero.alt,
+        },
+  imageGallery: model.images.heroGallery,
+})) as const;
+
+export const CAMPAIGN_GALLERY_BY_MODEL: Record<ProductModelId, CampaignGalleryModel> = {
+  "edicao-sagrada": {
+    name: "Edição Sagrada",
+    slug: "sagrada",
+    modelId: "edicao-sagrada",
+    images: SAGRADA_GALLERY,
+  },
+  "edicao-canarinho": {
+    name: "Edição Canarinho",
+    slug: "canarinho",
+    modelId: "edicao-canarinho",
+    images: CANARINHO_GALLERY,
+  },
+};
 
 /** Key visual do hero para meta. */
 export const HERO_IMAGE = {

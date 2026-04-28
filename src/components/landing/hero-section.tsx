@@ -1,28 +1,33 @@
 "use client";
 
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { TrustBadges } from "./trust-badges";
 import { PurchaseTrustBlock } from "./purchase-trust-block";
-import { PRODUCT, SIZES, HERO_PRODUCT_SLIDES } from "@/lib/product";
+import { PRODUCT, SIZES, HERO_EDITIONS, type HeroEditionId } from "@/lib/product";
 import type { Size } from "@/lib/types";
 import { useMobileParallaxOff } from "@/hooks/use-is-mobile-parallax";
 import { useInlineMutedVideoAutoplay } from "@/hooks/use-inline-muted-video-autoplay";
 import { cn } from "@/lib/utils";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { HeroEditionSelector } from "./hero-edition-selector";
 
 type HeroSectionProps = {
   selectedSize: Size;
   onSizeChange: (s: Size) => void;
   onBuyNow: () => void;
+  selectedEdition: HeroEditionId;
+  onEditionChange: (edition: HeroEditionId) => void;
 };
 
 export function HeroSection({
   selectedSize,
   onSizeChange,
   onBuyNow,
+  selectedEdition,
+  onEditionChange,
 }: HeroSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const mobileOff = useMobileParallaxOff();
@@ -39,16 +44,34 @@ export function HeroSection({
     mobileOff || reduced ? [0, 0] : [0, 48]
   );
 
-  const heroItem = HERO_PRODUCT_SLIDES[0];
+  const [selectedEditionImageIndex, setSelectedEditionImageIndex] = useState(0);
+  const selectedEditionData = HERO_EDITIONS.find((edition) => edition.id === selectedEdition) ?? HERO_EDITIONS[0];
+  const heroItem = selectedEditionData.media;
+  const selectedEditionGallery =
+    "imageGallery" in selectedEditionData &&
+    Array.isArray(selectedEditionData.imageGallery) &&
+    selectedEditionData.imageGallery.length > 0
+      ? selectedEditionData.imageGallery
+      : [];
+  const canNavigateEditionGallery = heroItem.kind === "image" && selectedEditionGallery.length > 1;
+  const activeEditionImageSrc =
+    heroItem.kind === "image"
+      ? selectedEditionGallery[selectedEditionImageIndex] ?? heroItem.src
+      : null;
 
   const heroVideoRef = useRef<HTMLVideoElement | null>(null);
   const [heroVideoFailed, setHeroVideoFailed] = useState(false);
   const heroPointerUnlockDone = useRef(false);
 
   useInlineMutedVideoAutoplay(heroVideoRef, {
-    enabled: !heroVideoFailed,
-    mediaKey: heroItem.mp4Src,
+    enabled: !heroVideoFailed && heroItem.kind === "video",
+    mediaKey: heroItem.kind === "video" ? heroItem.mp4Src : selectedEditionData.id,
   });
+
+  useEffect(() => {
+    setSelectedEditionImageIndex(0);
+    setHeroVideoFailed(false);
+  }, [selectedEdition]);
 
   /** Primeiro toque na hero (gesto do utilizador) — iOS por vezes só aí liberta o loop. */
   const onHeroPointerDown = useCallback(() => {
@@ -131,7 +154,7 @@ export function HeroSection({
               transition={{ duration: 0.6, delay: 0.4 }}
               className="mx-auto mt-6 max-w-xl text-lg font-medium leading-relaxed text-muted-foreground/90 lg:mx-0 md:text-xl"
             >
-              Design purificado com a presença do <span className="text-white font-bold">Cristo Redentor</span> em jacquard. Uma peça que resgata a verdadeira essência do Brasil com elegância e respeito.
+              {selectedEditionData.shortDescription}
             </motion.p>
 
             <motion.div
@@ -142,9 +165,21 @@ export function HeroSection({
             >
               <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-white/[0.02] p-6 shadow-luxe backdrop-blur-xl md:p-10">
                 <div className="flex flex-col gap-8">
+                  <HeroEditionSelector
+                    options={HERO_EDITIONS}
+                    selectedEdition={selectedEdition}
+                    onChange={(edition) => {
+                      onEditionChange(edition);
+                      setHeroVideoFailed(false);
+                      setSelectedEditionImageIndex(0);
+                    }}
+                  />
+
                   <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                     <div className="text-center sm:text-left">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Preço Exclusivo</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Modelo selecionado</p>
+                      <p className="mt-1 max-w-xs text-sm font-semibold text-white">{selectedEditionData.name}</p>
+                      <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Preço Exclusivo</p>
                       <div className="mt-2 flex items-baseline justify-center gap-2 sm:justify-start">
                         <span className="text-sm text-muted-foreground line-through">R$ 149,00</span>
                         <span className="price-gold-glow font-display text-4xl font-bold text-gold-bright">{PRODUCT.priceFormatted}</span>
@@ -185,7 +220,7 @@ export function HeroSection({
                     onClick={onBuyNow}
                   >
                     <ArrowRight className="mr-3 h-5 w-5 shrink-0" />
-                    Garantir minha Edição Sagrada
+                    {selectedEditionData.ctaLabel}
                   </Button>
 
                   <PurchaseTrustBlock variant="hero" />
@@ -208,15 +243,45 @@ export function HeroSection({
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                 className="hero-product-frame relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-navy-deep/40 backdrop-blur-sm"
               >
-                {heroVideoFailed ? (
-                  <Image
-                    src={heroItem.posterSrc}
-                    alt={heroItem.alt}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 90vw, 500px"
-                    priority
-                  />
+                {heroItem.kind === "image" || heroVideoFailed ? (
+                  <>
+                    <Image
+                      src={heroItem.kind === "video" ? heroItem.posterSrc : activeEditionImageSrc ?? heroItem.src}
+                      alt={heroItem.alt}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 1024px) 90vw, 500px"
+                      priority
+                    />
+                    {canNavigateEditionGallery ? (
+                      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between px-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedEditionImageIndex((prev) =>
+                              prev === 0 ? selectedEditionGallery.length - 1 : prev - 1
+                            )
+                          }
+                          className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-[#04070d]/70 text-gold-bright backdrop-blur-md transition hover:border-gold/70 hover:bg-[#04070d]/90"
+                          aria-label="Imagem anterior da edição"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedEditionImageIndex((prev) =>
+                              prev === selectedEditionGallery.length - 1 ? 0 : prev + 1
+                            )
+                          }
+                          className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-[#04070d]/70 text-gold-bright backdrop-blur-md transition hover:border-gold/70 hover:bg-[#04070d]/90"
+                          aria-label="Próxima imagem da edição"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : null}
+                  </>
                 ) : (
                   <video
                     ref={heroVideoRef}

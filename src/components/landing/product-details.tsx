@@ -24,41 +24,69 @@ const benefits = [
 ];
 
 export function ProductDetails() {
-  const [activeImage, setActiveImage] = useState<"front" | "back">("front");
+  const slides = [
+    {
+      id: "front-video",
+      label: "Vista frontal",
+      alt: "Modelo com camisa Brasil Alpha vista frontal",
+      imageSrc: PRODUCT_IMAGE_ARTE_REDENCAO_FRONT_SRC,
+      videoMp4Src: PRODUCT_VIDEO_ARTE_REDENCAO_FRONT_MP4_SRC,
+      videoWebmSrc: PRODUCT_VIDEO_ARTE_REDENCAO_FRONT_WEBM_SRC,
+    },
+    {
+      id: "back-video",
+      label: "Vista costas",
+      alt: "Modelo com camisa Brasil Alpha vista costas com nome e número 10",
+      imageSrc: PRODUCT_IMAGE_ARTE_REDENCAO_BACK_SRC,
+      videoMp4Src: PRODUCT_VIDEO_ARTE_REDENCAO_BACK_MP4_SRC,
+      videoWebmSrc: PRODUCT_VIDEO_ARTE_REDENCAO_BACK_WEBM_SRC,
+    },
+    {
+      id: "canarinho-front",
+      label: "Canarinho frontal",
+      alt: "Modelo com camisa canarinho amarela vista frontal",
+      imageSrc: "/images/camisa-detalhe-canarinho-frente.png",
+    },
+    {
+      id: "canarinho-back",
+      label: "Canarinho costas",
+      alt: "Modelo com camisa canarinho amarela vista costas",
+      imageSrc: "/images/camisa-detalhe-canarinho-costas.png",
+    },
+  ] as const;
+
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [videoFailedFront, setVideoFailedFront] = useState(false);
   const [videoFailedBack, setVideoFailedBack] = useState(false);
   const arteVideoRef = useRef<HTMLVideoElement | null>(null);
   const artePointerUnlock = useRef(false);
 
+  const activeSlide = slides[activeSlideIndex] ?? slides[0];
+  const activeIsVideo = Boolean(activeSlide.videoMp4Src && activeSlide.videoWebmSrc);
   const activeVideoFailed =
-    activeImage === "front" ? videoFailedFront : videoFailedBack;
-
-  const activeVideoMp4Src =
-    activeImage === "front"
-      ? PRODUCT_VIDEO_ARTE_REDENCAO_FRONT_MP4_SRC
-      : PRODUCT_VIDEO_ARTE_REDENCAO_BACK_MP4_SRC;
-  const activeVideoWebmSrc =
-    activeImage === "front"
-      ? PRODUCT_VIDEO_ARTE_REDENCAO_FRONT_WEBM_SRC
-      : PRODUCT_VIDEO_ARTE_REDENCAO_BACK_WEBM_SRC;
-  const activeImageSrc =
-    activeImage === "front"
-      ? PRODUCT_IMAGE_ARTE_REDENCAO_FRONT_SRC
-      : PRODUCT_IMAGE_ARTE_REDENCAO_BACK_SRC;
-  const activeAlt =
-    activeImage === "front"
-      ? "Modelo com camisa Brasil Alpha vista frontal"
-      : "Modelo com camisa Brasil Alpha vista costas com nome e número 10";
+    activeSlide.id === "front-video"
+      ? videoFailedFront
+      : activeSlide.id === "back-video"
+      ? videoFailedBack
+      : true;
 
   // Hook centralizado para autoplay apenas quando visível
   useInlineMutedVideoAutoplay(arteVideoRef, {
-    enabled: !activeVideoFailed,
-    mediaKey: `${activeImage}-${activeVideoMp4Src}`,
+    enabled: activeIsVideo && !activeVideoFailed,
+    mediaKey: `${activeSlide.id}-${activeSlide.videoMp4Src ?? activeSlide.imageSrc}`,
   });
 
   useEffect(() => {
     artePointerUnlock.current = false;
-  }, [activeImage]);
+  }, [activeSlideIndex]);
+
+  const goPrev = () => {
+    setActiveSlideIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+  };
+
+  const goNext = () => {
+    setActiveSlideIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+  };
 
   const onArtePointerDown = useCallback(() => {
     if (artePointerUnlock.current) return;
@@ -115,17 +143,17 @@ export function ProductDetails() {
               <div className="absolute inset-0 z-10 bg-gradient-to-t from-navy-deep/80 via-transparent to-transparent opacity-60 transition-opacity group-hover:opacity-40" />
               <AnimatePresence mode="sync">
                 <motion.div
-                  key={activeImage}
+                  key={activeSlide.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                   className="absolute inset-0"
                 >
-                  {activeVideoFailed ? (
+                  {!activeIsVideo || activeVideoFailed ? (
                     <Image
-                      src={activeImageSrc}
-                      alt={activeAlt}
+                      src={activeSlide.imageSrc}
+                      alt={activeSlide.alt}
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 90vw, 420px"
@@ -134,34 +162,34 @@ export function ProductDetails() {
                   ) : (
                     <video
                       ref={arteVideoRef}
-                      key={`${activeImage}-video`}
+                      key={`${activeSlide.id}-video`}
                       className="video-embed-no-native-ui h-full w-full object-cover"
                       muted
                       loop
                       playsInline
                       preload="metadata"
-                      poster={activeImageSrc}
-                      aria-label={activeAlt}
+                      poster={activeSlide.imageSrc}
+                      aria-label={activeSlide.alt}
                       controls={false}
                       disablePictureInPicture
                       controlsList="nodownload noremoteplayback nofullscreen"
                       onError={() =>
-                        activeImage === "front"
+                        activeSlide.id === "front-video"
                           ? setVideoFailedFront(true)
-                          : setVideoFailedBack(true)
+                          : activeSlide.id === "back-video"
+                          ? setVideoFailedBack(true)
+                          : undefined
                       }
                     >
-                      <source src={activeVideoMp4Src} type="video/mp4" />
-                      <source src={activeVideoWebmSrc} type="video/webm" />
+                      <source src={activeSlide.videoMp4Src} type="video/mp4" />
+                      <source src={activeSlide.videoWebmSrc} type="video/webm" />
                     </video>
                   )}
                 </motion.div>
               </AnimatePresence>
               <button
                 type="button"
-                onClick={() =>
-                  setActiveImage((prev) => (prev === "front" ? "back" : "front"))
-                }
+                onClick={goPrev}
                 className="absolute left-4 top-1/2 z-20 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/85 backdrop-blur transition-colors hover:border-gold/40 hover:text-gold-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 md:h-10 md:w-10"
                 aria-label="Mostrar foto anterior"
               >
@@ -169,9 +197,7 @@ export function ProductDetails() {
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  setActiveImage((prev) => (prev === "front" ? "back" : "front"))
-                }
+                onClick={goNext}
                 className="absolute right-4 top-1/2 z-20 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/85 backdrop-blur transition-colors hover:border-gold/40 hover:text-gold-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 md:h-10 md:w-10"
                 aria-label="Mostrar próxima foto"
               >
@@ -179,7 +205,7 @@ export function ProductDetails() {
               </button>
               <div className="absolute bottom-8 left-8 right-8 z-20">
                 <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold-bright">
-                  {activeImage === "front" ? "Vista frontal" : "Vista costas"}
+                  {activeSlide.label}
                 </p>
                 <p className="mt-1 text-sm font-medium text-white/90">
                   Toque nas setas para alternar

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { PREMIUM_GALLERY_IMAGES } from "@/lib/product";
+import { CAMPAIGN_GALLERY_BY_MODEL, type HeroEditionId } from "@/lib/product";
 import { SectionReveal, SectionShell } from "@/components/landing/section-shell";
 import {
   Dialog,
@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { Maximize2 } from "lucide-react";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-const TOTAL = PREMIUM_GALLERY_IMAGES.length;
 
 const MAIN_SIZES =
   "(max-width: 640px) 100vw, (max-width: 1024px) min(440px, 100vw), min(500px, 46vw)";
@@ -43,24 +42,43 @@ function CampaignBackground() {
   );
 }
 
-export function PremiumGallery() {
+type PremiumGalleryProps = {
+  selectedEdition: HeroEditionId;
+  onEditionChange: (edition: HeroEditionId) => void;
+};
+
+export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGalleryProps) {
   const [active, setActive] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showAllThumbs, setShowAllThumbs] = useState(false);
   const reduced = useReducedMotion();
+  const galleryModel =
+    CAMPAIGN_GALLERY_BY_MODEL[selectedEdition] ?? CAMPAIGN_GALLERY_BY_MODEL["edicao-sagrada"];
+  const galleryImages = galleryModel.images;
+  const total = galleryImages.length;
+  const editionOptions = [
+    CAMPAIGN_GALLERY_BY_MODEL["edicao-sagrada"],
+    CAMPAIGN_GALLERY_BY_MODEL["edicao-canarinho"],
+  ];
 
   /** Pré-carrega fotos da campanha para a troca não esperar rede após o clique. */
   useEffect(() => {
-    for (const item of PREMIUM_GALLERY_IMAGES) {
+    for (const item of galleryImages) {
       const img = new window.Image();
       img.src = item.src;
     }
-  }, []);
+  }, [galleryImages]);
 
-  const activeItem = PREMIUM_GALLERY_IMAGES[active];
+  useEffect(() => {
+    setActive(0);
+    setShowAllThumbs(false);
+    setLightboxOpen(false);
+  }, [selectedEdition]);
+
+  const activeItem = galleryImages[active] ?? galleryImages[0];
   const visibleThumbs = showAllThumbs
-    ? PREMIUM_GALLERY_IMAGES
-    : PREMIUM_GALLERY_IMAGES.slice(0, 4);
+    ? galleryImages
+    : galleryImages.slice(0, 4);
 
   return (
     <SectionShell
@@ -92,6 +110,30 @@ export function PremiumGallery() {
             <p className="font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80">
               Galeria da campanha
             </p>
+            <p className="mt-3 inline-flex w-fit rounded-full border border-gold/35 bg-gold/[0.12] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-gold-bright">
+              Galeria: {galleryModel.name}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {editionOptions.map((option) => {
+                const isActive = option.slug === selectedEdition;
+                return (
+                  <button
+                    key={option.slug}
+                    type="button"
+                    onClick={() => onEditionChange(option.modelId)}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] transition-all",
+                      isActive
+                        ? "border-gold/65 bg-gold/[0.16] text-gold-bright shadow-[0_0_16px_-10px_rgba(212,175,55,0.8)]"
+                        : "border-white/15 bg-white/[0.02] text-muted-foreground hover:border-gold/35 hover:text-gold-bright"
+                    )}
+                    aria-pressed={isActive}
+                  >
+                    {option.name}
+                  </button>
+                );
+              })}
+            </div>
 
             <h2
               id="gallery-heading"
@@ -185,7 +227,7 @@ export function PremiumGallery() {
                       {String(active + 1).padStart(2, "0")}
                     </span>
                     <span className="mx-1.5 text-white/20">/</span>
-                    <span>{String(TOTAL).padStart(2, "0")}</span>
+                    <span>{String(total).padStart(2, "0")}</span>
                   </div>
 
                   <button
@@ -279,7 +321,7 @@ export function PremiumGallery() {
                     );
                   })}
                 </div>
-                {!showAllThumbs && PREMIUM_GALLERY_IMAGES.length > visibleThumbs.length ? (
+                {!showAllThumbs && galleryImages.length > visibleThumbs.length ? (
                   <button
                     type="button"
                     onClick={() => setShowAllThumbs(true)}
@@ -291,9 +333,12 @@ export function PremiumGallery() {
               </div>
             </div>
 
-            <p className="mt-7 text-center text-[10px] uppercase tracking-[0.34em] text-muted-foreground/70 lg:mt-9 lg:text-left lg:tracking-[0.3em]">
+            <p className="mt-5 text-center text-sm text-muted-foreground/90 lg:text-left">
+              {activeItem.caption}
+            </p>
+            <p className="mt-3 text-center text-[10px] uppercase tracking-[0.34em] text-muted-foreground/70 lg:mt-4 lg:text-left lg:tracking-[0.3em]">
               Toque para navegar ·{" "}
-              <span className="text-muted-foreground/50">campanha Alpha</span>
+              <span className="text-muted-foreground/50">{galleryModel.name}</span>
             </p>
           </SectionReveal>
         </div>

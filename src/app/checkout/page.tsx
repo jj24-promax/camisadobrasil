@@ -369,7 +369,6 @@ function CheckoutContent() {
     shirtPaidPersonalization,
     personalizationMaster,
     personalizationBump.priceCents,
-    selectedProductModel.price,
     orderModels,
   ]);
 

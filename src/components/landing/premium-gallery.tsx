@@ -115,7 +115,7 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {editionOptions.map((option) => {
-                const isActive = option.slug === selectedEdition;
+                const isActive = option.modelId === selectedEdition;
                 return (
                   <button
                     key={option.slug}

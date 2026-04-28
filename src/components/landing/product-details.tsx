@@ -62,7 +62,11 @@ export function ProductDetails() {
   const artePointerUnlock = useRef(false);
 
   const activeSlide = slides[activeSlideIndex] ?? slides[0];
-  const activeIsVideo = Boolean(activeSlide.videoMp4Src && activeSlide.videoWebmSrc);
+  const activeVideoSources =
+    activeSlide.id === "front-video" || activeSlide.id === "back-video"
+      ? { mp4: activeSlide.videoMp4Src, webm: activeSlide.videoWebmSrc }
+      : null;
+  const activeIsVideo = activeVideoSources !== null;
   const activeVideoFailed =
     activeSlide.id === "front-video"
       ? videoFailedFront
@@ -73,7 +77,7 @@ export function ProductDetails() {
   // Hook centralizado para autoplay apenas quando visível
   useInlineMutedVideoAutoplay(arteVideoRef, {
     enabled: activeIsVideo && !activeVideoFailed,
-    mediaKey: `${activeSlide.id}-${activeSlide.videoMp4Src ?? activeSlide.imageSrc}`,
+    mediaKey: `${activeSlide.id}-${activeVideoSources?.mp4 ?? activeSlide.imageSrc}`,
   });
 
   useEffect(() => {
@@ -159,7 +163,7 @@ export function ProductDetails() {
                       sizes="(max-width: 768px) 90vw, 420px"
                       loading="lazy"
                     />
-                  ) : (
+                  ) : activeVideoSources ? (
                     <video
                       ref={arteVideoRef}
                       key={`${activeSlide.id}-video`}
@@ -181,10 +185,10 @@ export function ProductDetails() {
                           : undefined
                       }
                     >
-                      <source src={activeSlide.videoMp4Src} type="video/mp4" />
-                      <source src={activeSlide.videoWebmSrc} type="video/webm" />
+                      <source src={activeVideoSources.mp4} type="video/mp4" />
+                      <source src={activeVideoSources.webm} type="video/webm" />
                     </video>
-                  )}
+                  ) : null}
                 </motion.div>
               </AnimatePresence>
               <button

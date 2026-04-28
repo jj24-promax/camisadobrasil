@@ -317,7 +317,7 @@ export const HERO_EDITIONS = PRODUCT_MODELS.map((model) => ({
           alt: model.images.hero.alt,
         },
   imageGallery: model.images.heroGallery,
-})) as const;
+}));
 
 export const CAMPAIGN_GALLERY_BY_MODEL: Record<ProductModelId, CampaignGalleryModel> = {
   "edicao-sagrada": {

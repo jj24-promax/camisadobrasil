@@ -113,201 +113,30 @@ export function HeroSection({
           </div>
         </motion.div>
 
-        {/* TÍTULO - Centralizado no topo */}
-        <div className="mb-10 w-full text-center md:mb-14">
-          <motion.h1
-            id="hero-heading"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="font-display font-extrabold tracking-tight"
-          >
-            <span className="block text-[clamp(2.5rem,7vw,4.5rem)] leading-[0.9] text-white">
-              A Identidade que
-            </span>
-            <span className="mt-2 inline-block bg-gradient-to-r from-gold-bright via-gold to-gold-muted bg-clip-text text-[clamp(2.5rem,7vw,4.5rem)] leading-[1] text-transparent">
-              Protege e Une.
-            </span>
-          </motion.h1>
-        </div>
-
-        {/* COLUNAS: ESQUERDA (VALORES) / DIREITA (VÍDEO) */}
         <div className="grid w-full grid-cols-1 gap-10 md:gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-14">
           
-          {/* CAIXA DE COMPRA E AVALIAÇÃO - Esquerda (Desktop) / Baixo (Mobile) */}
-          <div className="order-2 flex flex-col justify-center text-center lg:order-1 lg:text-left">
-            
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mb-10 flex items-center justify-center gap-2 lg:justify-start"
-            >
-              <div className="flex gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-3 w-3 fill-gold text-gold" />
-                ))}
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold/90">
-                +4.800 CLIENTES SATISFEITOS
-              </span>
-            </motion.div>
-
-            <motion.div
+          {/* TÍTULO - Centralizado no topo */}
+          <div className="order-1 text-center lg:col-start-1 lg:row-start-1 lg:text-left">
+            <motion.h1
+              id="hero-heading"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex flex-col gap-6"
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="font-display font-extrabold tracking-tight"
             >
-              <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-white/[0.02] p-6 shadow-luxe backdrop-blur-xl md:p-10">
-                <div className="flex flex-col gap-6">
-                  
-                  <div className="flex flex-col gap-4">
-                    <p className="text-center font-display text-[10px] font-bold uppercase tracking-[0.2em] text-gold/80 sm:text-left">
-                      Escolha sua Edição:
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-4 sm:justify-start">
-                      {HERO_EDITIONS.map((edition) => {
-                        const isActive = selectedEdition === edition.id;
-                        return (
-                          <button
-                            key={edition.id}
-                            type="button"
-                            onClick={() => onEditionChange(edition.id)}
-                            className={cn(
-                              "group relative h-12 w-12 overflow-hidden rounded-xl border-2 transition-all duration-300",
-                              isActive
-                                ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
-                                : "border-white/10 hover:border-white/30"
-                            )}
-                            aria-label={`Selecionar cor ${edition.name}`}
-                          >
-                            <div 
-                              className="h-full w-full" 
-                              style={{ backgroundColor: edition.color }}
-                            />
-                            {isActive && (
-                              <motion.div 
-                                layoutId="buybox-color-check"
-                                className="absolute inset-0 flex items-center justify-center bg-black/20"
-                              >
-                                <div className="h-2 w-2 rounded-full bg-white shadow-[0_0_8px_white]" />
-                              </motion.div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="mt-1 min-h-[3.5rem] text-center sm:text-left">
-                      <AnimatePresence mode="wait">
-                        <motion.div
-                          key={selectedEdition}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          transition={{ duration: 0.3, ease: "easeOut" }}
-                          className="flex flex-col gap-1.5"
-                        >
-                          <p className="font-display text-sm font-bold uppercase tracking-widest text-white">
-                            {selectedEditionData.name}
-                          </p>
-                          <p className="mx-auto max-w-sm text-[13px] font-medium leading-relaxed text-muted-foreground/90 sm:mx-0">
-                            {selectedEditionData.shortDescription}
-                          </p>
-                        </motion.div>
-                      </AnimatePresence>
-                    </div>
-
-                    <AnimatePresence mode="wait">
-                      {selectedEditionData.inProduction ? (
-                        <motion.div
-                          key="production-badge"
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:justify-start"
-                        >
-                          <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
-                          <p className="text-xs font-bold uppercase tracking-widest text-amber-100">
-                            Em produção — Disponível em breve
-                          </p>
-                        </motion.div>
-                      ) : null}
-                    </AnimatePresence>
-                  </div>
-
-                  <div className="h-px w-full bg-white/[0.06]" />
-
-                  <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="text-center sm:text-left">
-                      {!selectedEditionData.inProduction && (
-                        <>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Preço Exclusivo</p>
-                          <div className="mt-2 flex items-baseline justify-center gap-2 sm:justify-start">
-                            <span className="text-sm text-muted-foreground line-through">R$ 149,00</span>
-                            <span className="price-gold-glow font-display text-4xl font-bold text-gold-bright">{PRODUCT.priceFormatted}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    
-                    {!selectedEditionData.inProduction && (
-                      <div className="flex-1">
-                        <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground sm:text-left">Selecione seu Tamanho</p>
-                        <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
-                          {SIZES.map((s) => (
-                            <button
-                              key={s}
-                              type="button"
-                              onClick={() => onSizeChange(s)}
-                              className={cn(
-                                "group relative flex h-12 min-w-12 items-center justify-center rounded-xl px-2 text-xs font-bold transition-all duration-300",
-                                selectedSize === s
-                                  ? "bg-gold text-navy-deep"
-                                  : "border border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40"
-                              )}
-                            >
-                              <span className="relative z-10">{s}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-2">
-                    <AnimatePresence mode="wait">
-                      <Button 
-                        key={selectedEditionData.inProduction ? "btn-prod" : "btn-buy"}
-                        size="xl" 
-                        disabled={selectedEditionData.inProduction}
-                        className={cn(
-                          "shimmer-btn w-full text-sm sm:text-base font-bold uppercase tracking-tight sm:tracking-normal",
-                          selectedEditionData.inProduction 
-                            ? "bg-white/5 text-muted-foreground border-white/10" 
-                            : "shadow-[0_0_30px_-5px_hsl(var(--gold)/0.4)]"
-                        )} 
-                        onClick={onBuyNow}
-                      >
-                        {!selectedEditionData.inProduction && <ArrowRight className="mr-3 h-5 w-5 shrink-0" />}
-                        {selectedEditionData.ctaLabel}
-                      </Button>
-                    </AnimatePresence>
-                  </div>
-
-                  <PurchaseTrustBlock variant="hero" />
-                </div>
-                
-                <TrustBadges />
-              </div>
-            </motion.div>
+              <span className="block text-[clamp(2.5rem,7vw,4.5rem)] leading-[0.9] text-white">
+                A Identidade que
+              </span>
+              <span className="mt-2 block bg-gradient-to-r from-gold-bright via-gold to-gold-muted bg-clip-text text-[clamp(2.5rem,7vw,4.5rem)] leading-[1] text-transparent">
+                Protege e Une.
+              </span>
+            </motion.h1>
           </div>
 
           {/* VÍDEO/GIF - Direita (Desktop) / Cima (Mobile) */}
           <motion.div
             style={{ y: imgY }}
-            className="order-1 flex items-start justify-center lg:order-2 lg:sticky lg:top-[12vh]"
+            className="order-2 flex items-center justify-center lg:col-start-2 lg:row-start-1 lg:row-span-2"
           >
             <div className="relative w-full max-w-[380px] lg:max-w-[500px]">
               <div className="absolute -inset-4 rounded-[3rem] bg-gold/5 blur-3xl" />
@@ -391,6 +220,169 @@ export function HeroSection({
             </div>
           </motion.div>
 
+          {/* CAIXA DE COMPRA E AVALIAÇÃO - Coluna Esquerda */}
+          <div className="order-3 flex flex-col gap-8 lg:col-start-1 lg:row-start-2">
+            
+            {/* SELO DE SATISFAÇÃO */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-center justify-center gap-2 lg:justify-start"
+            >
+              <div className="flex gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-3 w-3 fill-gold text-gold" />
+                ))}
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold/90">
+                +4.800 CLIENTES SATISFEITOS
+              </span>
+            </motion.div>
+
+            {/* QUADRANTE DE COMPRA */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="flex flex-col gap-6"
+            >
+              <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-white/[0.02] p-6 shadow-luxe backdrop-blur-xl md:p-10">
+                <div className="flex flex-col gap-8">
+                  
+                  {/* SEÇÃO 1: CORES E INFORMAÇÕES DA EDIÇÃO */}
+                  <div className="flex flex-col gap-4">
+                    <p className="text-center font-display text-[10px] font-bold uppercase tracking-[0.2em] text-gold/80 sm:text-left">
+                      Escolha sua Edição:
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-4 sm:justify-start">
+                      {HERO_EDITIONS.map((edition) => {
+                        const isActive = selectedEdition === edition.id;
+                        return (
+                          <button
+                            key={edition.id}
+                            type="button"
+                            onClick={() => onEditionChange(edition.id)}
+                            className={cn(
+                              "group relative h-12 w-12 overflow-hidden rounded-xl border-2 transition-all duration-300",
+                              isActive
+                                ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                                : "border-white/10 hover:border-white/30"
+                            )}
+                            aria-label={`Selecionar cor ${edition.name}`}
+                          >
+                            <div 
+                              className="h-full w-full" 
+                              style={{ backgroundColor: edition.color }}
+                            />
+                            {isActive && (
+                              <motion.div 
+                                layoutId="buybox-color-check"
+                                className="absolute inset-0 flex items-center justify-center bg-black/20"
+                              >
+                                <div className="h-2 w-2 rounded-full bg-white shadow-[0_0_8px_white]" />
+                              </motion.div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-2 text-center sm:text-left">
+                      {/* Removido AnimatePresence para garantir atualização instantânea */}
+                      <motion.div
+                        key={selectedEdition}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col gap-1.5"
+                      >
+                        <p className="font-display text-sm font-bold uppercase tracking-widest text-white">
+                          {selectedEditionData.name}
+                        </p>
+                        <p className="mx-auto max-w-sm text-[13px] font-medium leading-relaxed text-muted-foreground/90 sm:mx-0">
+                          {selectedEditionData.shortDescription}
+                        </p>
+                      </motion.div>
+                    </div>
+
+                    {selectedEditionData.inProduction ? (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:justify-start"
+                      >
+                        <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
+                        <p className="text-xs font-bold uppercase tracking-widest text-amber-100">
+                          Em produção — Disponível em breve
+                        </p>
+                      </motion.div>
+                    ) : null}
+                  </div>
+
+                  <div className="h-px w-full bg-white/[0.06]" />
+
+                  {/* SEÇÃO 2: PREÇO E TAMANHOS */}
+                  <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="text-center sm:text-left">
+                      {!selectedEditionData.inProduction && (
+                        <>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Preço Exclusivo</p>
+                          <div className="mt-2 flex items-baseline justify-center gap-2 sm:justify-start">
+                            <span className="text-sm text-muted-foreground line-through">R$ 149,00</span>
+                            <span className="price-gold-glow font-display text-4xl font-bold text-gold-bright">{PRODUCT.priceFormatted}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    
+                    {!selectedEditionData.inProduction && (
+                      <div className="flex-1">
+                        <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground sm:text-left">Selecione seu Tamanho</p>
+                        <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+                          {SIZES.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => onSizeChange(s)}
+                              className={cn(
+                                "group relative flex h-12 min-w-12 items-center justify-center rounded-xl px-2 text-xs font-bold transition-all duration-300",
+                                selectedSize === s
+                                  ? "bg-gold text-navy-deep"
+                                  : "border border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40"
+                              )}
+                            >
+                              <span className="relative z-10">{s}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-2">
+                    <Button 
+                      size="xl" 
+                      disabled={selectedEditionData.inProduction}
+                      className={cn(
+                        "w-full text-sm sm:text-base font-bold uppercase tracking-tight sm:tracking-normal transition-all duration-300",
+                        selectedEditionData.inProduction 
+                          ? "bg-white/5 text-muted-foreground border-white/10" 
+                          : "shimmer-btn shadow-[0_0_30px_-5px_hsl(var(--gold)/0.4)]"
+                      )} 
+                      onClick={onBuyNow}
+                    >
+                      {!selectedEditionData.inProduction && <ArrowRight className="mr-3 h-5 w-5 shrink-0" />}
+                      {selectedEditionData.ctaLabel}
+                    </Button>
+                  </div>
+
+                  <PurchaseTrustBlock variant="hero" />
+                </div>
+                
+                <TrustBadges />
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
     </section>

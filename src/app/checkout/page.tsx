@@ -1027,7 +1027,7 @@ function CheckoutContent() {
                             <div
                               className={cn(
                                 "ml-auto mt-2 flex h-5 w-5 items-center justify-center rounded border",
-                                isBumpSelected ? "border-gold bg-gold" : "border-white/10"
+                                isBumpSelected ? "border-gold bg-gold" : "border-white/50 bg-white/5"
                               )}
                             >
                               {isBumpSelected && (
@@ -1044,98 +1044,105 @@ function CheckoutContent() {
                               <span className="text-gold/90">{fmtBrl(personalizationBump.priceCents)}</span> por
                               camisa selecionada — pode deixar alguma sem personalização.
                             </p>
-                            {Array.from({ length: quantity }, (_, shirtIndex) => (
-                              <div
-                                key={shirtIndex}
-                                className="rounded-xl border border-white/[0.06] bg-[#060a12]/80 p-4"
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() => toggleShirtPaidPersonalization(shirtIndex)}
-                                  className="mb-3 flex w-full items-center gap-3 text-left"
+                            {Array.from({ length: quantity }, (_, shirtIndex) => {
+                              const shirtModel = getProductModelById(orderModels[shirtIndex] ?? selectedProductModel.id);
+                              
+                              return (
+                                <div
+                                  key={shirtIndex}
+                                  className="rounded-xl border border-white/[0.06] bg-[#060a12]/80 p-4"
                                 >
-                                  <span
-                                    className={cn(
-                                      "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
-                                      shirtPaidPersonalization[shirtIndex]
-                                        ? "border-gold bg-gold"
-                                        : "border-white/15 bg-transparent hover:border-white/25"
-                                    )}
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleShirtPaidPersonalization(shirtIndex)}
+                                    className="mb-3 flex w-full items-center gap-3 text-left"
                                   >
-                                    {shirtPaidPersonalization[shirtIndex] ? (
-                                      <Check size={12} className="text-navy-deep" />
+                                    <span
+                                      className={cn(
+                                        "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
+                                        shirtPaidPersonalization[shirtIndex]
+                                          ? "border-gold bg-gold"
+                                          : "border-white/50 bg-white/5 hover:border-white/70"
+                                      )}
+                                    >
+                                      {shirtPaidPersonalization[shirtIndex] ? (
+                                        <Check size={12} className="text-navy-deep" />
+                                      ) : null}
+                                    </span>
+                                    <span className="text-[11px] font-semibold leading-snug text-white">
+                                      Personalização paga nesta camisa
+                                      <span className="ml-1.5 text-gold/85">
+                                        (+ {fmtBrl(personalizationBump.priceCents)})
+                                      </span>
+                                    </span>
+                                  </button>
+                                  <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-gold/90">
+                                    Camisa {shirtIndex + 1}
+                                    <span className="ml-2 font-semibold text-white/80">
+                                      · {shirtModel.name}
+                                    </span>
+                                    {orderSizes[shirtIndex] ? (
+                                      <span className="ml-2 font-normal text-muted-foreground">
+                                        · Tam. {orderSizes[shirtIndex]}
+                                      </span>
                                     ) : null}
-                                  </span>
-                                  <span className="text-[11px] font-semibold leading-snug text-white">
-                                    Personalização paga nesta camisa
-                                    <span className="ml-1.5 text-gold/85">
-                                      (+ {fmtBrl(personalizationBump.priceCents)})
-                                    </span>
-                                  </span>
-                                </button>
-                                <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-gold/90">
-                                  Camisa {shirtIndex + 1}
-                                  {orderSizes[shirtIndex] ? (
-                                    <span className="ml-2 font-normal text-muted-foreground">
-                                      · Tam. {orderSizes[shirtIndex]}
-                                    </span>
-                                  ) : null}
-                                </p>
-                                {shirtPaidPersonalization[shirtIndex] ? (
-                                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <div className="flex flex-col gap-1.5">
-                                      <label className="pl-1 text-[9px] font-bold uppercase tracking-widest text-gold/70">
-                                        Nome na camisa
-                                      </label>
-                                      <div className="relative">
-                                        <UserIcon className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gold/40" />
-                                        <input
-                                          type="text"
-                                          placeholder="Ex: NEYMAR JR"
-                                          value={customNames[shirtIndex] ?? ""}
-                                          onChange={(e) => {
-                                            const v = e.target.value.toUpperCase();
-                                            setCustomNames((prev) => {
-                                              const next = [...prev];
-                                              next[shirtIndex] = v;
-                                              return next;
-                                            });
-                                          }}
-                                          className="h-10 w-full rounded-lg border border-gold/20 bg-[#060a12] pl-10 pr-4 text-xs font-bold text-white placeholder:text-muted-foreground/30 focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/50"
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-col gap-1.5">
-                                      <label className="pl-1 text-[9px] font-bold uppercase tracking-widest text-gold/70">
-                                        Número
-                                      </label>
-                                      <div className="relative">
-                                        <Hash className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gold/40" />
-                                        <input
-                                          type="text"
-                                          placeholder="Ex: 10"
-                                          maxLength={2}
-                                          value={customNumbers[shirtIndex] ?? ""}
-                                          onChange={(e) => {
-                                            const v = e.target.value.replace(/\D/g, "").slice(0, 2);
-                                            setCustomNumbers((prev) => {
-                                              const next = [...prev];
-                                              next[shirtIndex] = v;
-                                              return next;
-                                            });
-                                          }}
-                                          className="h-10 w-full rounded-lg border border-gold/20 bg-[#060a12] pl-10 pr-4 text-xs font-bold text-white placeholder:text-muted-foreground/30 focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/50"
-                                        />
-                                      </div>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <p className="text-[10px] text-muted-foreground/80">
-                                    Sem personalização nesta unidade — sem custo adicional.
                                   </p>
-                                )}
-                              </div>
-                            ))}
+                                  {shirtPaidPersonalization[shirtIndex] ? (
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                      <div className="flex flex-col gap-1.5">
+                                        <label className="pl-1 text-[9px] font-bold uppercase tracking-widest text-gold/70">
+                                          Nome na camisa
+                                        </label>
+                                        <div className="relative">
+                                          <UserIcon className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gold/40" />
+                                          <input
+                                            type="text"
+                                            placeholder="Ex: NEYMAR JR"
+                                            value={customNames[shirtIndex] ?? ""}
+                                            onChange={(e) => {
+                                              const v = e.target.value.toUpperCase();
+                                              setCustomNames((prev) => {
+                                                const next = [...prev];
+                                                next[shirtIndex] = v;
+                                                return next;
+                                              });
+                                            }}
+                                            className="h-10 w-full rounded-lg border border-gold/20 bg-[#060a12] pl-10 pr-4 text-xs font-bold text-white placeholder:text-muted-foreground/30 focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/50"
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="flex flex-col gap-1.5">
+                                        <label className="pl-1 text-[9px] font-bold uppercase tracking-widest text-gold/70">
+                                          Número
+                                        </label>
+                                        <div className="relative">
+                                          <Hash className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gold/40" />
+                                          <input
+                                            type="text"
+                                            placeholder="Ex: 10"
+                                            maxLength={2}
+                                            value={customNumbers[shirtIndex] ?? ""}
+                                            onChange={(e) => {
+                                              const v = e.target.value.replace(/\D/g, "").slice(0, 2);
+                                              setCustomNumbers((prev) => {
+                                                const next = [...prev];
+                                                next[shirtIndex] = v;
+                                                return next;
+                                              });
+                                            }}
+                                            className="h-10 w-full rounded-lg border border-gold/20 bg-[#060a12] pl-10 pr-4 text-xs font-bold text-white placeholder:text-muted-foreground/30 focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/50"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <p className="text-[10px] text-muted-foreground/80">
+                                      Sem personalização nesta unidade — sem custo adicional.
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
 
@@ -1151,7 +1158,7 @@ function CheckoutContent() {
                                   "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
                                   giftFreePersonalization
                                     ? "border-gold bg-gold"
-                                    : "border-white/15 hover:border-white/25"
+                                    : "border-white/50 bg-white/5 hover:border-white/70"
                                 )}
                               >
                                 {giftFreePersonalization ? (
@@ -1271,22 +1278,31 @@ function CheckoutContent() {
               </div>
               <h3 className="mb-6 font-display text-lg font-bold uppercase tracking-tight text-white">Resumo da Compra</h3>
               <div className="mb-8 min-w-0 space-y-4">
-                {orderSizes.length === 1 ? (
-                  <div className="flex min-w-0 justify-between gap-3 text-sm">
-                    <span className="min-w-0 shrink text-muted-foreground">Tamanho</span>
-                    <span className="shrink-0 font-bold text-gold-bright">{orderSizes[0]}</span>
-                  </div>
+                {quantity === 1 ? (
+                  <>
+                    <div className="flex min-w-0 justify-between gap-3 text-sm">
+                      <span className="min-w-0 shrink text-muted-foreground">Edição</span>
+                      <span className="shrink-0 font-bold text-white">{getProductModelById(orderModels[0]).name}</span>
+                    </div>
+                    <div className="flex min-w-0 justify-between gap-3 text-sm">
+                      <span className="min-w-0 shrink text-muted-foreground">Tamanho</span>
+                      <span className="shrink-0 font-bold text-gold-bright">{orderSizes[0]}</span>
+                    </div>
+                  </>
                 ) : (
                   <div className="min-w-0 space-y-2">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      Tamanhos
+                      Itens
                     </p>
-                    {orderSizes.map((s, i) => (
-                      <div key={i} className="flex min-w-0 justify-between gap-3 text-sm">
-                        <span className="min-w-0 shrink text-muted-foreground">Camisa {i + 1}</span>
-                        <span className="shrink-0 font-bold text-gold-bright">{s}</span>
-                      </div>
-                    ))}
+                    {orderSizes.map((s, i) => {
+                      const itemModel = getProductModelById(orderModels[i]);
+                      return (
+                        <div key={i} className="flex min-w-0 justify-between gap-3 text-sm">
+                          <span className="min-w-0 shrink text-muted-foreground">Camisa {i + 1} ({itemModel.name})</span>
+                          <span className="shrink-0 font-bold text-gold-bright">{s}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
                 <div className="flex min-w-0 justify-between gap-3 text-sm">

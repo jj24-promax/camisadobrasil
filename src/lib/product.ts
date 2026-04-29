@@ -19,7 +19,7 @@ export const PRODUCT_SCHEMA_AGGREGATE_RATING = {
 
 /** Vídeo principal — agora no topo do site. */
 export const HERO_VIDEO_WEBM = "/videos/camisa-galeria-detail.webm" as const;
-export const HERO_VIDEO_MP4 = "/videos/camisa-galeria-detail.mp4" as const;
+export const HERO_VIDEO_MP4 = "/videos/videoazul.mp4" as const;
 
 /** Vídeo da edição Canarinho */
 export const CANARINHO_VIDEO_MP4 = "/videos/camisa-canarinho-hero.mp4" as const;

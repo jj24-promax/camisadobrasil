@@ -321,7 +321,7 @@ export function HeroSection({
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="hero-product-frame relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-navy-deep/40 backdrop-blur-sm"
+                className="hero-product-frame relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-[#02050a] backdrop-blur-sm"
               >
                 <AnimatePresence mode="popLayout" initial={false}>
                   <motion.div
@@ -329,13 +329,13 @@ export function HeroSection({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.4, ease: "easeInOut" }}
-                    className="absolute inset-0"
+                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                    className="absolute inset-0 h-full w-full"
                   >
                     {heroItem.kind === "image" || heroVideoFailed ? (
                       <>
                         <Image
-                          src={heroItem.kind === "video" ? heroItem.posterSrc : activeEditionImageSrc ?? heroItem.src}
+                          src={activeEditionImageSrc ?? heroItem.src}
                           alt={heroItem.alt}
                           fill
                           className="object-cover"
@@ -381,7 +381,6 @@ export function HeroSection({
                         playsInline
                         autoPlay
                         preload="auto"
-                        poster={heroItem.posterSrc}
                         aria-label={heroItem.alt}
                         controls={false}
                         disablePictureInPicture

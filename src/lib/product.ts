@@ -21,6 +21,9 @@ export const PRODUCT_SCHEMA_AGGREGATE_RATING = {
 export const HERO_VIDEO_WEBM = "/videos/camisa-galeria-detail.webm" as const;
 export const HERO_VIDEO_MP4 = "/videos/camisa-galeria-detail.mp4" as const;
 
+/** Vídeo da edição Canarinho */
+export const CANARINHO_VIDEO_MP4 = "/videos/camisa-canarinho-hero.mp4" as const;
+
 /** Imagem de poster / LCP enquanto o vídeo carrega. */
 export const HERO_PRODUCT_POSTER_SRC =
   "/images/camisa-hero-produto-isolado.png" as const;
@@ -275,11 +278,12 @@ export const PRODUCT_MODELS: readonly ProductModel[] = [
     sizes: SIZES,
     images: {
       hero: {
-        kind: "image",
+        kind: "video",
         alt: "Camisa Alpha Brasil Edição Canarinho amarela",
-        src: "/images/camisa-edicao-canarinho-hero.gif",
+        mp4Src: CANARINHO_VIDEO_MP4,
+        posterSrc: "/images/camisa-detalhe-canarinho-frente.png",
       },
-      heroGallery: ["/images/camisa-edicao-canarinho-hero.gif"],
+      heroGallery: ["/images/camisa-detalhe-canarinho-frente.png"],
       checkout: "/images/camisa-detalhe-canarinho-frente.png",
     },
     gallery: CANARINHO_GALLERY,

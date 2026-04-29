@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { SectionReveal, SectionShell, SectionSplit } from "@/components/landing/section-shell";
 import {
   PRODUCT_IMAGE_ARTE_REDENCAO_BACK_SRC,
@@ -11,10 +11,13 @@ import {
   PRODUCT_VIDEO_ARTE_REDENCAO_BACK_WEBM_SRC,
   PRODUCT_VIDEO_ARTE_REDENCAO_FRONT_MP4_SRC,
   PRODUCT_VIDEO_ARTE_REDENCAO_FRONT_WEBM_SRC,
+  type HeroEditionId,
+  HERO_EDITIONS
 } from "@/lib/product";
 import { SECTION_STAGGER } from "@/hooks/use-section-motion";
 import { useInlineMutedVideoAutoplay } from "@/hooks/use-inline-muted-video-autoplay";
-import { ChevronLeft, ChevronRight, ShieldCheck, Sparkles, Map, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShieldCheck, Sparkles, Map, Heart, CameraOff } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const benefits = [
   { icon: ShieldCheck, title: "Símbolo de Respeito", copy: "O Cristo Redentor em relevo substitui padrões polêmicos por fé e identidade." },
@@ -23,10 +26,16 @@ const benefits = [
   { icon: Heart, title: "Conforto Sagrado", copy: "Tecido tecnológico respirável que oferece frescor absoluto durante todo o uso." },
 ];
 
-export function ProductDetails() {
-  const slides = [
+type ProductDetailsProps = {
+  selectedEdition: HeroEditionId;
+  onEditionChange: (edition: HeroEditionId) => void;
+};
+
+export function ProductDetails({ selectedEdition, onEditionChange }: ProductDetailsProps) {
+  const allSlides = [
     {
-      id: "front-video",
+      id: "sagrada-front",
+      edition: "edicao-sagrada",
       label: "Vista frontal",
       alt: "Modelo com camisa Brasil Alpha vista frontal",
       imageSrc: PRODUCT_IMAGE_ARTE_REDENCAO_FRONT_SRC,
@@ -34,21 +43,24 @@ export function ProductDetails() {
       videoWebmSrc: PRODUCT_VIDEO_ARTE_REDENCAO_FRONT_WEBM_SRC,
     },
     {
-      id: "back-video",
+      id: "sagrada-back",
+      edition: "edicao-sagrada",
       label: "Vista costas",
-      alt: "Modelo com camisa Brasil Alpha vista costas com nome e número 10",
+      alt: "Modelo com camisa Brasil Alpha vista costas",
       imageSrc: PRODUCT_IMAGE_ARTE_REDENCAO_BACK_SRC,
       videoMp4Src: PRODUCT_VIDEO_ARTE_REDENCAO_BACK_MP4_SRC,
       videoWebmSrc: PRODUCT_VIDEO_ARTE_REDENCAO_BACK_WEBM_SRC,
     },
     {
       id: "canarinho-front",
+      edition: "edicao-canarinho",
       label: "Canarinho frontal",
       alt: "Modelo com camisa canarinho amarela vista frontal",
       imageSrc: "/images/camisa-detalhe-canarinho-frente.png",
     },
     {
       id: "canarinho-back",
+      edition: "edicao-canarinho",
       label: "Canarinho costas",
       alt: "Modelo com camisa canarinho amarela vista costas",
       imageSrc: "/images/camisa-detalhe-canarinho-costas.png",
@@ -56,33 +68,30 @@ export function ProductDetails() {
   ] as const;
 
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-  const [videoFailedFront, setVideoFailedFront] = useState(false);
-  const [videoFailedBack, setVideoFailedBack] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
   const arteVideoRef = useRef<HTMLVideoElement | null>(null);
   const artePointerUnlock = useRef(false);
 
-  const activeSlide = slides[activeSlideIndex] ?? slides[0];
-  const activeVideoSources =
-    activeSlide.id === "front-video" || activeSlide.id === "back-video"
-      ? { mp4: activeSlide.videoMp4Src, webm: activeSlide.videoWebmSrc }
-      : null;
-  const activeIsVideo = activeVideoSources !== null;
-  const activeVideoFailed =
-    activeSlide.id === "front-video"
-      ? videoFailedFront
-      : activeSlide.id === "back-video"
-      ? videoFailedBack
-      : true;
+  // Filtra slides baseado na edição selecionada
+  const slides = useMemo(() => {
+    const filtered = allSlides.filter(s => s.edition === selectedEdition);
+    return filtered.length > 0 ? filtered : [];
+  }, [selectedEdition, allSlides]);
 
-  // Hook centralizado para autoplay apenas quando visível
+  const activeSlide = slides[activeSlideIndex] ?? null;
+  const activeIsVideo = activeSlide && 'videoMp4Src' in activeSlide;
+  const activeVideoSources = activeIsVideo ? { mp4: activeSlide.videoMp4Src, webm: activeSlide.videoWebmSrc } : null;
+
   useInlineMutedVideoAutoplay(arteVideoRef, {
-    enabled: activeIsVideo && !activeVideoFailed,
-    mediaKey: `${activeSlide.id}-${activeVideoSources?.mp4 ?? activeSlide.imageSrc}`,
+    enabled: !!activeSlide && activeIsVideo && !videoFailed,
+    mediaKey: activeSlide ? `${activeSlide.id}-${activeSlide.imageSrc}` : 'empty',
   });
 
   useEffect(() => {
+    setActiveSlideIndex(0);
+    setVideoFailed(false);
     artePointerUnlock.current = false;
-  }, [activeSlideIndex]);
+  }, [selectedEdition]);
 
   const goPrev = () => {
     setActiveSlideIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
@@ -115,6 +124,45 @@ export function ProductDetails() {
               <p className="mt-8 text-lg leading-relaxed text-muted-foreground md:text-xl">
                 Diferente de lançamentos recentes que geraram desconforto, nossa edição foca na clareza. Utilizamos a silhueta do Cristo Redentor como elemento central de proteção e orgulho nacional.
               </p>
+
+              {/* Seletor de Cores integrado aqui também */}
+              <div className="mt-10 space-y-4">
+                <p className="font-display text-[10px] font-semibold uppercase tracking-[0.2em] text-gold/80">
+                  Explorar por Edição:
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  {HERO_EDITIONS.map((edition) => {
+                    const isActive = selectedEdition === edition.id;
+                    return (
+                      <button
+                        key={edition.id}
+                        type="button"
+                        onClick={() => onEditionChange(edition.id)}
+                        className={cn(
+                          "group relative h-10 w-10 overflow-hidden rounded-xl border-2 transition-all duration-300",
+                          isActive
+                            ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                            : "border-white/10 hover:border-white/30"
+                        )}
+                        aria-label={`Ver detalhes da cor ${edition.name}`}
+                      >
+                        <div 
+                          className="h-full w-full" 
+                          style={{ backgroundColor: edition.color }}
+                        />
+                        {isActive && (
+                          <motion.div 
+                            layoutId="details-color-check"
+                            className="absolute inset-0 flex items-center justify-center bg-black/20"
+                          >
+                            <div className="h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_white]" />
+                          </motion.div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </SectionReveal>
 
             <ul className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-1">
@@ -145,76 +193,88 @@ export function ProductDetails() {
               onPointerDownCapture={onArtePointerDown}
             >
               <div className="absolute inset-0 z-10 bg-gradient-to-t from-navy-deep/80 via-transparent to-transparent opacity-60 transition-opacity group-hover:opacity-40" />
+              
               <AnimatePresence mode="sync">
-                <motion.div
-                  key={activeSlide.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                  className="absolute inset-0"
-                >
-                  {!activeIsVideo || activeVideoFailed ? (
-                    <Image
-                      src={activeSlide.imageSrc}
-                      alt={activeSlide.alt}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 90vw, 420px"
-                      loading="lazy"
-                    />
-                  ) : activeVideoSources ? (
-                    <video
-                      ref={arteVideoRef}
-                      key={`${activeSlide.id}-video`}
-                      className="video-embed-no-native-ui h-full w-full object-cover"
-                      muted
-                      loop
-                      playsInline
-                      preload="metadata"
-                      poster={activeSlide.imageSrc}
-                      aria-label={activeSlide.alt}
-                      controls={false}
-                      disablePictureInPicture
-                      controlsList="nodownload noremoteplayback nofullscreen"
-                      onError={() =>
-                        activeSlide.id === "front-video"
-                          ? setVideoFailedFront(true)
-                          : activeSlide.id === "back-video"
-                          ? setVideoFailedBack(true)
-                          : undefined
-                      }
-                    >
-                      <source src={activeVideoSources.mp4} type="video/mp4" />
-                      <source src={activeVideoSources.webm} type="video/webm" />
-                    </video>
-                  ) : null}
-                </motion.div>
+                {activeSlide ? (
+                  <motion.div
+                    key={activeSlide.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                    className="absolute inset-0"
+                  >
+                    {!activeIsVideo || videoFailed ? (
+                      <Image
+                        src={activeSlide.imageSrc}
+                        alt={activeSlide.alt}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 90vw, 420px"
+                        loading="lazy"
+                      />
+                    ) : activeVideoSources ? (
+                      <video
+                        ref={arteVideoRef}
+                        key={`${activeSlide.id}-video`}
+                        className="video-embed-no-native-ui h-full w-full object-cover"
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                        poster={activeSlide.imageSrc}
+                        aria-label={activeSlide.alt}
+                        controls={false}
+                        disablePictureInPicture
+                        controlsList="nodownload noremoteplayback nofullscreen"
+                        onError={() => setVideoFailed(true)}
+                      >
+                        <source src={activeVideoSources.mp4} type="video/mp4" />
+                        <source src={activeVideoSources.webm} type="video/webm" />
+                      </video>
+                    ) : null}
+                  </motion.div>
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-navy-deep/40 px-8 text-center">
+                    <CameraOff className="h-10 w-10 text-white/20" strokeWidth={1.5} />
+                    <p className="text-sm font-semibold text-white/60">Edição em Produção</p>
+                  </div>
+                )}
               </AnimatePresence>
-              <button
-                type="button"
-                onClick={goPrev}
-                className="absolute left-4 top-1/2 z-20 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/85 backdrop-blur transition-colors hover:border-gold/40 hover:text-gold-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 md:h-10 md:w-10"
-                aria-label="Mostrar foto anterior"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={goNext}
-                className="absolute right-4 top-1/2 z-20 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/85 backdrop-blur transition-colors hover:border-gold/40 hover:text-gold-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 md:h-10 md:w-10"
-                aria-label="Mostrar próxima foto"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-              <div className="absolute bottom-8 left-8 right-8 z-20">
-                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold-bright">
-                  {activeSlide.label}
-                </p>
-                <p className="mt-1 text-sm font-medium text-white/90">
-                  Toque nas setas para alternar
-                </p>
-              </div>
+
+              {slides.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={goPrev}
+                    className="absolute left-4 top-1/2 z-20 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/85 backdrop-blur transition-colors hover:border-gold/40 hover:text-gold-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 md:h-10 md:w-10"
+                    aria-label="Mostrar foto anterior"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    className="absolute right-4 top-1/2 z-20 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/85 backdrop-blur transition-colors hover:border-gold/40 hover:text-gold-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 md:h-10 md:w-10"
+                    aria-label="Mostrar próxima foto"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+
+              {activeSlide && (
+                <div className="absolute bottom-8 left-8 right-8 z-20">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold-bright">
+                    {activeSlide.label}
+                  </p>
+                  {slides.length > 1 && (
+                    <p className="mt-1 text-sm font-medium text-white/90">
+                      Toque nas setas para alternar
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </SectionReveal>
         </div>

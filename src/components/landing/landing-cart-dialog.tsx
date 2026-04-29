@@ -43,14 +43,12 @@ export function LandingCartDialog({
   onSizesChange,
 }: LandingCartDialogProps) {
   const { requestCheckoutNavigation } = useCheckoutTransition();
-  const productModel = getProductModelById(selectedProduct);
   const safeQty = quantity < 1 ? 1 : quantity;
   const lineSizes = sizes.length === safeQty ? sizes : Array.from({ length: safeQty }, (_, i) => sizes[i] ?? "M");
   const lineModels =
     models.length === safeQty ? models : Array.from({ length: safeQty }, (_, i) => models[i] ?? selectedProduct);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const clampedPreviewIndex = Math.min(activePreviewIndex, Math.max(0, safeQty - 1));
-  const displayModel = getProductModelById(lineModels[clampedPreviewIndex] ?? selectedProduct);
 
   const pricing = useMemo(() => {
     const linePriceCents = lineModels.map((modelId) => Math.round(getProductModelById(modelId).price * 100));
@@ -120,42 +118,47 @@ export function LandingCartDialog({
             </div>
           </DialogHeader>
 
-          <div className="flex flex-1 flex-col gap-6 px-6 py-6">
-            <div className="glass-dark overflow-hidden rounded-[1.5rem] border border-gold/20 p-5">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-                <div className="relative mx-auto aspect-square w-full max-w-[140px] shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40">
-                  <Image
-                    src={displayModel.images.checkout}
-                    alt={displayModel.fullName}
-                    fill
-                    className="object-cover"
-                    sizes="140px"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="min-w-0 flex-1 space-y-4">
-                  <h2 className="font-display text-sm font-bold uppercase leading-snug tracking-tight text-white">
-                    {displayModel.fullName}
-                  </h2>
-                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/85">
-                    Pode misturar modelos por camisa abaixo
-                  </p>
+          <div className="flex flex-1 flex-col gap-6 px-4 sm:px-6 py-6">
+            <div className="glass-dark overflow-hidden rounded-[1.5rem] border border-gold/20 p-4 sm:p-5 space-y-5">
+              
+              <div className="text-center sm:text-left">
+                <h2 className="font-display text-sm font-bold uppercase leading-snug tracking-tight text-white">
+                  Itens do Pedido
+                </h2>
+                <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/85">
+                  Configure o modelo e tamanho de cada peça
+                </p>
+              </div>
 
-                  <div className="space-y-4">
-                    {lineSizes.map((sz, index) => (
-                      <div
-                        key={index}
-                        className={cn(
-                          "rounded-xl border bg-white/[0.02] p-3 transition-colors",
-                          clampedPreviewIndex === index ? "border-gold/35" : "border-white/[0.06]"
-                        )}
-                      >
+              <div className="space-y-3">
+                {lineSizes.map((sz, index) => {
+                  const itemModel = getProductModelById(lineModels[index] ?? selectedProduct);
+                  return (
+                    <div
+                      key={index}
+                      className={cn(
+                        "rounded-xl border bg-white/[0.02] p-3 transition-colors flex gap-3 sm:gap-4",
+                        clampedPreviewIndex === index ? "border-gold/35" : "border-white/[0.06]"
+                      )}
+                    >
+                      {/* Miniatura do modelo atual */}
+                      <div className="relative aspect-square w-20 sm:w-24 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/40">
+                        <Image
+                          src={itemModel.images.checkout}
+                          alt={itemModel.fullName}
+                          fill
+                          className="object-cover"
+                          sizes="96px"
+                        />
+                      </div>
+                      
+                      <div className="min-w-0 flex-1 flex flex-col justify-center">
                         <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                          {safeQty > 1 ? `Camisa ${index + 1}` : "Configurar camisa"}
+                          {safeQty > 1 ? `Camisa ${index + 1}` : "Camisa"}
                         </p>
-                        <p className="mb-1 text-[9px] font-semibold uppercase tracking-widest text-gold/80">Modelo</p>
+                        
                         <div className="mb-2 grid grid-cols-2 gap-1.5">
-                          {PRODUCT_MODELS.map((model) => {
+                          {PRODUCT_MODELS.filter(m => !m.inProduction).map((model) => {
                             const activeModel = lineModels[index] === model.id;
                             return (
                               <button
@@ -163,18 +166,18 @@ export function LandingCartDialog({
                                 type="button"
                                 onClick={() => setModelAt(index, model.id)}
                                 className={cn(
-                                  "rounded-md border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide",
+                                  "rounded-md border px-1 py-1.5 text-[9px] font-semibold uppercase tracking-wider truncate transition-colors",
                                   activeModel
                                     ? "border-gold/60 bg-gold/[0.14] text-gold-bright"
                                     : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40"
                                 )}
                               >
-                                {model.slug === "sagrada" ? "Sagrada" : model.slug === "canarinho" ? "Canarinho" : "Fênix"}
+                                {model.slug === "sagrada" ? "Sagrada" : "Canarinho"}
                               </button>
                             );
                           })}
                         </div>
-                        <p className="mb-1 text-[9px] font-semibold uppercase tracking-widest text-gold/80">Tamanho</p>
+                        
                         <div className="flex flex-wrap gap-1.5">
                           {SIZES.map((s) => (
                             <button
@@ -182,7 +185,7 @@ export function LandingCartDialog({
                               type="button"
                               onClick={() => setSizeAt(index, s)}
                               className={cn(
-                                "flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-[11px] font-bold transition-all",
+                                "flex h-8 min-w-8 items-center justify-center rounded-lg px-1.5 text-[10px] font-bold transition-all",
                                 sz === s
                                   ? "bg-gold text-navy-deep"
                                   : "border border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40"
@@ -193,38 +196,41 @@ export function LandingCartDialog({
                           ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
-
-                  <div>
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      Quantidade
-                    </p>
-                    <div className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
-                      <button
-                        type="button"
-                        onClick={() => bumpQty(-1)}
-                        className="flex h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10"
-                        aria-label="Diminuir quantidade"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="min-w-[2rem] text-center font-bold tabular-nums text-white">{safeQty}</span>
-                      <button
-                        type="button"
-                        onClick={() => bumpQty(1)}
-                        className="flex h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10"
-                        aria-label="Aumentar quantidade"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5 text-[11px] leading-snug text-muted-foreground">
-                    <Truck className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden />
-                    <span>Frete grátis no checkout para este pedido.</span>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between border-t border-white/[0.06] pt-4">
+                <div>
+                  <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Quantidade Total
+                  </p>
+                  <div className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
+                    <button
+                      type="button"
+                      onClick={() => bumpQty(-1)}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10"
+                      aria-label="Diminuir quantidade"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="min-w-[2rem] text-center font-bold tabular-nums text-white">{safeQty}</span>
+                    <button
+                      type="button"
+                      onClick={() => bumpQty(1)}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10"
+                      aria-label="Aumentar quantidade"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-start gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5 text-[11px] leading-snug text-muted-foreground">
+                <Truck className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden />
+                <span>Frete grátis no checkout para este pedido.</span>
               </div>
             </div>
 

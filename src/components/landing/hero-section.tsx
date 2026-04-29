@@ -323,67 +323,77 @@ export function HeroSection({
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                 className="hero-product-frame relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-navy-deep/40 backdrop-blur-sm"
               >
-                {heroItem.kind === "image" || heroVideoFailed ? (
-                  <>
-                    <Image
-                      src={heroItem.kind === "video" ? heroItem.posterSrc : activeEditionImageSrc ?? heroItem.src}
-                      alt={heroItem.alt}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 90vw, 500px"
-                      priority
-                    />
-                    {canNavigateEditionGallery ? (
-                      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between px-3">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSelectedEditionImageIndex((prev) =>
-                              prev === 0 ? selectedEditionGallery.length - 1 : prev - 1
-                            )
-                          }
-                          className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-[#04070d]/70 text-gold-bright backdrop-blur-md transition hover:border-gold/70 hover:bg-[#04070d]/90"
-                          aria-label="Imagem anterior da edição"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSelectedEditionImageIndex((prev) =>
-                              prev === selectedEditionGallery.length - 1 ? 0 : prev + 1
-                            )
-                          }
-                          className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-[#04070d]/70 text-gold-bright backdrop-blur-md transition hover:border-gold/70 hover:bg-[#04070d]/90"
-                          aria-label="Próxima imagem da edição"
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : null}
-                  </>
-                ) : (
-                  <video
-                    ref={heroVideoRef}
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.div
                     key={selectedEditionData.id}
-                    className="video-embed-no-native-ui h-full w-full object-cover"
-                    muted
-                    loop
-                    playsInline
-                    autoPlay
-                    preload="auto"
-                    poster={heroItem.posterSrc}
-                    aria-label={heroItem.alt}
-                    controls={false}
-                    disablePictureInPicture
-                    controlsList="nodownload noremoteplayback nofullscreen"
-                    onError={() => setHeroVideoFailed(true)}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                    className="absolute inset-0"
                   >
-                    {/* MP4 primeiro: Safari/iOS não reproduz WebM */}
-                    <source src={heroItem.mp4Src} type="video/mp4" />
-                    <source src={heroItem.webmSrc} type="video/webm" />
-                  </video>
-                )}
+                    {heroItem.kind === "image" || heroVideoFailed ? (
+                      <>
+                        <Image
+                          src={heroItem.kind === "video" ? heroItem.posterSrc : activeEditionImageSrc ?? heroItem.src}
+                          alt={heroItem.alt}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 1024px) 90vw, 500px"
+                          priority
+                        />
+                        {canNavigateEditionGallery ? (
+                          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between px-3">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSelectedEditionImageIndex((prev) =>
+                                  prev === 0 ? selectedEditionGallery.length - 1 : prev - 1
+                                )
+                              }
+                              className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-[#04070d]/70 text-gold-bright backdrop-blur-md transition hover:border-gold/70 hover:bg-[#04070d]/90"
+                              aria-label="Imagem anterior da edição"
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSelectedEditionImageIndex((prev) =>
+                                  prev === selectedEditionGallery.length - 1 ? 0 : prev + 1
+                                )
+                              }
+                              className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-[#04070d]/70 text-gold-bright backdrop-blur-md transition hover:border-gold/70 hover:bg-[#04070d]/90"
+                              aria-label="Próxima imagem da edição"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : null}
+                      </>
+                    ) : (
+                      <video
+                        ref={heroVideoRef}
+                        key={`${selectedEditionData.id}-video`}
+                        className="video-embed-no-native-ui h-full w-full object-cover"
+                        muted
+                        loop
+                        playsInline
+                        autoPlay
+                        preload="auto"
+                        poster={heroItem.posterSrc}
+                        aria-label={heroItem.alt}
+                        controls={false}
+                        disablePictureInPicture
+                        controlsList="nodownload noremoteplayback nofullscreen"
+                        onError={() => setHeroVideoFailed(true)}
+                      >
+                        <source src={heroItem.mp4Src} type="video/mp4" />
+                        <source src={heroItem.webmSrc} type="video/webm" />
+                      </video>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
               </motion.div>
             </div>
           </motion.div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion, AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,7 @@ import type { Size } from "@/lib/types";
 import { useMobileParallaxOff } from "@/hooks/use-is-mobile-parallax";
 import { useInlineMutedVideoAutoplay } from "@/hooks/use-inline-muted-video-autoplay";
 import { cn } from "@/lib/utils";
-import { ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
-import { HeroEditionSelector } from "./hero-edition-selector";
+import { ArrowRight, ChevronLeft, ChevronRight, Star, Clock } from "lucide-react";
 
 type HeroSectionProps = {
   selectedSize: Size;
@@ -94,7 +93,7 @@ export function HeroSection({
     >
       <div className="relative z-10 mx-auto flex max-w-[1600px] flex-col items-center px-5 pb-20 pt-[6rem] md:px-10 md:pb-24 md:pt-28 xl:px-14">
         
-        {/* Logo Centralizado - Tamanho reduzido na web para maior elegância */}
+        {/* Logo Centralizado */}
         <motion.div
           initial={{ opacity: 0, y: -20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -165,61 +164,113 @@ export function HeroSection({
             >
               <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-white/[0.02] p-6 shadow-luxe backdrop-blur-xl md:p-10">
                 <div className="flex flex-col gap-8">
-                  <HeroEditionSelector
-                    options={HERO_EDITIONS}
-                    selectedEdition={selectedEdition}
-                    onChange={(edition) => {
-                      onEditionChange(edition);
-                      setHeroVideoFailed(false);
-                      setSelectedEditionImageIndex(0);
-                    }}
-                  />
+                  
+                  {/* Seletor de Cores */}
+                  <div className="space-y-4">
+                    <p className="text-center font-display text-[11px] font-bold uppercase tracking-[0.2em] text-gold/80 lg:text-left">
+                      Cores disponíveis:
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
+                      {HERO_EDITIONS.map((edition) => {
+                        const isActive = selectedEdition === edition.id;
+                        return (
+                          <button
+                            key={edition.id}
+                            type="button"
+                            onClick={() => onEditionChange(edition.id)}
+                            className={cn(
+                              "group relative h-12 w-12 overflow-hidden rounded-xl border-2 transition-all duration-300",
+                              isActive
+                                ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                                : "border-white/10 hover:border-white/30"
+                            )}
+                            aria-label={`Selecionar cor ${edition.name}`}
+                          >
+                            <div 
+                              className="h-full w-full" 
+                              style={{ backgroundColor: edition.color }}
+                            />
+                            {isActive && (
+                              <motion.div 
+                                layoutId="color-check"
+                                className="absolute inset-0 flex items-center justify-center bg-black/20"
+                              >
+                                <div className="h-2 w-2 rounded-full bg-white shadow-[0_0_8px_white]" />
+                              </motion.div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                      {selectedEditionData.inProduction ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 lg:justify-start"
+                        >
+                          <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
+                          <p className="text-xs font-bold uppercase tracking-widest text-amber-100">
+                            Em produção — Disponível em breve
+                          </p>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+                  </div>
 
                   <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                     <div className="text-center sm:text-left">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Modelo selecionado</p>
                       <p className="mt-1 max-w-xs text-sm font-semibold text-white">{selectedEditionData.name}</p>
-                      <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Preço Exclusivo</p>
-                      <div className="mt-2 flex items-baseline justify-center gap-2 sm:justify-start">
-                        <span className="text-sm text-muted-foreground line-through">R$ 149,00</span>
-                        <span className="price-gold-glow font-display text-4xl font-bold text-gold-bright">{PRODUCT.priceFormatted}</span>
-                      </div>
+                      {!selectedEditionData.inProduction && (
+                        <>
+                          <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Preço Exclusivo</p>
+                          <div className="mt-2 flex items-baseline justify-center gap-2 sm:justify-start">
+                            <span className="text-sm text-muted-foreground line-through">R$ 149,00</span>
+                            <span className="price-gold-glow font-display text-4xl font-bold text-gold-bright">{PRODUCT.priceFormatted}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                     
-                    <div className="flex-1">
-                      <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground sm:text-left">Selecione seu Tamanho</p>
-                      <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
-                        {SIZES.map((s) => (
-                          <button
-                            key={s}
-                            type="button"
-                            onClick={() => onSizeChange(s)}
-                            className={cn(
-                              "group relative flex h-12 min-w-12 items-center justify-center rounded-xl px-2 text-xs font-bold transition-all duration-300",
-                              selectedSize === s
-                                ? "bg-gold text-navy-deep"
-                                : "border border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40"
-                            )}
-                          >
-                            <span className="relative z-10">{s}</span>
-                          </button>
-                        ))}
+                    {!selectedEditionData.inProduction && (
+                      <div className="flex-1">
+                        <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground sm:text-left">Selecione seu Tamanho</p>
+                        <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+                          {SIZES.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => onSizeChange(s)}
+                              className={cn(
+                                "group relative flex h-12 min-w-12 items-center justify-center rounded-xl px-2 text-xs font-bold transition-all duration-300",
+                                selectedSize === s
+                                  ? "bg-gold text-navy-deep"
+                                  : "border border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40"
+                              )}
+                            >
+                              <span className="relative z-10">{s}</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <a
-                        href="#tabela-tamanhos"
-                        className="mx-auto mt-4 flex w-fit max-w-full items-center justify-center rounded-xl border border-gold/35 bg-gold/[0.1] px-4 py-2.5 text-center text-[11px] font-semibold leading-snug text-gold-bright shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm transition-all hover:border-gold/55 hover:bg-gold/[0.16] hover:underline hover:underline-offset-4 sm:mx-0 sm:justify-start"
-                      >
-                        Não sabe seu tamanho? Descubra agora
-                      </a>
-                    </div>
+                    )}
                   </div>
 
                   <Button 
                     size="xl" 
-                    className="shimmer-btn w-full text-sm sm:text-base font-bold uppercase tracking-tight sm:tracking-normal shadow-[0_0_30px_-5px_hsl(var(--gold)/0.4)]" 
+                    disabled={selectedEditionData.inProduction}
+                    className={cn(
+                      "shimmer-btn w-full text-sm sm:text-base font-bold uppercase tracking-tight sm:tracking-normal",
+                      selectedEditionData.inProduction 
+                        ? "bg-white/5 text-muted-foreground border-white/10" 
+                        : "shadow-[0_0_30px_-5px_hsl(var(--gold)/0.4)]"
+                    )} 
                     onClick={onBuyNow}
                   >
-                    <ArrowRight className="mr-3 h-5 w-5 shrink-0" />
+                    {!selectedEditionData.inProduction && <ArrowRight className="mr-3 h-5 w-5 shrink-0" />}
                     {selectedEditionData.ctaLabel}
                   </Button>
 
@@ -285,6 +336,7 @@ export function HeroSection({
                 ) : (
                   <video
                     ref={heroVideoRef}
+                    key={selectedEditionData.id}
                     className="video-embed-no-native-ui h-full w-full object-cover"
                     muted
                     loop

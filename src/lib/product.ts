@@ -49,7 +49,7 @@ export type CampaignGalleryItem = {
 
 export type CampaignGalleryModel = {
   name: string;
-  slug: "sagrada" | "canarinho";
+  slug: "sagrada" | "canarinho" | "vermelha";
   modelId: ProductModelId;
   images: CampaignGalleryItem[];
 };
@@ -101,11 +101,11 @@ export const PRODUCT_IMAGE_SRC = PRODUCT_IMAGE_CLEAN_SRC;
 
 export const SIZES = ["P", "M", "G", "GG", "G1", "G2"] as const;
 export type Size = (typeof SIZES)[number];
-export type ProductModelId = "edicao-sagrada" | "edicao-canarinho";
+export type ProductModelId = "edicao-sagrada" | "edicao-canarinho" | "edicao-vermelha";
 
 export type ProductModel = {
   id: ProductModelId;
-  slug: "sagrada" | "canarinho";
+  slug: "sagrada" | "canarinho" | "vermelha";
   name: string;
   fullName: string;
   badge: string;
@@ -127,6 +127,7 @@ export type ProductModel = {
     checkout: string;
   };
   gallery: CampaignGalleryItem[];
+  inProduction?: boolean;
 };
 
 export const GALLERY_IMAGES = [
@@ -183,7 +184,7 @@ const SAGRADA_GALLERY: CampaignGalleryItem[] = [
       {
         src: "/images/campaign/galeria-modelo-01.png",
         alt: "Modelo veste a camisa Brasil Alpha — pose frontal com braços cruzados, escudo CBF, Cristo em jacquard e número 10",
-        caption: "Frontal editorial with presence premium.",
+        caption: "Frontal editorial com presença premium.",
       },
       {
         src: "/images/campaign/galeria-modelo-06-detalhe.png",
@@ -288,6 +289,29 @@ export const PRODUCT_MODELS: readonly ProductModel[] = [
     },
     gallery: CANARINHO_GALLERY,
   },
+  {
+    id: "edicao-vermelha",
+    slug: "vermelha",
+    name: "Edição Fênix",
+    fullName: "Alpha Brasil — Edição Fênix Vermelha",
+    badge: "Em breve",
+    price: 67.9,
+    compareAtPrice: 149,
+    description: "Nova edição em vermelho intenso. Poder e determinação em cada fibra.",
+    cta: "Avisar-me quando disponível",
+    sizes: SIZES,
+    images: {
+      hero: {
+        kind: "image",
+        alt: "Camisa Alpha Brasil Edição Fênix Vermelha",
+        src: "/images/camisa-hero-produto-isolado.png", // Fallback
+      },
+      heroGallery: ["/images/camisa-hero-produto-isolado.png"],
+      checkout: "/images/camisa-hero-produto-isolado.png",
+    },
+    gallery: [],
+    inProduction: true,
+  },
 ] as const;
 
 export function getProductModelById(id: string | null | undefined): ProductModel {
@@ -299,10 +323,13 @@ export type HeroEditionId = ProductModelId;
 
 export const HERO_EDITIONS = PRODUCT_MODELS.map((model) => ({
   id: model.id,
-  name: `${model.name} — ${model.slug === "sagrada" ? "Cristo Redentor" : "Amarela Clássica"}`,
+  name: model.name,
+  slug: model.slug,
   badge: model.badge,
   shortDescription: model.description,
   ctaLabel: model.cta,
+  inProduction: model.inProduction,
+  color: model.slug === "sagrada" ? "#1a2a4a" : model.slug === "canarinho" ? "#fbbf24" : "#b91c1c",
   media:
     model.images.hero.kind === "video"
       ? {
@@ -332,6 +359,12 @@ export const CAMPAIGN_GALLERY_BY_MODEL: Record<ProductModelId, CampaignGalleryMo
     slug: "canarinho",
     modelId: "edicao-canarinho",
     images: CANARINHO_GALLERY,
+  },
+  "edicao-vermelha": {
+    name: "Edição Fênix",
+    slug: "vermelha",
+    modelId: "edicao-vermelha",
+    images: [],
   },
 };
 

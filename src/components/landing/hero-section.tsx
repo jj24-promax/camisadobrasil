@@ -63,7 +63,7 @@ export function HeroSection({
   const heroPointerUnlockDone = useRef(false);
 
   useInlineMutedVideoAutoplay(heroVideoRef, {
-    enabled: !heroVideoFailed && heroItem.kind === "video",
+    enabled: !heroVideoFailed && heroItem.kind === "video" && !selectedEditionData.inProduction,
     mediaKey: heroItem.kind === "video" ? heroItem.mp4Src : selectedEditionData.id,
   });
 
@@ -155,7 +155,17 @@ export function HeroSection({
                     transition={{ duration: 0.5, ease: "easeInOut" }}
                     className="absolute inset-0 h-full w-full"
                   >
-                    {heroItem.kind === "image" || heroVideoFailed ? (
+                    {selectedEditionData.inProduction ? (
+                      <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center bg-[#05080f]">
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.05),transparent_70%)]" />
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-8 backdrop-blur-md text-center max-w-[80%] z-10 shadow-luxe">
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-white">Edição em Produção</p>
+                          <p className="mt-3 mx-auto text-[13px] leading-relaxed text-muted-foreground/80">
+                            Estamos finalizando as fotos exclusivas desta peça. Disponível em breve.
+                          </p>
+                        </div>
+                      </div>
+                    ) : heroItem.kind === "image" || heroVideoFailed ? (
                       <>
                         <Image
                           src={activeEditionImageSrc ?? heroItem.src}

@@ -91,13 +91,14 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
       <div className="mx-auto max-w-[1280px]">
         <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-x-10 xl:gap-x-14 lg:gap-y-0">
           
-          {/* Seletor de Cores — Mobile */}
-          <SectionReveal className="order-1 lg:hidden">
-            <div className="mb-10 space-y-4">
-              <p className="text-center font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80">
+          {/* Coluna editorial (Cor + Textos) -> Topo no Mobile, Direita no Desktop */}
+          <SectionReveal className="order-1 lg:order-2 flex flex-col lg:col-span-5 lg:pr-2 xl:pr-4 text-center lg:text-left">
+            {/* Seletor de Cores */}
+            <div className="mb-8 lg:mb-10 space-y-4">
+              <p className="font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80">
                 Explore as edições
               </p>
-              <div className="flex flex-wrap justify-center gap-5">
+              <div className="flex flex-wrap justify-center lg:justify-start gap-5">
                 {HERO_EDITIONS.map((edition) => {
                   const isActive = selectedEdition === edition.id;
                   return (
@@ -134,12 +135,44 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
                 })}
               </div>
             </div>
+
+            <div className="mb-5 flex items-center justify-center lg:justify-start gap-4 md:mb-8" aria-hidden>
+              <span className="hidden lg:block h-px w-10 bg-gradient-to-r from-gold/70 to-gold/0 md:w-14" />
+              <span className="font-display text-[9px] font-semibold uppercase tracking-[0.48em] text-gold/55">
+                Alpha Brasil
+              </span>
+            </div>
+
+            {/* Título e Descrição Dinâmicos da Galeria */}
+            <motion.div
+              key={selectedEdition}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <h2 id="gallery-heading" className="font-display text-[clamp(2.15rem,4.5vw,3.35rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance md:mt-2">
+                 <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">
+                  {selectedEditionData.name}
+                </span>
+              </h2>
+
+              <p className="mx-auto lg:mx-0 mt-5 lg:mt-6 max-w-[36ch] text-[15px] leading-[1.75] text-muted-foreground/95 md:text-base">
+                {selectedEditionData.shortDescription}
+              </p>
+            </motion.div>
+
+            <div className="mt-8 hidden items-center gap-3 border-t border-white/[0.06] pt-8 lg:flex">
+              <div className="h-1 w-1 rounded-full bg-gold/50" />
+              <p className="max-w-[32ch] text-xs leading-relaxed text-muted-foreground/75">
+                Selecione uma imagem ao lado para explorar os enquadramentos da coleção.
+              </p>
+            </div>
           </SectionReveal>
 
-          {/* Coluna de Mídia */}
+          {/* Coluna de Mídia -> Order 2 no Mobile, Order 1 no Desktop */}
           <SectionReveal
             delay={0.06}
-            className="relative order-2 lg:col-span-7"
+            className="relative order-2 lg:order-1 lg:col-span-7"
           >
             <div className="flex flex-col gap-6 sm:gap-7 lg:flex-row lg:items-start lg:justify-end lg:gap-6 xl:gap-8">
               {/* Moldura premium */}
@@ -294,76 +327,6 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
             </div>
           </SectionReveal>
 
-          {/* Coluna editorial */}
-          <SectionReveal
-            className="order-3 flex flex-col lg:col-span-5 lg:pr-2 xl:pr-4"
-          >
-            {/* Seletor de Cores — Desktop */}
-            <div className="mb-10 hidden space-y-4 lg:block">
-              <p className="font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80">
-                Explore as edições
-              </p>
-              <div className="flex flex-wrap gap-5">
-                {HERO_EDITIONS.map((edition) => {
-                  const isActive = selectedEdition === edition.id;
-                  return (
-                    <div key={edition.id} className="flex flex-col items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onEditionChange(edition.id)}
-                        className={cn(
-                          "group relative h-12 w-12 overflow-hidden rounded-full border-2 transition-all duration-300",
-                          isActive
-                            ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
-                            : "border-white/10 hover:border-white/30"
-                        )}
-                      >
-                        <div 
-                          className="h-full w-full" 
-                          style={{ backgroundColor: edition.color }}
-                        />
-                      </button>
-                      <span className={cn("text-[8px] font-bold uppercase tracking-widest", isActive ? "text-gold-bright" : "text-muted-foreground/60")}>
-                        {edition.name.split(' ')[1]}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="mb-6 flex items-center gap-4 md:mb-8" aria-hidden>
-              <span className="h-px w-10 bg-gradient-to-r from-gold/70 to-gold/0 md:w-14" />
-              <span className="font-display text-[9px] font-semibold uppercase tracking-[0.48em] text-gold/55">
-                Alpha Brasil
-              </span>
-            </div>
-
-            {/* Título e Descrição Dinâmicos da Galeria */}
-            <motion.div
-              key={selectedEdition}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-            >
-              <h2 id="gallery-heading" className="mt-2 font-display text-[clamp(2.15rem,4.5vw,3.35rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance md:mt-5">
-                 <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">
-                  {selectedEditionData.name}
-                </span>
-              </h2>
-
-              <p className="mt-6 max-w-[36ch] text-[15px] leading-[1.75] text-muted-foreground/95 md:text-base">
-                {selectedEditionData.shortDescription}
-              </p>
-            </motion.div>
-
-            <div className="mt-8 hidden items-center gap-3 border-t border-white/[0.06] pt-8 lg:flex">
-              <div className="h-1 w-1 rounded-full bg-gold/50" />
-              <p className="max-w-[32ch] text-xs leading-relaxed text-muted-foreground/75">
-                Selecione uma imagem ao lado para explorar os enquadramentos da coleção.
-              </p>
-            </div>
-          </SectionReveal>
         </div>
       </div>
 

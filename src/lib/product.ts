@@ -277,10 +277,10 @@ export const PRODUCT_MODELS: readonly ProductModel[] = [
       hero: {
         kind: "image",
         alt: "Camisa Alpha Brasil Edição Canarinho amarela",
-        src: "/images/camisa-edicao-canarinho-amarela.png",
+        src: "/images/camisa-edicao-canarinho-hero.gif",
       },
       heroGallery: [
-        "/images/camisa-edicao-canarinho-amarela.png",
+        "/images/camisa-edicao-canarinho-hero.gif",
         "/images/camisa-edicao-canarinho-modelo-2.png",
       ],
       checkout: "/images/camisa-detalhe-canarinho-frente.png",

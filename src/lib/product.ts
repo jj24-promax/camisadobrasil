@@ -180,7 +180,7 @@ const SAGRADA_GALLERY: CampaignGalleryItem[] = [
       {
         src: "/images/campaign/galeria-modelo-01.png",
         alt: "Modelo veste a camisa Brasil Alpha — pose frontal com braços cruzados, escudo CBF, Cristo em jacquard e número 10",
-        caption: "Frontal editorial com presença premium.",
+        caption: "Frontal editorial with presence premium.",
       },
       {
         src: "/images/campaign/galeria-modelo-06-detalhe.png",
@@ -279,10 +279,7 @@ export const PRODUCT_MODELS: readonly ProductModel[] = [
         alt: "Camisa Alpha Brasil Edição Canarinho amarela",
         src: "/images/camisa-edicao-canarinho-hero.gif",
       },
-      heroGallery: [
-        "/images/camisa-edicao-canarinho-hero.gif",
-        "/images/camisa-edicao-canarinho-modelo-2.png",
-      ],
+      heroGallery: ["/images/camisa-edicao-canarinho-hero.gif"],
       checkout: "/images/camisa-detalhe-canarinho-frente.png",
     },
     gallery: CANARINHO_GALLERY,

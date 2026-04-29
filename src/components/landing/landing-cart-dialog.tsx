@@ -123,7 +123,7 @@ export function LandingCartDialog({
           <div className="flex flex-1 flex-col gap-6 px-6 py-6">
             <div className="glass-dark overflow-hidden rounded-[1.5rem] border border-gold/20 p-5">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-                <div className="relative mx-auto aspect-square w-full max-w-[140px] shrink-0 overflow-hidden rounded-xl border border-white/10">
+                <div className="relative mx-auto aspect-square w-full max-w-[140px] shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40">
                   <Image
                     src={displayModel.images.checkout}
                     alt={displayModel.fullName}
@@ -169,7 +169,7 @@ export function LandingCartDialog({
                                     : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40"
                                 )}
                               >
-                                {model.slug === "sagrada" ? "Sagrada" : "Canarinho"}
+                                {model.slug === "sagrada" ? "Sagrada" : model.slug === "canarinho" ? "Canarinho" : "Fênix"}
                               </button>
                             );
                           })}

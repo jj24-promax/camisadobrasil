@@ -285,7 +285,7 @@ export const PRODUCT_MODELS: readonly ProductModel[] = [
         posterSrc: "/images/camisa-detalhe-canarinho-frente.png",
       },
       heroGallery: ["/images/camisa-detalhe-canarinho-frente.png"],
-      checkout: "/images/camisa-detalhe-canarinho-frente.png",
+      checkout: "/images/camisa-canarinho-isolada.png",
     },
     gallery: CANARINHO_GALLERY,
   },

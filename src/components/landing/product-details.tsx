@@ -197,24 +197,22 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
               </div>
 
               {/* Nome e Descrição Dinâmicos do Modelo */}
-              <div className="min-h-[6rem] lg:min-h-0">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={selectedEdition}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="space-y-2"
-                  >
-                    <p className="font-display text-[14px] font-bold uppercase tracking-[0.24em] text-gold-bright">
-                      {selectedEditionData.name}
-                    </p>
-                    <p className="mx-auto max-w-[32ch] text-[15px] font-medium leading-relaxed text-white/80 lg:mx-0 lg:max-w-none">
-                      {selectedEditionData.shortDescription}
-                    </p>
-                  </motion.div>
-                </AnimatePresence>
+              <div className="min-h-[4rem] lg:min-h-0">
+                {/* Removido AnimatePresence para garantir que o texto não "suma" */}
+                <motion.div
+                  key={selectedEdition}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="space-y-2"
+                >
+                  <p className="font-display text-[14px] font-bold uppercase tracking-[0.24em] text-gold-bright">
+                    {selectedEditionData.name}
+                  </p>
+                  <p className="mx-auto max-w-[32ch] text-[15px] font-medium leading-relaxed text-white/80 lg:mx-0 lg:max-w-none">
+                    {selectedEditionData.shortDescription}
+                  </p>
+                </motion.div>
               </div>
             </div>
 

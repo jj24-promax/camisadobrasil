@@ -56,14 +56,14 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
       edition: "edicao-canarinho",
       label: "Canarinho frontal",
       alt: "Modelo com camisa canarinho amarela vista frontal",
-      imageSrc: "/images/camisa-detalhe-canarinho-frente.png",
+      imageSrc: "/images/amarela-1.webp",
     },
     {
       id: "canarinho-back",
       edition: "edicao-canarinho",
       label: "Canarinho costas",
       alt: "Modelo com camisa canarinho amarela vista costas",
-      imageSrc: "/images/camisa-detalhe-canarinho-costas.png",
+      imageSrc: "/images/amarela-2.webp",
     },
   ] as const;
 

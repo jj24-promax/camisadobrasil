@@ -52,8 +52,6 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showAllThumbs, setShowAllThumbs] = useState(false);
   const reduced = useReducedMotion();
-  
-  const selectedEditionData = HERO_EDITIONS.find((e) => e.id === selectedEdition) ?? HERO_EDITIONS[0];
   const galleryModel =
     CAMPAIGN_GALLERY_BY_MODEL[selectedEdition] ?? CAMPAIGN_GALLERY_BY_MODEL["edicao-sagrada"];
   const galleryImages = galleryModel.images || [];
@@ -93,7 +91,7 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
       <div className="mx-auto max-w-[1280px]">
         <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-x-10 xl:gap-x-14 lg:gap-y-0">
           
-          {/* Seletor de Cores — Mobile */}
+          {/* Seletor de Cores — Em cima das galerias no mobile */}
           <SectionReveal className="order-1 lg:hidden">
             <div className="mb-10 space-y-4">
               <p className="text-center font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80">
@@ -341,26 +339,13 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
               </span>
             </div>
 
-            {/* Título e Descrição Dinâmicos da Galeria */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={selectedEdition}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
-                <h2 id="gallery-heading" className="mt-2 font-display text-[clamp(2.15rem,4.5vw,3.35rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance md:mt-5">
-                   <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">
-                    {selectedEditionData.name}
-                  </span>
-                </h2>
+            <h2 id="gallery-heading" className="mt-2 font-display text-[clamp(2.15rem,4.5vw,3.35rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance md:mt-5">
+              Presença em <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">cada detalhe</span>
+            </h2>
 
-                <p className="mt-6 max-w-[36ch] text-[15px] leading-[1.75] text-muted-foreground/95 md:text-base">
-                  {selectedEditionData.shortDescription}
-                </p>
-              </motion.div>
-            </AnimatePresence>
+            <p className="mt-6 max-w-[36ch] text-[15px] leading-[1.75] text-muted-foreground/95 md:text-base">
+              Fotos reais para mostrar o caimento, a presença e a identidade da peça no corpo.
+            </p>
 
             <div className="mt-8 hidden items-center gap-3 border-t border-white/[0.06] pt-8 lg:flex">
               <div className="h-1 w-1 rounded-full bg-gold/50" />

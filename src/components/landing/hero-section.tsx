@@ -44,10 +44,7 @@ export function HeroSection({
   );
 
   const [selectedEditionImageIndex, setSelectedEditionImageIndex] = useState(0);
-  
-  // Garantimos que os dados são sempre derivados do ID atual selecionado
   const selectedEditionData = HERO_EDITIONS.find((edition) => edition.id === selectedEdition) ?? HERO_EDITIONS[0];
-  
   const heroItem = selectedEditionData.media;
   const selectedEditionGallery =
     "imageGallery" in selectedEditionData &&
@@ -118,7 +115,6 @@ export function HeroSection({
 
         <div className="flex flex-col gap-10 md:gap-16 lg:grid lg:grid-cols-[1.1fr_0.9fr] lg:gap-14 w-full">
           
-          {/* TÍTULO */}
           <div className="order-1 text-center lg:text-left">
             <motion.h1
               id="hero-heading"
@@ -136,7 +132,6 @@ export function HeroSection({
             </motion.h1>
           </div>
 
-          {/* VÍDEO / GIF */}
           <motion.div
             style={{ y: imgY }}
             className="order-2 flex items-center justify-center lg:col-start-2 lg:row-start-1 lg:row-span-2"
@@ -221,10 +216,14 @@ export function HeroSection({
             </div>
           </motion.div>
 
-          {/* COLUNA DE SELEÇÃO */}
           <div className="order-3 flex flex-col justify-center text-center lg:text-left">
             
-            <div className="mb-8 space-y-4">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mb-6 space-y-4"
+            >
               <p className="text-center font-display text-[11px] font-bold uppercase tracking-[0.2em] text-gold/80 lg:text-left">
                 Cores disponíveis:
               </p>
@@ -260,28 +259,28 @@ export function HeroSection({
                 })}
               </div>
 
-              {/* Título e Descrição Dinâmicos */}
-              <div className="mt-8 min-h-[6.5rem]">
+              {/* Título do modelo e Descrição juntos */}
+              <div className="mt-6 flex flex-col gap-2 min-h-[6rem]">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={selectedEdition}
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="flex flex-col gap-2"
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.35 }}
+                    className="flex flex-col gap-1.5"
                   >
-                    <p className="font-display text-sm font-bold uppercase tracking-[0.22em] text-gold-bright">
+                    <p className="font-display text-sm font-bold uppercase tracking-widest text-white">
                       {selectedEditionData.name}
                     </p>
-                    <p className="mx-auto max-w-xl text-lg font-medium leading-relaxed text-white/90 lg:mx-0 md:text-xl">
+                    <p className="mx-auto max-w-xl text-base font-medium leading-relaxed text-muted-foreground/90 lg:mx-0">
                       {selectedEditionData.shortDescription}
                     </p>
                   </motion.div>
                 </AnimatePresence>
               </div>
 
-              <div className="min-h-12">
+              <div className="min-h-10">
                 <AnimatePresence mode="wait">
                   {selectedEditionData.inProduction ? (
                     <motion.div
@@ -299,9 +298,8 @@ export function HeroSection({
                   ) : null}
                 </AnimatePresence>
               </div>
-            </div>
+            </motion.div>
 
-            {/* SELO DE SATISFAÇÃO */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -318,7 +316,6 @@ export function HeroSection({
               </span>
             </motion.div>
 
-            {/* CAIXA DE COMPRA */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

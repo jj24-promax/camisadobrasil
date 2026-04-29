@@ -9,7 +9,6 @@ import { AnnouncementBar } from "@/components/landing/announcement-bar";
 import type { Size } from "@/lib/types";
 import { type ProductModelId } from "@/lib/product";
 
-// Importações estáticas para secções (evita Hydration Mismatch e dessincronização do useId())
 import { ProductDetails } from "@/components/landing/product-details";
 import { PromoBundle } from "@/components/landing/promo-bundle";
 import { PremiumGallery } from "@/components/landing/premium-gallery";
@@ -20,7 +19,6 @@ import { FaqSection } from "@/components/landing/faq-section";
 import { FeedbackSection } from "@/components/landing/feedback-section";
 import { FinalCta } from "@/components/landing/final-cta";
 
-// UI Dinâmica e Modais (sem server-side rendering para poupar recursos de servidor e não encravar a hidratação)
 const StickyBuyBar = dynamic(() => import("@/components/landing/sticky-buy-bar").then(m => m.StickyBuyBar), { ssr: false });
 const SalesNotifications = dynamic(() => import("@/components/landing/sales-notifications").then(m => m.SalesNotifications), { ssr: false });
 const LandingCartDialog = dynamic(() => import("@/components/landing/landing-cart-dialog").then(m => m.LandingCartDialog), { ssr: false });
@@ -136,7 +134,10 @@ export function HomePageClient() {
           onEditionChange={setSelectedProduct}
           onBuyNow={() => openCart(1)}
         />
-        <ProductDetails />
+        <ProductDetails 
+          selectedEdition={selectedProduct} 
+          onEditionChange={setSelectedProduct} 
+        />
         <PromoBundle onBuyBundle={() => openCart(3)} />
         <PremiumGallery selectedEdition={selectedProduct} onEditionChange={setSelectedProduct} />
         <SocialProof />

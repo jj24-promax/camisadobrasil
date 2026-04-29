@@ -54,9 +54,8 @@ export function HeroSection({
       : [];
   const canNavigateEditionGallery = heroItem.kind === "image" && selectedEditionGallery.length > 1;
   const activeEditionImageSrc =
-    heroItem.kind === "image"
-      ? selectedEditionGallery[selectedEditionImageIndex] ?? heroItem.src
-      : null;
+    heroItem.kind === "image" ? selectedEditionGallery[selectedEditionImageIndex] : null;
+  const heroImageSrc = heroItem.kind === "image" ? activeEditionImageSrc ?? heroItem.src : null;
 
   const heroVideoRef = useRef<HTMLVideoElement | null>(null);
   const [heroVideoFailed, setHeroVideoFailed] = useState(false);
@@ -168,7 +167,7 @@ export function HeroSection({
                     ) : heroItem.kind === "image" || heroVideoFailed ? (
                       <>
                         <Image
-                          src={activeEditionImageSrc ?? heroItem.src}
+                          src={heroImageSrc ?? "/images/alpha-brasil-gold-logo.png"}
                           alt={heroItem.alt}
                           fill
                           className="object-cover"
@@ -213,7 +212,7 @@ export function HeroSection({
                         loop
                         playsInline
                         autoPlay
-                        preload="auto"
+                        preload="metadata"
                         aria-label={heroItem.alt}
                         controls={false}
                         disablePictureInPicture
@@ -221,7 +220,7 @@ export function HeroSection({
                         onError={() => setHeroVideoFailed(true)}
                       >
                         <source src={heroItem.mp4Src} type="video/mp4" />
-                        <source src={heroItem.webmSrc} type="video/webm" />
+                        {heroItem.webmSrc ? <source src={heroItem.webmSrc} type="video/webm" /> : null}
                       </video>
                     )}
                   </motion.div>

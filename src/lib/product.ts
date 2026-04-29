@@ -23,6 +23,8 @@ export const HERO_VIDEO_MP4 = "/videos/videoazul.mp4" as const;
 
 /** Vídeo da edição Canarinho */
 export const CANARINHO_VIDEO_MP4 = "/videos/camisa-canarinho-hero.mp4" as const;
+/** Vídeo da edição Fênix */
+export const FENIX_VIDEO_MP4 = "/videos/videovermelho.mp4" as const;
 
 /** Imagem de poster / LCP enquanto o vídeo carrega. */
 export const HERO_PRODUCT_POSTER_SRC =
@@ -231,8 +233,8 @@ const CANARINHO_GALLERY: CampaignGalleryItem[] = [
       },
       {
         src: "/images/campaign/canarinho-04.png",
-        alt: "Modelo feminino vestindo a camisa Canarinho com foco no caimento",
-        caption: "Caimento real em diferentes perfis.",
+        alt: "Vista traseira da camisa Canarinho com nome e número personalizados",
+        caption: "Costas personalizadas da Edição Canarinho.",
       },
       {
         src: "/images/campaign/canarinho-05.png",
@@ -240,6 +242,29 @@ const CANARINHO_GALLERY: CampaignGalleryItem[] = [
         caption: "Costas personalizadas da Edição Canarinho.",
       },
     ];
+
+const FENIX_GALLERY: CampaignGalleryItem[] = [
+  {
+    src: "/images/campaign/edicao-fenix-frente.png",
+    alt: "Modelo com camisa Alpha Brasil Edição Fênix vermelha — vista frontal em estúdio",
+    caption: "Editorial frontal da Edição Fênix.",
+  },
+  {
+    src: "/images/campaign/edicao-fenix-close-1.png",
+    alt: "Close frontal da camisa Alpha Brasil Edição Fênix, com escudo CBF e número 10 em destaque",
+    caption: "Close premium frontal da Edição Fênix.",
+  },
+  {
+    src: "/images/campaign/edicao-fenix-close-2.png",
+    alt: "Close superior da camisa Alpha Brasil Edição Fênix com foco no acabamento e textura",
+    caption: "Detalhes de acabamento da Edição Fênix.",
+  },
+  {
+    src: "/images/campaign/edicao-fenix-costas.png",
+    alt: "Modelo com camisa Alpha Brasil Edição Fênix vermelha — vista costas com nome e número",
+    caption: "Costas e personalização da Edição Fênix.",
+  },
+];
 
 export const PRODUCT_MODELS: readonly ProductModel[] = [
   {
@@ -294,23 +319,27 @@ export const PRODUCT_MODELS: readonly ProductModel[] = [
     slug: "vermelha",
     name: "Edição Fênix",
     fullName: "Alpha Brasil — Edição Fênix Vermelha",
-    badge: "Em breve",
+    badge: "Novo",
     price: 67.9,
     compareAtPrice: 149,
     description: "Nova edição em vermelho intenso. Poder e determinação em cada fibra.",
-    cta: "Avisar-me quando disponível",
+    cta: "Garantir minha Edição Fênix",
     sizes: SIZES,
     images: {
       hero: {
-        kind: "image",
+        kind: "video",
         alt: "Camisa Alpha Brasil Edição Fênix Vermelha",
-        src: "/images/camisa-hero-produto-isolado.png", // Fallback
+        mp4Src: FENIX_VIDEO_MP4,
+        posterSrc: "/images/campaign/edicao-fenix-frente.png",
       },
-      heroGallery: ["/images/camisa-hero-produto-isolado.png"],
-      checkout: "/images/camisa-hero-produto-isolado.png",
+      heroGallery: [
+        "/images/campaign/edicao-fenix-frente.png",
+        "/images/campaign/edicao-fenix-costas.png",
+      ],
+      checkout: "/images/camisa-vermelha-carrinho.png",
     },
-    gallery: [],
-    inProduction: true,
+    gallery: FENIX_GALLERY,
+    inProduction: false,
   },
 ] as const;
 
@@ -334,7 +363,7 @@ export const HERO_EDITIONS = PRODUCT_MODELS.map((model) => ({
     model.images.hero.kind === "video"
       ? {
           kind: "video" as const,
-          webmSrc: model.images.hero.webmSrc ?? HERO_VIDEO_WEBM,
+          webmSrc: model.images.hero.webmSrc,
           mp4Src: model.images.hero.mp4Src ?? HERO_VIDEO_MP4,
           posterSrc: model.images.hero.posterSrc ?? HERO_PRODUCT_POSTER_SRC,
           alt: model.images.hero.alt,
@@ -364,7 +393,7 @@ export const CAMPAIGN_GALLERY_BY_MODEL: Record<ProductModelId, CampaignGalleryMo
     name: "Edição Fênix",
     slug: "vermelha",
     modelId: "edicao-vermelha",
-    images: [],
+    images: FENIX_GALLERY,
   },
 };
 

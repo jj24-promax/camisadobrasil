@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CAMPAIGN_GALLERY_BY_MODEL, type HeroEditionId, HERO_EDITIONS } from "@/lib/product";
 import { SectionReveal, SectionShell } from "@/components/landing/section-shell";
 import {
@@ -52,20 +52,24 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
   const reduced = useReducedMotion();
   
   const selectedEditionData = HERO_EDITIONS.find((e) => e.id === selectedEdition) ?? HERO_EDITIONS[0];
-  const galleryModel =
-    CAMPAIGN_GALLERY_BY_MODEL[selectedEdition] ?? CAMPAIGN_GALLERY_BY_MODEL["edicao-sagrada"];
-  const galleryImages = galleryModel.images || [];
+  const galleryImages = useMemo(
+    () =>
+      (CAMPAIGN_GALLERY_BY_MODEL[selectedEdition] ?? CAMPAIGN_GALLERY_BY_MODEL["edicao-sagrada"])
+        .images || [],
+    [selectedEdition]
+  );
   const total = galleryImages.length;
   const hasImages = total > 0;
 
-  /** Pré-carrega fotos da campanha para a troca não esperar rede após o clique. */
+  /** Pré-carrega somente a próxima imagem para reduzir pico de rede sem alterar UX. */
   useEffect(() => {
-    if (!hasImages) return;
-    for (const item of galleryImages) {
-      const img = new window.Image();
-      img.src = item.src;
-    }
-  }, [galleryImages, hasImages]);
+    if (!hasImages || total < 2) return;
+    const nextIndex = (active + 1) % total;
+    const nextItem = galleryImages[nextIndex];
+    if (!nextItem) return;
+    const img = new window.Image();
+    img.src = nextItem.src;
+  }, [active, galleryImages, hasImages, total]);
 
   useEffect(() => {
     setActive(0);
@@ -217,8 +221,8 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
                               alt={activeItem.alt}
                               fill
                               priority={active === 0}
-                              loading="eager"
-                              fetchPriority="high"
+                              loading={active === 0 ? "eager" : "lazy"}
+                              fetchPriority={active === 0 ? "high" : "auto"}
                               quality={90}
                               sizes={MAIN_SIZES}
                               className="object-cover object-center"

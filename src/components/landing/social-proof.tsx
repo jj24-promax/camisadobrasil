@@ -26,6 +26,10 @@ type ReviewPhotoEntry = {
   imageSrc: string;
   /** `table` = camisa/produto (ex. mesa); `person` = pessoa vestindo — intercalados no carrossel. */
   photoKind: "table" | "person";
+  /** Cor predominante da camisa para misturar melhor a sequência visual. */
+  jerseyColor?: "azul" | "amarela" | "vermelha" | "indefinida";
+  /** Itens marcados aparecem antes no loop inicial sem quebrar mistura de cor. */
+  featured?: boolean;
   /** Substitui o `object-position` padrão da foto principal (ex. `object-center`). */
   coverClassName?: string;
 };
@@ -36,17 +40,19 @@ const ugcReviewPhotos: ReviewPhotoEntry[] = [
     name: "Ricardo H.",
     text: "Igual às fotos do site — no espelho ficou ainda melhor. O amarelo é super vivo e a camisa veste muito bem!",
     rating: 5,
-    profileImageSrc: "/images/testimonials/profiles/ricardo-h.png",
+    profileImageSrc: reviewPortraitMan(59),
     imageSrc: "/images/testimonials/ugc/feedback-1.webp",
     photoKind: "person",
+    jerseyColor: "amarela",
   },
   {
     name: "Bruno T.",
     text: "Montei o kit completo: presença absurda e tecido leve. Nota máxima.",
     rating: 5,
-    profileImageSrc: "/images/testimonials/profiles/bruno-t.png",
+    profileImageSrc: reviewPortraitMan(61),
     imageSrc: "/images/testimonials/ugc/ugc-2.png",
     photoKind: "person",
+    jerseyColor: "azul",
     /** Figura um pouco à direita no original — recorte para centrar no cartão. */
     coverClassName: "object-[44%_center]",
   },
@@ -57,6 +63,7 @@ const ugcReviewPhotos: ReviewPhotoEntry[] = [
     profileImageSrc: "/images/testimonials/profiles/leticia-m.png",
     imageSrc: "/images/testimonials/ugc/ugc-3.png",
     photoKind: "person",
+    jerseyColor: "azul",
     /** Selfie com muito teto em cima — baixa o ponto de ancoragem para mostrar mais rosto/camisa. */
     coverClassName: "object-[center_72%]",
   },
@@ -64,9 +71,10 @@ const ugcReviewPhotos: ReviewPhotoEntry[] = [
     name: "Camila R.",
     text: "Compramos o kit pra nós dois e amamos! O caimento e a cor são perfeitos.",
     rating: 5,
-    profileImageSrc: "/images/testimonials/profiles/camila-r.png",
+    profileImageSrc: reviewPortraitWoman(12),
     imageSrc: "/images/testimonials/ugc/gemini-casal.webp",
     photoKind: "person",
+    jerseyColor: "amarela",
     coverClassName: "object-[center_20%]",
   },
   {
@@ -77,7 +85,7 @@ const ugcReviewPhotos: ReviewPhotoEntry[] = [
     imageSrc: "/images/testimonials/ugc/gemini-1.webp",
     photoKind: "person",
     /** Pessoa um pouco à esquerda no original — desloca o recorte para centrar no cartão 4:3. */
-    coverClassName: "object-[center_10%]",
+    coverClassName: "object-[center_24%]",
   },
   {
     name: "Matheus L.",
@@ -86,23 +94,15 @@ const ugcReviewPhotos: ReviewPhotoEntry[] = [
     profileImageSrc: "/images/testimonials/profiles/matheus-l.png",
     imageSrc: "/images/testimonials/ugc/gemini-2.webp",
     photoKind: "person",
+    jerseyColor: "amarela",
   },
   {
     name: "Priscila T.",
     text: "Levei na feira no fim de semana — confortável, linda e diferente das camisas comuns.",
     rating: 5,
-    profileImageSrc: "/images/testimonials/profiles/priscila-t.png",
+    profileImageSrc: reviewPortraitWoman(58),
     imageSrc: "/images/testimonials/ugc/ugc-7.png",
     photoKind: "person",
-  },
-  {
-    name: "André P.",
-    text: "A embalagem premium e a camisa são sensacionais. Vale cada centavo, super recomendo!",
-    rating: 5,
-    profileImageSrc: reviewPortraitMan(53),
-    imageSrc: "/images/testimonials/ugc/feedback-2.webp",
-    photoKind: "person",
-    coverClassName: "object-[center_10%]",
   },
   {
     name: "Murilo S.",
@@ -111,6 +111,7 @@ const ugcReviewPhotos: ReviewPhotoEntry[] = [
     profileImageSrc: reviewPortraitMan(57),
     imageSrc: "/images/testimonials/ugc/gemini-gamer.webp",
     photoKind: "person",
+    jerseyColor: "amarela",
     coverClassName: "object-[center_20%]",
   },
   {
@@ -121,6 +122,39 @@ const ugcReviewPhotos: ReviewPhotoEntry[] = [
     imageSrc: "/images/testimonials/ugc/ugc-10.png",
     photoKind: "person",
     coverClassName: "object-[center_30%]",
+  },
+  {
+    name: "Patrícia N.",
+    text: "Peguei a Fênix e vestiu super bem no corpo. Cor linda ao vivo e tecido muito confortável.",
+    rating: 5,
+    profileImageSrc: reviewPortraitWoman(63),
+    imageSrc: "/images/testimonials/ugc/vermelha-feedback-1.png",
+    photoKind: "person",
+    jerseyColor: "vermelha",
+    featured: true,
+    coverClassName: "object-[center_40%]",
+  },
+  {
+    name: "Larissa V.",
+    text: "Usei no fim de semana e todo mundo perguntou onde comprei. Acabamento impecável!",
+    rating: 5,
+    profileImageSrc: "/images/testimonials/profiles/larissa-v.png",
+    imageSrc: "/images/testimonials/ugc/vermelha-feedback-2.png",
+    photoKind: "person",
+    jerseyColor: "vermelha",
+    featured: true,
+    coverClassName: "object-[center_36%]",
+  },
+  {
+    name: "Gabriela S.",
+    text: "A edição vermelha ficou simplesmente perfeita. Chegou rápido e a qualidade surpreendeu.",
+    rating: 5,
+    profileImageSrc: "/images/testimonials/profiles/gabriela-s.png",
+    imageSrc: "/images/testimonials/ugc/vermelha-feedback-3.png",
+    photoKind: "person",
+    jerseyColor: "vermelha",
+    featured: true,
+    coverClassName: "object-[center_34%]",
   },
 ];
 
@@ -268,6 +302,23 @@ function dedupeByImageSrc(entries: readonly ReviewPhotoEntry[]): ReviewPhotoEntr
   return out;
 }
 
+function spreadPersonsByColor(entries: readonly ReviewPhotoEntry[]): ReviewPhotoEntry[] {
+  const pool = [...entries].sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
+  const out: ReviewPhotoEntry[] = [];
+  let lastColor: ReviewPhotoEntry["jerseyColor"] = undefined;
+
+  while (pool.length > 0) {
+    let idx = pool.findIndex((e) => e.featured && e.jerseyColor && e.jerseyColor !== lastColor);
+    if (idx < 0) idx = pool.findIndex((e) => e.jerseyColor && e.jerseyColor !== lastColor);
+    if (idx < 0) idx = 0;
+    const [picked] = pool.splice(idx, 1);
+    out.push(picked);
+    lastColor = picked.jerseyColor;
+  }
+
+  return out;
+}
+
 /** Sem `imageSrc` repetido; mesa ↔ pessoa intercalados (variação dentro de cada grupo com seed fixo). */
 const reviews = (() => {
   const all = dedupeByImageSrc([...stockReviewPhotos, ...ugcReviewPhotos]);
@@ -279,7 +330,7 @@ const reviews = (() => {
     all.filter((e) => e.photoKind === "person"),
     0x50455253 /* "PERS" */
   );
-  return interleaveTableAndPerson(tables, persons);
+  return interleaveTableAndPerson(tables, spreadPersonsByColor(persons));
 })();
 
 type ReviewEntry = (typeof reviews)[number];

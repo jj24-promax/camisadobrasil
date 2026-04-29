@@ -49,6 +49,7 @@ import {
 } from "@/lib/pix-gateway-response";
 import { savePosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 import { extractTrackingFromSearch, sendUtmifyPaidOrderOnce } from "@/lib/utmify-client";
+import { grantMetaPurchasePixelAfterConfirmedPix } from "@/lib/meta-purchase-gate";
 import { supabaseEdgeInvokeHeaders } from "@/lib/supabase/edge-invoke-headers";
 
 // Funções de máscara para campos de formulário
@@ -464,6 +465,7 @@ function CheckoutContent() {
     void sendCheckoutUtmifyPaid().catch(() => {
       // Não bloqueia o fluxo de entrega por falha de postback.
     });
+    grantMetaPurchasePixelAfterConfirmedPix();
     toast.success("Pagamento confirmado!");
     router.push(POS_COMPRA.upsellVip);
   }, [
@@ -571,6 +573,7 @@ function CheckoutContent() {
       void sendCheckoutUtmifyPaid().catch(() => {
         // Não bloqueia o fluxo de entrega por falha de postback.
       });
+      grantMetaPurchasePixelAfterConfirmedPix();
       router.push(POS_COMPRA.upsellVip);
       return;
     }
@@ -707,13 +710,28 @@ function CheckoutContent() {
       savePosCompraPixClient(buildPosCompraClientPayload());
       toast.success("Pix gerado! Escaneie o QR ou copie o código.");
 
-      // Dispara o InitiateCheckout apenas após o Pix ser gerado com sucesso
+      // InitiateCheckout após Pix gerado — dedupe por idTransaction para re-tentativas na mesma ref.
       if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
-        (window as any).fbq('track', 'InitiateCheckout', {
-          value: finalTotalCents / 100,
-          currency: 'BRL',
-          num_items: quantity
-        });
+        const txIc = (data.idTransaction ?? "").trim();
+        const dedupeKey = txIc ? `alpha_fbq_initiate_checkout_${txIc}` : "alpha_fbq_initiate_checkout_notx";
+        let duplicate = false;
+        try {
+          duplicate = sessionStorage.getItem(dedupeKey) === "1";
+        } catch {
+          duplicate = false;
+        }
+        if (!duplicate) {
+          (window as any).fbq("track", "InitiateCheckout", {
+            value: finalTotalCents / 100,
+            currency: "BRL",
+            num_items: quantity,
+          });
+          try {
+            sessionStorage.setItem(dedupeKey, "1");
+          } catch {
+            // ignore
+          }
+        }
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Não foi possível gerar o Pix.";

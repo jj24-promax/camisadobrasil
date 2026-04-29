@@ -142,13 +142,13 @@ export function LandingCartDialog({
                       )}
                     >
                       {/* Miniatura do modelo atual */}
-                      <div className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-sm">
+                      <div className="relative aspect-square w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-sm sm:w-24">
                         <Image
                           src={itemModel.images.checkout}
                           alt={itemModel.fullName}
                           fill
-                          className="object-cover"
-                          sizes="96px"
+                          className="object-contain p-1"
+                          sizes="80px"
                         />
                       </div>
                       
@@ -157,27 +157,45 @@ export function LandingCartDialog({
                           {safeQty > 1 ? `Camisa ${index + 1}` : "Camisa"}
                         </p>
                         
-                        <div className="mb-3 grid grid-cols-2 gap-2">
-                          {PRODUCT_MODELS.filter(m => !m.inProduction).map((model) => {
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          Cores:
+                        </p>
+                        <div className="mb-3 grid grid-cols-3 gap-1.5 sm:gap-2">
+                          {PRODUCT_MODELS.filter((m) => !m.inProduction).map((model) => {
                             const activeModel = lineModels[index] === model.id;
+                            const swatchClass =
+                              model.slug === "sagrada"
+                                ? "bg-[#1a2a4a]"
+                                : model.slug === "canarinho"
+                                  ? "bg-[#fbbf24]"
+                                  : "bg-[#b91c1c]";
                             return (
                               <button
                                 key={`${index}-${model.id}`}
                                 type="button"
                                 onClick={() => setModelAt(index, model.id)}
                                 className={cn(
-                                  "flex h-10 items-center justify-center rounded-lg border text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-colors",
+                                  "flex h-10 min-w-0 items-center justify-center rounded-lg border px-1.5 transition-colors",
                                   activeModel
                                     ? "border-gold/60 bg-gold/[0.14] text-gold-bright"
                                     : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40 hover:bg-white/[0.06]"
                                 )}
+                                aria-label={`Selecionar cor ${model.name}`}
                               >
-                                {model.slug === "sagrada" ? "Sagrada" : "Canarinho"}
+                                <span
+                                  className={cn(
+                                    "h-3.5 w-3.5 shrink-0 rounded-full border border-white/25",
+                                    swatchClass
+                                  )}
+                                />
                               </button>
                             );
                           })}
                         </div>
-                        
+
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          Tamanhos:
+                        </p>
                         <div className="flex flex-wrap gap-2">
                           {SIZES.map((s) => (
                             <button

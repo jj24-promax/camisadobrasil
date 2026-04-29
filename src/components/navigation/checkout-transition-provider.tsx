@@ -11,6 +11,10 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import {
+  mergeCheckoutQueryWithMarketing,
+  persistMarketingSearchFromBrowser,
+} from "@/lib/checkout-navigation-params";
 
 type CheckoutTransitionContextValue = {
   /** `searchParams` sem o `?` inicial (ex.: `q=3&sizes=M%2CG%2CGG`). */
@@ -54,10 +58,15 @@ export function CheckoutTransitionProvider({ children }: { children: ReactNode }
     if (phase !== "overlay_in" || !pending.current || pushDone.current) return;
     const id = window.setTimeout(() => {
       pushDone.current = true;
-      router.push(`/checkout?${pending.current}`);
+      const merged = mergeCheckoutQueryWithMarketing(pending.current!);
+      router.push(`/checkout?${merged}`);
     }, OVERLAY_IN_MS);
     return () => window.clearTimeout(id);
   }, [phase, router]);
+
+  useEffect(() => {
+    persistMarketingSearchFromBrowser();
+  }, [pathname]);
 
   useEffect(() => {
     if (!pathname.startsWith("/checkout")) return;

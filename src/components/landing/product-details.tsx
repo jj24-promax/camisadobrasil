@@ -26,46 +26,62 @@ const benefits = [
   { icon: Heart, title: "Conforto Sagrado", copy: "Tecido tecnológico respirável que oferece frescor absoluto durante todo o uso." },
 ];
 
+/** Slides estáveis por edição — evita recriar array a cada render. */
+const arteRedencaoSlides = [
+  {
+    id: "sagrada-front",
+    edition: "edicao-sagrada",
+    label: "Vista frontal",
+    alt: "Modelo com camisa Brasil Alpha vista frontal",
+    imageSrc: PRODUCT_IMAGE_ARTE_REDENCAO_FRONT_SRC,
+    videoMp4Src: PRODUCT_VIDEO_ARTE_REDENCAO_FRONT_MP4_SRC,
+    videoWebmSrc: PRODUCT_VIDEO_ARTE_REDENCAO_FRONT_WEBM_SRC,
+  },
+  {
+    id: "sagrada-back",
+    edition: "edicao-sagrada",
+    label: "Vista costas",
+    alt: "Modelo com camisa Brasil Alpha vista costas",
+    imageSrc: PRODUCT_IMAGE_ARTE_REDENCAO_BACK_SRC,
+    videoMp4Src: PRODUCT_VIDEO_ARTE_REDENCAO_BACK_MP4_SRC,
+    videoWebmSrc: PRODUCT_VIDEO_ARTE_REDENCAO_BACK_WEBM_SRC,
+  },
+  {
+    id: "canarinho-front",
+    edition: "edicao-canarinho",
+    label: "Canarinho frontal",
+    alt: "Modelo com camisa canarinho amarela vista frontal",
+    imageSrc: "/images/amarela-1.webp",
+  },
+  {
+    id: "canarinho-back",
+    edition: "edicao-canarinho",
+    label: "Canarinho costas",
+    alt: "Modelo com camisa canarinho amarela vista costas",
+    imageSrc: "/images/amarela-2.webp",
+  },
+  {
+    id: "fenix-front",
+    edition: "edicao-vermelha",
+    label: "Fênix frontal",
+    alt: "Modelo com camisa Alpha Brasil Edição Fênix vermelha — vista frontal",
+    imageSrc: "/images/campaign/edicao-fenix-frente.png",
+  },
+  {
+    id: "fenix-back",
+    edition: "edicao-vermelha",
+    label: "Fênix costas",
+    alt: "Modelo com camisa Alpha Brasil Edição Fênix vermelha — vista costas",
+    imageSrc: "/images/campaign/edicao-fenix-costas.png",
+  },
+] as const;
+
 type ProductDetailsProps = {
   selectedEdition: HeroEditionId;
   onEditionChange: (edition: HeroEditionId) => void;
 };
 
 export function ProductDetails({ selectedEdition, onEditionChange }: ProductDetailsProps) {
-  const allSlides = [
-    {
-      id: "sagrada-front",
-      edition: "edicao-sagrada",
-      label: "Vista frontal",
-      alt: "Modelo com camisa Brasil Alpha vista frontal",
-      imageSrc: PRODUCT_IMAGE_ARTE_REDENCAO_FRONT_SRC,
-      videoMp4Src: PRODUCT_VIDEO_ARTE_REDENCAO_FRONT_MP4_SRC,
-      videoWebmSrc: PRODUCT_VIDEO_ARTE_REDENCAO_FRONT_WEBM_SRC,
-    },
-    {
-      id: "sagrada-back",
-      edition: "edicao-sagrada",
-      label: "Vista costas",
-      alt: "Modelo com camisa Brasil Alpha vista costas",
-      imageSrc: PRODUCT_IMAGE_ARTE_REDENCAO_BACK_SRC,
-      videoMp4Src: PRODUCT_VIDEO_ARTE_REDENCAO_BACK_MP4_SRC,
-      videoWebmSrc: PRODUCT_VIDEO_ARTE_REDENCAO_BACK_WEBM_SRC,
-    },
-    {
-      id: "canarinho-front",
-      edition: "edicao-canarinho",
-      label: "Canarinho frontal",
-      alt: "Modelo com camisa canarinho amarela vista frontal",
-      imageSrc: "/images/amarela-1.webp",
-    },
-    {
-      id: "canarinho-back",
-      edition: "edicao-canarinho",
-      label: "Canarinho costas",
-      alt: "Modelo com camisa canarinho amarela vista costas",
-      imageSrc: "/images/amarela-2.webp",
-    },
-  ] as const;
 
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -78,9 +94,9 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
   );
 
   const slides = useMemo(() => {
-    const filtered = allSlides.filter(s => s.edition === selectedEdition);
+    const filtered = arteRedencaoSlides.filter((s) => s.edition === selectedEdition);
     return filtered.length > 0 ? filtered : [];
-  }, [selectedEdition, allSlides]);
+  }, [selectedEdition]);
 
   const activeSlide = slides[activeSlideIndex] ?? null;
   const activeIsVideo = activeSlide && 'videoMp4Src' in activeSlide;
@@ -224,22 +240,22 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
                 <AnimatePresence mode="sync">
                   {activeSlide ? (
                     <>
-                      <div className="absolute inset-0 z-10 bg-gradient-to-t from-navy-deep/80 via-transparent to-transparent opacity-60 transition-opacity group-hover:opacity-40" />
                       <motion.div
                         key={activeSlide.id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute inset-0"
+                        className="absolute inset-0 z-[1]"
                       >
                         {!activeIsVideo || videoFailed ? (
                           <Image
                             src={activeSlide.imageSrc}
                             alt={activeSlide.alt}
                             fill
-                            className="object-cover"
+                            className="object-cover object-center"
                             sizes="(max-width: 768px) 90vw, 420px"
+                            quality={90}
                             loading="lazy"
                           />
                         ) : activeVideoSources ? (
@@ -263,6 +279,10 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
                           </video>
                         ) : null}
                       </motion.div>
+                      <div
+                        className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-navy-deep/80 via-transparent to-transparent opacity-60 transition-opacity group-hover:opacity-40"
+                        aria-hidden
+                      />
                     </>
                   ) : (
                     <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center bg-[#05080f]">
@@ -307,6 +327,28 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
                         Toque nas setas para alternar
                       </p>
                     )}
+                  </div>
+                )}
+
+                {slides.length > 1 && (
+                  <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
+                    {slides.map((slide, index) => {
+                      const isActive = index === activeSlideIndex;
+                      return (
+                        <button
+                          key={slide.id}
+                          type="button"
+                          onClick={() => setActiveSlideIndex(index)}
+                          className={cn(
+                            "h-2 w-2 rounded-full border transition-all",
+                            isActive
+                              ? "border-gold/80 bg-gold/90"
+                              : "border-white/40 bg-white/40 hover:border-gold/60 hover:bg-gold/40"
+                          )}
+                          aria-label={`Ir para foto ${index + 1}`}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>

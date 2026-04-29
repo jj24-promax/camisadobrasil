@@ -136,7 +136,7 @@ export function HeroSection({
           {/* VÍDEO/GIF - Direita (Desktop) na mesma linha do card (lg:row-start-2) / Cima (Mobile) */}
           <motion.div
             style={{ y: imgY }}
-            className="order-2 flex items-center justify-center lg:col-start-2 lg:row-start-2"
+            className="order-2 flex flex-col items-center justify-start gap-6 lg:col-start-2 lg:row-start-2"
           >
             <div className="relative w-full max-w-[380px] lg:max-w-[500px]">
               <div className="absolute -inset-4 rounded-[3rem] bg-gold/5 blur-3xl" />
@@ -228,17 +228,13 @@ export function HeroSection({
                 </AnimatePresence>
               </motion.div>
             </div>
-          </motion.div>
 
-          {/* CAIXA DE COMPRA E AVALIAÇÃO - Coluna Esquerda na mesma linha do GIF (lg:row-start-2) */}
-          <div className="order-3 flex flex-col gap-8 lg:col-start-1 lg:row-start-2">
-            
-            {/* SELO DE SATISFAÇÃO */}
+            {/* SELO DE SATISFAÇÃO (Movido para debaixo do GIF) */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="flex items-center justify-center gap-2 lg:justify-start"
+              className="flex items-center justify-center gap-2"
             >
               <div className="flex gap-0.5">
                 {[...Array(5)].map((_, i) => (
@@ -249,6 +245,10 @@ export function HeroSection({
                 +4.800 CLIENTES SATISFEITOS
               </span>
             </motion.div>
+          </motion.div>
+
+          {/* CAIXA DE COMPRA E AVALIAÇÃO - Coluna Esquerda na mesma linha do GIF (lg:row-start-2) */}
+          <div className="order-3 flex flex-col gap-8 lg:col-start-1 lg:row-start-2">
 
             {/* QUADRANTE DE COMPRA */}
             <motion.div

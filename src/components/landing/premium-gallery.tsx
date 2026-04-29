@@ -314,7 +314,7 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
                         type="button"
                         onClick={() => onEditionChange(edition.id)}
                         className={cn(
-                          "group relative h-10 w-10 overflow-hidden rounded-full border-2 transition-all duration-300",
+                          "group relative h-12 w-12 overflow-hidden rounded-full border-2 transition-all duration-300",
                           isActive
                             ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
                             : "border-white/10 hover:border-white/30"
@@ -342,25 +342,22 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
             </div>
 
             {/* Título e Descrição Dinâmicos da Galeria */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={selectedEdition}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
-                <h2 id="gallery-heading" className="mt-2 font-display text-[clamp(2.15rem,4.5vw,3.35rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance md:mt-5">
-                   <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">
-                    {selectedEditionData.name}
-                  </span>
-                </h2>
+            <motion.div
+              key={selectedEdition}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <h2 id="gallery-heading" className="mt-2 font-display text-[clamp(2.15rem,4.5vw,3.35rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance md:mt-5">
+                 <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">
+                  {selectedEditionData.name}
+                </span>
+              </h2>
 
-                <p className="mt-6 max-w-[36ch] text-[15px] leading-[1.75] text-muted-foreground/95 md:text-base">
-                  {selectedEditionData.shortDescription}
-                </p>
-              </motion.div>
-            </AnimatePresence>
+              <p className="mt-6 max-w-[36ch] text-[15px] leading-[1.75] text-muted-foreground/95 md:text-base">
+                {selectedEditionData.shortDescription}
+              </p>
+            </motion.div>
 
             <div className="mt-8 hidden items-center gap-3 border-t border-white/[0.06] pt-8 lg:flex">
               <div className="h-1 w-1 rounded-full bg-gold/50" />

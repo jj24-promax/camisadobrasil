@@ -166,31 +166,35 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
                   {HERO_EDITIONS.map((edition) => {
                     const isActive = selectedEdition === edition.id;
                     return (
-                      <button
-                        key={edition.id}
-                        type="button"
-                        onClick={() => onEditionChange(edition.id)}
-                        className={cn(
-                          "group relative h-12 w-12 overflow-hidden rounded-xl border-2 transition-all duration-300",
-                          isActive
-                            ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
-                            : "border-white/10 hover:border-white/30"
-                        )}
-                        aria-label={`Ver detalhes da cor ${edition.name}`}
-                      >
-                        <div 
-                          className="h-full w-full" 
-                          style={{ backgroundColor: edition.color }}
-                        />
-                        {isActive && (
-                          <motion.div 
-                            layoutId="details-color-check"
-                            className="absolute inset-0 flex items-center justify-center bg-black/20"
-                          >
-                            <div className="h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_white]" />
-                          </motion.div>
-                        )}
-                      </button>
+                      <div key={edition.id} className="flex flex-col items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onEditionChange(edition.id)}
+                          className={cn(
+                            "group relative h-12 w-12 overflow-hidden rounded-full border-2 transition-all duration-300",
+                            isActive
+                              ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                              : "border-white/10 hover:border-white/30"
+                          )}
+                          aria-label={`Ver detalhes da cor ${edition.name}`}
+                        >
+                          <div 
+                            className="h-full w-full" 
+                            style={{ backgroundColor: edition.color }}
+                          />
+                          {isActive && (
+                            <motion.div 
+                              layoutId="details-color-check"
+                              className="absolute inset-0 flex items-center justify-center bg-black/20"
+                            >
+                              <div className="h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_white]" />
+                            </motion.div>
+                          )}
+                        </button>
+                        <span className={cn("text-[8px] font-bold uppercase tracking-widest transition-colors", isActive ? "text-gold-bright" : "text-muted-foreground/60")}>
+                          {edition.name.split(' ')[1]}
+                        </span>
+                      </div>
                     );
                   })}
                 </div>
@@ -198,7 +202,6 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
 
               {/* Nome e Descrição Dinâmicos do Modelo */}
               <div className="min-h-[4rem] lg:min-h-0">
-                {/* Removido AnimatePresence para garantir que o texto não "suma" */}
                 <motion.div
                   key={selectedEdition}
                   initial={{ opacity: 0, y: 5 }}

@@ -72,7 +72,11 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
   const arteVideoRef = useRef<HTMLVideoElement | null>(null);
   const artePointerUnlock = useRef(false);
 
-  // Filtra slides baseado na edição selecionada
+  const selectedEditionData = useMemo(() => 
+    HERO_EDITIONS.find((e) => e.id === selectedEdition) ?? HERO_EDITIONS[0],
+    [selectedEdition]
+  );
+
   const slides = useMemo(() => {
     const filtered = allSlides.filter(s => s.edition === selectedEdition);
     return filtered.length > 0 ? filtered : [];
@@ -125,42 +129,64 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
                 Diferente de lançamentos recentes que geraram desconforto, nossa edição foca na clareza. Utilizamos a silhueta do Cristo Redentor como elemento central de proteção e orgulho nacional.
               </p>
 
-              {/* Seletor de Cores integrado aqui também */}
-              <div className="mt-10 space-y-4">
-                <p className="font-display text-[10px] font-semibold uppercase tracking-[0.2em] text-gold/80">
-                  Explorar por Edição:
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  {HERO_EDITIONS.map((edition) => {
-                    const isActive = selectedEdition === edition.id;
-                    return (
-                      <button
-                        key={edition.id}
-                        type="button"
-                        onClick={() => onEditionChange(edition.id)}
-                        className={cn(
-                          "group relative h-10 w-10 overflow-hidden rounded-xl border-2 transition-all duration-300",
-                          isActive
-                            ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
-                            : "border-white/10 hover:border-white/30"
-                        )}
-                        aria-label={`Ver detalhes da cor ${edition.name}`}
-                      >
-                        <div 
-                          className="h-full w-full" 
-                          style={{ backgroundColor: edition.color }}
-                        />
-                        {isActive && (
-                          <motion.div 
-                            layoutId="details-color-check"
-                            className="absolute inset-0 flex items-center justify-center bg-black/20"
-                          >
-                            <div className="h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_white]" />
-                          </motion.div>
-                        )}
-                      </button>
-                    );
-                  })}
+              <div className="mt-10 space-y-6">
+                <div>
+                  <p className="font-display text-[10px] font-semibold uppercase tracking-[0.2em] text-gold/80 mb-4">
+                    Explorar por Edição:
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    {HERO_EDITIONS.map((edition) => {
+                      const isActive = selectedEdition === edition.id;
+                      return (
+                        <button
+                          key={edition.id}
+                          type="button"
+                          onClick={() => onEditionChange(edition.id)}
+                          className={cn(
+                            "group relative h-10 w-10 overflow-hidden rounded-xl border-2 transition-all duration-300",
+                            isActive
+                              ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                              : "border-white/10 hover:border-white/30"
+                          )}
+                          aria-label={`Ver detalhes da cor ${edition.name}`}
+                        >
+                          <div 
+                            className="h-full w-full" 
+                            style={{ backgroundColor: edition.color }}
+                          />
+                          {isActive && (
+                            <motion.div 
+                              layoutId="details-color-check"
+                              className="absolute inset-0 flex items-center justify-center bg-black/20"
+                            >
+                              <div className="h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_white]" />
+                            </motion.div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Texto Dinâmico do Modelo e Descrição */}
+                <div className="min-h-[5rem]">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={selectedEdition}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.3 }}
+                      className="space-y-1.5"
+                    >
+                      <p className="font-display text-sm font-bold uppercase tracking-widest text-white">
+                        {selectedEditionData.name}
+                      </p>
+                      <p className="text-sm font-medium leading-relaxed text-muted-foreground/90">
+                        {selectedEditionData.shortDescription}
+                      </p>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
               </div>
             </SectionReveal>

@@ -116,6 +116,70 @@ export function HeroSection({
 
         <div className="grid grid-cols-1 items-center gap-10 md:gap-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14 w-full">
           <div className="order-2 flex flex-col justify-center text-center lg:order-1 lg:text-left">
+            
+            {/* Seletor de Cores - Movido para o topo para ficar perto do vídeo no mobile */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="mb-8 space-y-4"
+            >
+              <p className="text-center font-display text-[11px] font-bold uppercase tracking-[0.2em] text-gold/80 lg:text-left">
+                Cores disponíveis:
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
+                {HERO_EDITIONS.map((edition) => {
+                  const isActive = selectedEdition === edition.id;
+                  return (
+                    <button
+                      key={edition.id}
+                      type="button"
+                      onClick={() => onEditionChange(edition.id)}
+                      className={cn(
+                        "group relative h-12 w-12 overflow-hidden rounded-xl border-2 transition-all duration-300",
+                        isActive
+                          ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                          : "border-white/10 hover:border-white/30"
+                      )}
+                      aria-label={`Selecionar cor ${edition.name}`}
+                    >
+                      <div 
+                        className="h-full w-full" 
+                        style={{ backgroundColor: edition.color }}
+                      />
+                      {isActive && (
+                        <motion.div 
+                          layoutId="color-check"
+                          className="absolute inset-0 flex items-center justify-center bg-black/20"
+                        >
+                          <div className="h-2 w-2 rounded-full bg-white shadow-[0_0_8px_white]" />
+                        </motion.div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="min-h-10">
+                <AnimatePresence mode="wait">
+                  {selectedEditionData.inProduction ? (
+                    <motion.div
+                      key="production-badge"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 lg:justify-start"
+                    >
+                      <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
+                      <p className="text-xs font-bold uppercase tracking-widest text-amber-100">
+                        Em produção — Disponível em breve
+                      </p>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -172,64 +236,6 @@ export function HeroSection({
               <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-white/[0.02] p-6 shadow-luxe backdrop-blur-xl md:p-10">
                 <div className="flex flex-col gap-8">
                   
-                  {/* Seletor de Cores */}
-                  <div className="space-y-4">
-                    <p className="text-center font-display text-[11px] font-bold uppercase tracking-[0.2em] text-gold/80 lg:text-left">
-                      Cores disponíveis:
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
-                      {HERO_EDITIONS.map((edition) => {
-                        const isActive = selectedEdition === edition.id;
-                        return (
-                          <button
-                            key={edition.id}
-                            type="button"
-                            onClick={() => onEditionChange(edition.id)}
-                            className={cn(
-                              "group relative h-12 w-12 overflow-hidden rounded-xl border-2 transition-all duration-300",
-                              isActive
-                                ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
-                                : "border-white/10 hover:border-white/30"
-                            )}
-                            aria-label={`Selecionar cor ${edition.name}`}
-                          >
-                            <div 
-                              className="h-full w-full" 
-                              style={{ backgroundColor: edition.color }}
-                            />
-                            {isActive && (
-                              <motion.div 
-                                layoutId="color-check"
-                                className="absolute inset-0 flex items-center justify-center bg-black/20"
-                              >
-                                <div className="h-2 w-2 rounded-full bg-white shadow-[0_0_8px_white]" />
-                              </motion.div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="h-10">
-                      <AnimatePresence mode="wait">
-                        {selectedEditionData.inProduction ? (
-                          <motion.div
-                            key="production-badge"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 lg:justify-start"
-                          >
-                            <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
-                            <p className="text-xs font-bold uppercase tracking-widest text-amber-100">
-                              Em produção — Disponível em breve
-                            </p>
-                          </motion.div>
-                        ) : null}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-
                   <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                     <div className="text-center sm:text-left">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Modelo selecionado</p>

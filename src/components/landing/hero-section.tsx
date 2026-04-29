@@ -147,20 +147,27 @@ export function HeroSection({
               </span>
             </motion.h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="mx-auto mt-6 max-w-xl text-lg font-medium leading-relaxed text-muted-foreground/90 lg:mx-0 md:text-xl"
-            >
-              {selectedEditionData.shortDescription}
-            </motion.p>
+            {/* Container estabilizado para a descrição */}
+            <div className="mt-6 min-h-[5rem] sm:min-h-[6rem] md:min-h-[5rem] lg:min-h-[4rem]">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={selectedEdition}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  className="mx-auto max-w-xl text-lg font-medium leading-relaxed text-muted-foreground/90 lg:mx-0 md:text-xl"
+                >
+                  {selectedEditionData.shortDescription}
+                </motion.p>
+              </AnimatePresence>
+            </div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="mt-10 flex flex-col gap-6"
+              className="mt-6 flex flex-col gap-6"
             >
               <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-white/[0.02] p-6 shadow-luxe backdrop-blur-xl md:p-10">
                 <div className="flex flex-col gap-8">
@@ -203,27 +210,42 @@ export function HeroSection({
                       })}
                     </div>
 
-                    <AnimatePresence mode="wait">
-                      {selectedEditionData.inProduction ? (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 lg:justify-start"
-                        >
-                          <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
-                          <p className="text-xs font-bold uppercase tracking-widest text-amber-100">
-                            Em produção — Disponível em breve
-                          </p>
-                        </motion.div>
-                      ) : null}
-                    </AnimatePresence>
+                    <div className="h-10">
+                      <AnimatePresence mode="wait">
+                        {selectedEditionData.inProduction ? (
+                          <motion.div
+                            key="production-badge"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 lg:justify-start"
+                          >
+                            <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
+                            <p className="text-xs font-bold uppercase tracking-widest text-amber-100">
+                              Em produção — Disponível em breve
+                            </p>
+                          </motion.div>
+                        ) : null}
+                      </AnimatePresence>
+                    </div>
                   </div>
 
                   <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                     <div className="text-center sm:text-left">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Modelo selecionado</p>
-                      <p className="mt-1 max-w-xs text-sm font-semibold text-white">{selectedEditionData.name}</p>
+                      <div className="h-6">
+                        <AnimatePresence mode="wait">
+                          <motion.p 
+                            key={selectedEdition}
+                            initial={{ opacity: 0, x: -5 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 5 }}
+                            className="mt-1 max-w-xs text-sm font-semibold text-white"
+                          >
+                            {selectedEditionData.name}
+                          </motion.p>
+                        </AnimatePresence>
+                      </div>
                       {!selectedEditionData.inProduction && (
                         <>
                           <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Preço Exclusivo</p>
@@ -259,20 +281,27 @@ export function HeroSection({
                     )}
                   </div>
 
-                  <Button 
-                    size="xl" 
-                    disabled={selectedEditionData.inProduction}
-                    className={cn(
-                      "shimmer-btn w-full text-sm sm:text-base font-bold uppercase tracking-tight sm:tracking-normal",
-                      selectedEditionData.inProduction 
-                        ? "bg-white/5 text-muted-foreground border-white/10" 
-                        : "shadow-[0_0_30px_-5px_hsl(var(--gold)/0.4)]"
-                    )} 
-                    onClick={onBuyNow}
-                  >
-                    {!selectedEditionData.inProduction && <ArrowRight className="mr-3 h-5 w-5 shrink-0" />}
-                    {selectedEditionData.ctaLabel}
-                  </Button>
+                  <div className="mt-2">
+                    <AnimatePresence mode="wait">
+                      <Button 
+                        key={selectedEditionData.inProduction ? "btn-prod" : "btn-buy"}
+                        size="xl" 
+                        disabled={selectedEditionData.inProduction}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className={cn(
+                          "shimmer-btn w-full text-sm sm:text-base font-bold uppercase tracking-tight sm:tracking-normal",
+                          selectedEditionData.inProduction 
+                            ? "bg-white/5 text-muted-foreground border-white/10" 
+                            : "shadow-[0_0_30px_-5px_hsl(var(--gold)/0.4)]"
+                        )} 
+                        onClick={onBuyNow}
+                      >
+                        {!selectedEditionData.inProduction && <ArrowRight className="mr-3 h-5 w-5 shrink-0" />}
+                        {selectedEditionData.ctaLabel}
+                      </Button>
+                    </AnimatePresence>
+                  </div>
 
                   <PurchaseTrustBlock variant="hero" />
                 </div>

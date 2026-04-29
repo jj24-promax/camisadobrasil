@@ -153,11 +153,8 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
           </div>
 
           <SectionReveal className="lg:col-span-5 lg:col-start-8">
-            {/* Quadrante de Informações — Card apenas na Web */}
-            <div className={cn(
-              "mb-10 space-y-6 text-center lg:text-left transition-all",
-              "lg:rounded-[2rem] lg:border lg:border-white/[0.08] lg:bg-white/[0.02] lg:p-10 lg:shadow-luxe lg:backdrop-blur-xl"
-            )}>
+            {/* Quadrante de Informações da Edição */}
+            <div className="mb-10 space-y-6 text-center lg:text-left transition-all">
               <div>
                 <p className="font-display text-[10px] font-semibold uppercase tracking-[0.38em] text-gold/75 mb-4">
                   Escolha sua Edição:

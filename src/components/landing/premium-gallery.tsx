@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { CAMPAIGN_GALLERY_BY_MODEL, type HeroEditionId } from "@/lib/product";
+import { CAMPAIGN_GALLERY_BY_MODEL, type HeroEditionId, HERO_EDITIONS } from "@/lib/product";
 import { SectionReveal, SectionShell } from "@/components/landing/section-shell";
 import {
   Dialog,
@@ -58,8 +58,6 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
   const total = galleryImages.length;
   const hasImages = total > 0;
 
-  const editionOptions = Object.values(CAMPAIGN_GALLERY_BY_MODEL);
-
   /** Pré-carrega fotos da campanha para a troca não esperar rede após o clique. */
   useEffect(() => {
     if (!hasImages) return;
@@ -93,15 +91,59 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
       <div className="mx-auto max-w-[1280px]">
         <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-x-10 xl:gap-x-14 lg:gap-y-0">
           
-          {/* Coluna de Mídia — No topo em mobile */}
+          {/* Seletor de Cores — Em cima das galerias no mobile */}
+          <SectionReveal className="order-1 lg:hidden">
+            <div className="mb-10 space-y-4">
+              <p className="text-center font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80">
+                Explore as edições
+              </p>
+              <div className="flex flex-wrap justify-center gap-5">
+                {HERO_EDITIONS.map((edition) => {
+                  const isActive = selectedEdition === edition.id;
+                  return (
+                    <div key={edition.id} className="flex flex-col items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEditionChange(edition.id)}
+                        className={cn(
+                          "group relative h-12 w-12 overflow-hidden rounded-full border-2 transition-all duration-300",
+                          isActive
+                            ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                            : "border-white/10 hover:border-white/30"
+                        )}
+                        aria-label={`Selecionar cor ${edition.name}`}
+                      >
+                        <div 
+                          className="h-full w-full" 
+                          style={{ backgroundColor: edition.color }}
+                        />
+                        {isActive && (
+                          <motion.div 
+                            layoutId="gallery-color-check"
+                            className="absolute inset-0 flex items-center justify-center bg-black/20"
+                          >
+                            <div className="h-2 w-2 rounded-full bg-white shadow-[0_0_8px_white]" />
+                          </motion.div>
+                        )}
+                      </button>
+                      <span className={cn("text-[8px] font-bold uppercase tracking-widest transition-colors", isActive ? "text-gold-bright" : "text-muted-foreground/60")}>
+                        {edition.name.split(' ')[1]}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </SectionReveal>
+
+          {/* Coluna de Mídia */}
           <SectionReveal
             delay={0.06}
-            className="relative order-1 lg:col-span-7 lg:order-2"
+            className="relative order-2 lg:col-span-7"
           >
             <div className="flex flex-col gap-6 sm:gap-7 lg:flex-row lg:items-start lg:justify-end lg:gap-6 xl:gap-8">
-              {/* Moldura premium — centro nobre */}
+              {/* Moldura premium */}
               <div className="relative mx-auto w-full max-w-[400px] sm:max-w-[430px] lg:mx-0 lg:max-w-[min(100%,448px)] lg:flex-1">
-                {/* Halo + profundidade */}
                 <div
                   className="pointer-events-none absolute -inset-3 rounded-[2rem] bg-[radial-gradient(ellipse_at_50%_0%,hsl(38_35%_45%/0.09),transparent_62%)] blur-xl sm:-inset-4 sm:rounded-[2.15rem]"
                   aria-hidden
@@ -191,7 +233,7 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
                 </motion.div>
               </div>
 
-              {/* Miniaturas — navegação de campanha */}
+              {/* Miniaturas */}
               {hasImages && (
                 <div className="relative w-full lg:w-[5.25rem] lg:flex-shrink-0 xl:w-[5.75rem]">
                   <p className="mb-3 hidden text-[9px] font-medium uppercase tracking-[0.28em] text-muted-foreground/55 lg:block">
@@ -205,16 +247,6 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
                     )}
                     aria-label="Miniaturas da galeria"
                   >
-                    {/* Fade nas bordas — mobile */}
-                    <div
-                      className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-[#04070d] via-[#04070d]/90 to-transparent lg:hidden"
-                      aria-hidden
-                    />
-                    <div
-                      className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[#04070d] via-[#04070d]/90 to-transparent lg:hidden"
-                      aria-hidden
-                    />
-
                     {visibleThumbs.map((img, i) => {
                       const isActive = active === i;
                       return (
@@ -222,14 +254,12 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
                           key={img.src}
                           type="button"
                           aria-pressed={isActive}
-                          aria-label={`Mostrar foto ${i + 1} da campanha`}
                           onClick={() => {
                             setActive(i);
                             setLightboxOpen(false);
                           }}
                           className={cn(
-                            "group/thumb relative shrink-0 snap-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#04070d]",
-                            "transition-[transform,opacity] duration-300 ease-out",
+                            "group/thumb relative shrink-0 snap-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50 transition-[transform,opacity] duration-300 ease-out",
                             isActive ? "scale-[1.02] lg:scale-100" : "opacity-[0.52] hover:opacity-100"
                           )}
                         >
@@ -237,161 +267,90 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
                             className={cn(
                               "relative overflow-hidden rounded-2xl p-[1.5px] transition-shadow duration-300",
                               isActive
-                                ? "bg-gradient-to-b from-gold/45 via-gold/15 to-gold/5 shadow-[0_0_0_1px_rgba(212,175,55,0.25),0_12px_36px_-16px_rgba(0,0,0,0.85),0_0_28px_-12px_rgba(196,169,122,0.2)]"
-                                : "bg-gradient-to-b from-white/[0.08] to-white/[0.02] shadow-[0_8px_24px_-18px_rgba(0,0,0,0.7)] hover:from-white/[0.14] hover:to-white/[0.05] hover:shadow-[0_12px_32px_-14px_rgba(0,0,0,0.75)]"
+                                ? "bg-gradient-to-b from-gold/45 via-gold/15 to-gold/5 shadow-luxe"
+                                : "bg-gradient-to-b from-white/[0.08] to-white/[0.02] shadow-sm"
                             )}
                           >
-                            <div
-                              className={cn(
-                                "relative aspect-[4/5] h-[4.5rem] overflow-hidden rounded-[13px] bg-[#05080f] sm:h-[5rem]",
-                                "lg:h-auto lg:w-full"
-                              )}
-                            >
+                            <div className="relative aspect-[4/5] h-[4.5rem] overflow-hidden rounded-[13px] bg-[#05080f] sm:h-[5rem] lg:h-auto lg:w-full">
                               <Image
                                 src={img.src}
                                 alt=""
                                 fill
-                                sizes="(max-width: 1024px) 80px, 92px"
-                                loading={i === 0 ? undefined : "lazy"}
-                                quality={75}
+                                sizes="92px"
+                                loading="lazy"
                                 className={cn(
-                                  "object-cover object-center transition-transform duration-500 ease-out",
+                                  "object-cover transition-transform duration-500",
                                   isActive ? "scale-100" : "scale-[1.03] group-hover/thumb:scale-105"
                                 )}
                               />
-                              {isActive && (
-                                <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10" />
-                              )}
                             </div>
                           </div>
                         </button>
                       );
                     })}
                   </div>
-                  {!showAllThumbs && galleryImages.length > visibleThumbs.length ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllThumbs(true)}
-                      className="mt-3 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:border-gold/25 hover:text-gold-bright lg:mt-4"
-                    >
-                      Ver mais
-                    </button>
-                  ) : null}
                 </div>
               )}
             </div>
-
-            {hasImages && activeItem && (
-              <div className="mt-5 text-center lg:text-left">
-                <p className="text-sm text-muted-foreground/90">
-                  {activeItem.caption}
-                </p>
-                <p className="mt-3 text-[10px] uppercase tracking-[0.34em] text-muted-foreground/70 lg:mt-4 lg:tracking-[0.3em]">
-                  Toque para navegar ·{" "}
-                  <span className="text-muted-foreground/50">{galleryModel.name}</span>
-                </p>
-              </div>
-            )}
           </SectionReveal>
 
-          {/* Coluna editorial — texto */}
+          {/* Coluna editorial */}
           <SectionReveal
-            delay={0}
-            className="order-2 flex flex-col lg:col-span-5 lg:order-1 lg:min-h-0 lg:pr-2 xl:pr-4"
+            className="order-3 flex flex-col lg:col-span-5 lg:pr-2 xl:pr-4"
           >
-            {/* Seletor de Edições — Movido para o topo para facilitar a visualização no mobile */}
-            <div className="mb-10 space-y-4">
-              <p className="text-center font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80 lg:text-left">
-                Galeria da campanha
+            {/* Seletor de Cores — Desktop */}
+            <div className="mb-10 hidden space-y-4 lg:block">
+              <p className="font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80">
+                Explore as edições
               </p>
-              <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
-                {editionOptions.map((option) => {
-                  const isActive = option.modelId === selectedEdition;
-                  const isCanarinho = option.slug === "canarinho";
-                  const isVermelha = option.slug === "vermelha";
-                  
+              <div className="flex flex-wrap gap-5">
+                {HERO_EDITIONS.map((edition) => {
+                  const isActive = selectedEdition === edition.id;
                   return (
-                    <button
-                      key={option.slug}
-                      type="button"
-                      onClick={() => onEditionChange(option.modelId)}
-                      className={cn(
-                        "group relative inline-flex min-h-[2.5rem] items-center justify-center overflow-hidden rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]",
-                        isActive
-                          ? cn(
-                              "border border-gold/75 text-white shadow-[0_0_0_1px_rgba(212,175,55,0.35),0_0_28px_-8px_rgba(212,175,55,0.65),0_4px_24px_-12px_rgba(0,0,0,0.5)]",
-                              isCanarinho
-                                ? "bg-gradient-to-br from-emerald-400/[0.22] via-gold/[0.18] to-gold/[0.06] ring-1 ring-emerald-300/45"
-                                : isVermelha
-                                  ? "bg-gradient-to-br from-red-500/[0.22] via-gold/[0.18] to-gold/[0.06] ring-1 ring-red-400/45"
-                                  : "bg-gradient-to-br from-gold/[0.28] via-gold/[0.12] to-transparent ring-1 ring-gold/50"
-                            )
-                          : "border border-white/22 bg-black/[0.35] text-muted-foreground backdrop-blur-[2px] hover:border-gold/45 hover:bg-white/[0.06] hover:text-gold-bright hover:shadow-[0_0_22px_-10px_rgba(212,175,55,0.45)] active:scale-[0.98]"
-                      )}
-                      aria-pressed={isActive}
-                    >
-                      {isActive ? (
-                        <>
-                          <span
-                            aria-hidden
-                            className={cn(
-                              "pointer-events-none absolute -inset-px rounded-full opacity-95 blur-[0.5px]",
-                              isCanarinho
-                                ? "bg-[radial-gradient(ellipse_at_50%_-10%,rgba(167,243,208,0.5)_0%,rgba(212,175,55,0.15)_42%,transparent_68%)]"
-                                : isVermelha
-                                  ? "bg-[radial-gradient(ellipse_at_50%_-10%,rgba(239,68,68,0.5)_0%,rgba(212,175,55,0.15)_42%,transparent_68%)]"
-                                  : "bg-[radial-gradient(ellipse_at_50%_-10%,rgba(255,223,128,0.45)_0%,rgba(212,175,55,0.2)_42%,transparent_68%)]"
-                            )}
-                          />
-                          <span
-                            aria-hidden
-                            className="pointer-events-none absolute inset-x-3 top-0 h-[42%] rounded-t-full bg-gradient-to-b from-white/25 via-white/[0.06] to-transparent opacity-60"
-                          />
-                        </>
-                      ) : null}
-                      <span className="relative z-[1] drop-shadow-[0_1px_8px_rgba(0,0,0,0.55)]">
-                        {option.name}
+                    <div key={edition.id} className="flex flex-col items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEditionChange(edition.id)}
+                        className={cn(
+                          "group relative h-10 w-10 overflow-hidden rounded-full border-2 transition-all duration-300",
+                          isActive
+                            ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                            : "border-white/10 hover:border-white/30"
+                        )}
+                      >
+                        <div 
+                          className="h-full w-full" 
+                          style={{ backgroundColor: edition.color }}
+                        />
+                      </button>
+                      <span className={cn("text-[8px] font-bold uppercase tracking-widest", isActive ? "text-gold-bright" : "text-muted-foreground/60")}>
+                        {edition.name.split(' ')[1]}
                       </span>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
             </div>
 
-            <div
-              className="mb-6 flex items-center gap-4 md:mb-8"
-              aria-hidden
-            >
+            <div className="mb-6 flex items-center gap-4 md:mb-8" aria-hidden>
               <span className="h-px w-10 bg-gradient-to-r from-gold/70 to-gold/0 md:w-14" />
               <span className="font-display text-[9px] font-semibold uppercase tracking-[0.48em] text-gold/55">
                 Alpha Brasil
               </span>
             </div>
 
-            <h2
-              id="gallery-heading"
-              className="mt-2 font-display text-[clamp(2.15rem,4.5vw,3.35rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance md:mt-5"
-            >
-              Presença em{" "}
-              <span className="relative inline">
-                <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">
-                  cada detalhe
-                </span>
-                <span className="absolute -bottom-1 left-0 right-0 h-px bg-gradient-to-r from-gold/40 via-gold/15 to-transparent opacity-80" />
-              </span>
+            <h2 id="gallery-heading" className="mt-2 font-display text-[clamp(2.15rem,4.5vw,3.35rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance md:mt-5">
+              Presença em <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">cada detalhe</span>
             </h2>
 
-            <p className="mt-6 max-w-[36ch] text-[15px] leading-[1.75] text-muted-foreground/95 md:text-base md:leading-relaxed">
-              Fotos reais para mostrar o caimento, a presença e a identidade
-              da peça no corpo — a mesma linguagem visual da campanha Alpha
-              Brasil.
+            <p className="mt-6 max-w-[36ch] text-[15px] leading-[1.75] text-muted-foreground/95 md:text-base">
+              Fotos reais para mostrar o caimento, a presença e a identidade da peça no corpo.
             </p>
 
             <div className="mt-8 hidden items-center gap-3 border-t border-white/[0.06] pt-8 lg:flex">
               <div className="h-1 w-1 rounded-full bg-gold/50" />
               <p className="max-w-[32ch] text-xs leading-relaxed text-muted-foreground/75">
-                Selecione uma imagem ao lado para explorar os enquadramentos da
-                coleção.
+                Selecione uma imagem ao lado para explorar os enquadramentos da coleção.
               </p>
             </div>
           </SectionReveal>
@@ -400,32 +359,10 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
 
       {lightboxOpen && activeItem ? (
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-          <DialogContent
-            className={cn(
-              "flex max-h-[min(92dvh,960px)] w-[min(calc(100vw-1.25rem),920px)] max-w-none flex-col gap-0 overflow-hidden border border-white/[0.09] bg-[#05080f]/[0.98] p-2 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.95),0_0_0_1px_rgba(212,175,55,0.08)] backdrop-blur-2xl sm:p-3 md:p-4",
-              "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl sm:rounded-[1.35rem]"
-            )}
-          >
-            <DialogTitle className="sr-only">{activeItem.alt}</DialogTitle>
-            <DialogDescription className="sr-only">
-              Visualização ampliada da foto da campanha.
-            </DialogDescription>
-            <div className="relative flex min-h-0 w-full flex-1 items-center justify-center rounded-xl bg-gradient-to-b from-[#03060c] to-[#050a12]">
-              <div className="relative h-[min(82dvh,880px)] w-full">
-                <Image
-                  src={activeItem.src}
-                  alt={activeItem.alt}
-                  fill
-                  className="object-contain object-center"
-                  sizes="(max-width: 920px) 96vw, 880px"
-                  loading="lazy"
-                  quality={95}
-                />
-              </div>
+          <DialogContent className="max-w-4xl border-none bg-transparent p-0 shadow-none">
+            <div className="relative aspect-[4/5] w-full">
+              <Image src={activeItem.src} alt={activeItem.alt} fill className="object-contain" />
             </div>
-            <p className="mt-2 px-1 text-center text-[10px] uppercase tracking-[0.28em] text-muted-foreground/85 sm:mt-3">
-              Esc · clique fora ou ✕ para fechar
-            </p>
           </DialogContent>
         </Dialog>
       ) : null}

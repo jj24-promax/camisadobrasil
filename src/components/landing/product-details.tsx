@@ -156,7 +156,7 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
             {/* Quadrante de Informações — Card apenas na Web */}
             <div className={cn(
               "mb-10 space-y-6 text-center lg:text-left transition-all",
-              "lg:glass-dark lg:p-8 lg:rounded-[2rem] lg:border lg:border-white/[0.08] lg:shadow-luxe"
+              "lg:rounded-[2rem] lg:border lg:border-white/[0.08] lg:bg-white/[0.02] lg:p-10 lg:shadow-luxe lg:backdrop-blur-xl"
             )}>
               <div>
                 <p className="font-display text-[10px] font-semibold uppercase tracking-[0.38em] text-gold/75 mb-4">
@@ -197,20 +197,20 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
               </div>
 
               {/* Nome e Descrição Dinâmicos do Modelo */}
-              <div className="min-h-[5.5rem] lg:min-h-[auto]">
+              <div className="min-h-[6rem] lg:min-h-0">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={selectedEdition}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     className="space-y-2"
                   >
-                    <p className="font-display text-[13px] font-bold uppercase tracking-[0.24em] text-gold-bright">
+                    <p className="font-display text-[14px] font-bold uppercase tracking-[0.24em] text-gold-bright">
                       {selectedEditionData.name}
                     </p>
-                    <p className="mx-auto max-w-[32ch] text-sm font-medium leading-relaxed text-muted-foreground/95 lg:mx-0 lg:max-w-none">
+                    <p className="mx-auto max-w-[32ch] text-[15px] font-medium leading-relaxed text-white/80 lg:mx-0 lg:max-w-none">
                       {selectedEditionData.shortDescription}
                     </p>
                   </motion.div>

@@ -113,10 +113,9 @@ export function HeroSection({
           </div>
         </motion.div>
 
-        <div className="grid w-full grid-cols-1 gap-10 md:gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-14">
+        <div className="flex flex-col gap-10 md:gap-16 lg:grid lg:grid-cols-[1.1fr_0.9fr] lg:gap-14 w-full">
           
-          {/* TÍTULO - Alinhado no topo da grelha */}
-          <div className="order-1 text-center lg:col-start-1 lg:row-start-1 lg:text-left">
+          <div className="order-1 text-center lg:text-left">
             <motion.h1
               id="hero-heading"
               initial={{ opacity: 0, y: 20 }}
@@ -133,10 +132,9 @@ export function HeroSection({
             </motion.h1>
           </div>
 
-          {/* VÍDEO/GIF - Na mesma altura do Título no Desktop */}
           <motion.div
             style={{ y: imgY }}
-            className="order-2 flex items-start justify-center lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-[12vh]"
+            className="order-2 flex items-center justify-center lg:col-start-2 lg:row-start-1 lg:row-span-2"
           >
             <div className="relative w-full max-w-[380px] lg:max-w-[500px]">
               <div className="absolute -inset-4 rounded-[3rem] bg-gold/5 blur-3xl" />
@@ -220,15 +218,13 @@ export function HeroSection({
             </div>
           </motion.div>
 
-          {/* CAIXA DE COMPRA E AVALIAÇÃO - Coluna Esquerda */}
-          <div className="order-3 flex flex-col gap-8 lg:col-start-1 lg:row-start-2">
+          <div className="order-3 flex flex-col justify-center text-center lg:text-left">
             
-            {/* SELO DE SATISFAÇÃO */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="flex items-center justify-center gap-2 lg:justify-start"
+              className="mb-10 flex items-center justify-center gap-2 lg:justify-start"
             >
               <div className="flex gap-0.5">
                 {[...Array(5)].map((_, i) => (
@@ -240,7 +236,6 @@ export function HeroSection({
               </span>
             </motion.div>
 
-            {/* QUADRANTE DE COMPRA */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -248,9 +243,8 @@ export function HeroSection({
               className="flex flex-col gap-6"
             >
               <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-white/[0.02] p-6 shadow-luxe backdrop-blur-xl md:p-10">
-                <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-6">
                   
-                  {/* SEÇÃO 1: CORES E INFORMAÇÕES DA EDIÇÃO */}
                   <div className="flex flex-col gap-4">
                     <p className="text-center font-display text-[10px] font-bold uppercase tracking-[0.2em] text-gold/80 sm:text-left">
                       Escolha sua Edição:
@@ -288,7 +282,7 @@ export function HeroSection({
                       })}
                     </div>
 
-                    <div className="mt-2 min-h-[4rem] text-center sm:text-left">
+                    <div className="mt-1 min-h-[3.5rem] text-center sm:text-left">
                       <AnimatePresence mode="wait">
                         <motion.div
                           key={selectedEdition}
@@ -308,29 +302,26 @@ export function HeroSection({
                       </AnimatePresence>
                     </div>
 
-                    <div className="min-h-10">
-                      <AnimatePresence mode="wait">
-                        {selectedEditionData.inProduction ? (
-                          <motion.div
-                            key="production-badge"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:justify-start"
-                          >
-                            <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
-                            <p className="text-xs font-bold uppercase tracking-widest text-amber-100">
-                              Em produção — Disponível em breve
-                            </p>
-                          </motion.div>
-                        ) : null}
-                      </AnimatePresence>
-                    </div>
+                    <AnimatePresence mode="wait">
+                      {selectedEditionData.inProduction ? (
+                        <motion.div
+                          key="production-badge"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="mt-1 flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:justify-start"
+                        >
+                          <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
+                          <p className="text-xs font-bold uppercase tracking-widest text-amber-100">
+                            Em produção — Disponível em breve
+                          </p>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
                   </div>
 
                   <div className="h-px w-full bg-white/[0.06]" />
 
-                  {/* SEÇÃO 2: PREÇO E TAMANHOS */}
                   <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                     <div className="text-center sm:text-left">
                       {!selectedEditionData.inProduction && (

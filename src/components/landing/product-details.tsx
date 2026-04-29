@@ -153,7 +153,11 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
           </div>
 
           <SectionReveal className="lg:col-span-5 lg:col-start-8">
-            <div className="mb-10 space-y-6 text-center lg:text-left">
+            {/* Quadrante de Informações — Card apenas na Web */}
+            <div className={cn(
+              "mb-10 space-y-6 text-center lg:text-left transition-all",
+              "lg:glass-dark lg:p-8 lg:rounded-[2rem] lg:border lg:border-white/[0.08] lg:shadow-luxe"
+            )}>
               <div>
                 <p className="font-display text-[10px] font-semibold uppercase tracking-[0.38em] text-gold/75 mb-4">
                   Escolha sua Edição:
@@ -192,14 +196,14 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
                 </div>
               </div>
 
-              {/* Nome e Descrição Dinâmicos — Ajustado para Mobile */}
-              <div className="min-h-[5.5rem] border-white/5 lg:border-l lg:pl-5">
+              {/* Nome e Descrição Dinâmicos do Modelo */}
+              <div className="min-h-[5.5rem] lg:min-h-[auto]">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={selectedEdition}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     className="space-y-2"
                   >

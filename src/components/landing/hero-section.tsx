@@ -113,112 +113,29 @@ export function HeroSection({
           </div>
         </motion.div>
 
-        <div className="flex flex-col gap-10 md:gap-16 lg:grid lg:grid-cols-[1.1fr_0.9fr] lg:gap-14 w-full">
-          
-          <div className="order-1 text-center lg:text-left">
-            <motion.h1
-              id="hero-heading"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="font-display font-extrabold tracking-tight"
-            >
-              <span className="block text-[clamp(2.5rem,7vw,4.5rem)] leading-[0.9] text-white">
-                A Identidade que
-              </span>
-              <span className="mt-2 block bg-gradient-to-r from-gold-bright via-gold to-gold-muted bg-clip-text text-[clamp(2.5rem,7vw,4.5rem)] leading-[1] text-transparent">
-                Protege e Une.
-              </span>
-            </motion.h1>
-          </div>
-
-          <motion.div
-            style={{ y: imgY }}
-            className="order-2 flex items-center justify-center lg:col-start-2 lg:row-start-1 lg:row-span-2"
+        {/* TÍTULO - Centralizado no topo */}
+        <div className="mb-10 w-full text-center md:mb-14">
+          <motion.h1
+            id="hero-heading"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="font-display font-extrabold tracking-tight"
           >
-            <div className="relative w-full max-w-[380px] lg:max-w-[500px]">
-              <div className="absolute -inset-4 rounded-[3rem] bg-gold/5 blur-3xl" />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="hero-product-frame relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-[#02050a] backdrop-blur-sm"
-              >
-                <AnimatePresence mode="popLayout" initial={false}>
-                  <motion.div
-                    key={selectedEditionData.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.5, ease: "easeInOut" }}
-                    className="absolute inset-0 h-full w-full"
-                  >
-                    {heroItem.kind === "image" || heroVideoFailed ? (
-                      <>
-                        <Image
-                          src={activeEditionImageSrc ?? heroItem.src}
-                          alt={heroItem.alt}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 1024px) 90vw, 500px"
-                          priority
-                        />
-                        {canNavigateEditionGallery ? (
-                          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between px-3">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setSelectedEditionImageIndex((prev) =>
-                                  prev === 0 ? selectedEditionGallery.length - 1 : prev - 1
-                                )
-                              }
-                              className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-[#04070d]/70 text-gold-bright backdrop-blur-md transition hover:border-gold/70 hover:bg-[#04070d]/90"
-                              aria-label="Imagem anterior da edição"
-                            >
-                              <ChevronLeft className="h-4 w-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setSelectedEditionImageIndex((prev) =>
-                                  prev === selectedEditionGallery.length - 1 ? 0 : prev + 1
-                                )
-                              }
-                              className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-[#04070d]/70 text-gold-bright backdrop-blur-md transition hover:border-gold/70 hover:bg-[#04070d]/90"
-                              aria-label="Próxima imagem da edição"
-                            >
-                              <ChevronRight className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ) : null}
-                      </>
-                    ) : (
-                      <video
-                        ref={heroVideoRef}
-                        key={`${selectedEditionData.id}-video`}
-                        className="video-embed-no-native-ui h-full w-full object-cover"
-                        muted
-                        loop
-                        playsInline
-                        autoPlay
-                        preload="auto"
-                        aria-label={heroItem.alt}
-                        controls={false}
-                        disablePictureInPicture
-                        controlsList="nodownload noremoteplayback nofullscreen"
-                        onError={() => setHeroVideoFailed(true)}
-                      >
-                        <source src={heroItem.mp4Src} type="video/mp4" />
-                        <source src={heroItem.webmSrc} type="video/webm" />
-                      </video>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </motion.div>
-            </div>
-          </motion.div>
+            <span className="block text-[clamp(2.5rem,7vw,4.5rem)] leading-[0.9] text-white">
+              A Identidade que
+            </span>
+            <span className="mt-2 inline-block bg-gradient-to-r from-gold-bright via-gold to-gold-muted bg-clip-text text-[clamp(2.5rem,7vw,4.5rem)] leading-[1] text-transparent">
+              Protege e Une.
+            </span>
+          </motion.h1>
+        </div>
 
-          <div className="order-3 flex flex-col justify-center text-center lg:text-left">
+        {/* COLUNAS: ESQUERDA (VALORES) / DIREITA (VÍDEO) */}
+        <div className="grid w-full grid-cols-1 gap-10 md:gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-14">
+          
+          {/* CAIXA DE COMPRA E AVALIAÇÃO - Esquerda (Desktop) / Baixo (Mobile) */}
+          <div className="order-2 flex flex-col justify-center text-center lg:order-1 lg:text-left">
             
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -309,7 +226,7 @@ export function HeroSection({
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.95 }}
-                          className="mt-1 flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:justify-start"
+                          className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:justify-start"
                         >
                           <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
                           <p className="text-xs font-bold uppercase tracking-widest text-amber-100">
@@ -386,6 +303,94 @@ export function HeroSection({
               </div>
             </motion.div>
           </div>
+
+          {/* VÍDEO/GIF - Direita (Desktop) / Cima (Mobile) */}
+          <motion.div
+            style={{ y: imgY }}
+            className="order-1 flex items-start justify-center lg:order-2 lg:sticky lg:top-[12vh]"
+          >
+            <div className="relative w-full max-w-[380px] lg:max-w-[500px]">
+              <div className="absolute -inset-4 rounded-[3rem] bg-gold/5 blur-3xl" />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className="hero-product-frame relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-[#02050a] backdrop-blur-sm"
+              >
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.div
+                    key={selectedEditionData.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                    className="absolute inset-0 h-full w-full"
+                  >
+                    {heroItem.kind === "image" || heroVideoFailed ? (
+                      <>
+                        <Image
+                          src={activeEditionImageSrc ?? heroItem.src}
+                          alt={heroItem.alt}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 1024px) 90vw, 500px"
+                          priority
+                        />
+                        {canNavigateEditionGallery ? (
+                          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between px-3">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSelectedEditionImageIndex((prev) =>
+                                  prev === 0 ? selectedEditionGallery.length - 1 : prev - 1
+                                )
+                              }
+                              className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-[#04070d]/70 text-gold-bright backdrop-blur-md transition hover:border-gold/70 hover:bg-[#04070d]/90"
+                              aria-label="Imagem anterior da edição"
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSelectedEditionImageIndex((prev) =>
+                                  prev === selectedEditionGallery.length - 1 ? 0 : prev + 1
+                                )
+                              }
+                              className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-[#04070d]/70 text-gold-bright backdrop-blur-md transition hover:border-gold/70 hover:bg-[#04070d]/90"
+                              aria-label="Próxima imagem da edição"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : null}
+                      </>
+                    ) : (
+                      <video
+                        ref={heroVideoRef}
+                        key={`${selectedEditionData.id}-video`}
+                        className="video-embed-no-native-ui h-full w-full object-cover"
+                        muted
+                        loop
+                        playsInline
+                        autoPlay
+                        preload="auto"
+                        aria-label={heroItem.alt}
+                        controls={false}
+                        disablePictureInPicture
+                        controlsList="nodownload noremoteplayback nofullscreen"
+                        onError={() => setHeroVideoFailed(true)}
+                      >
+                        <source src={heroItem.mp4Src} type="video/mp4" />
+                        <source src={heroItem.webmSrc} type="video/webm" />
+                      </video>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </motion.div>
+            </div>
+          </motion.div>
+
         </div>
       </div>
     </section>

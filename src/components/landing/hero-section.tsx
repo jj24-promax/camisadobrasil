@@ -72,7 +72,6 @@ export function HeroSection({
     setHeroVideoFailed(false);
   }, [selectedEdition]);
 
-  /** Primeiro toque na hero (gesto do utilizador) — iOS por vezes só aí liberta o loop. */
   const onHeroPointerDown = useCallback(() => {
     if (heroPointerUnlockDone.current) return;
     heroPointerUnlockDone.current = true;
@@ -116,7 +115,6 @@ export function HeroSection({
 
         <div className="flex flex-col gap-10 md:gap-16 lg:grid lg:grid-cols-[1.1fr_0.9fr] lg:gap-14 w-full">
           
-          {/* TÍTULO - SEMPRE NO TOPO NO MOBILE */}
           <div className="order-1 text-center lg:text-left">
             <motion.h1
               id="hero-heading"
@@ -134,7 +132,6 @@ export function HeroSection({
             </motion.h1>
           </div>
 
-          {/* VÍDEO/GIF - SEGUNDO LUGAR NO MOBILE */}
           <motion.div
             style={{ y: imgY }}
             className="order-2 flex items-center justify-center lg:col-start-2 lg:row-start-1 lg:row-span-2"
@@ -176,7 +173,6 @@ export function HeroSection({
                                 )
                               }
                               className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-[#04070d]/70 text-gold-bright backdrop-blur-md transition hover:border-gold/70 hover:bg-[#04070d]/90"
-                              aria-label="Imagem anterior da edição"
                             >
                               <ChevronLeft className="h-4 w-4" />
                             </button>
@@ -188,7 +184,6 @@ export function HeroSection({
                                 )
                               }
                               className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-[#04070d]/70 text-gold-bright backdrop-blur-md transition hover:border-gold/70 hover:bg-[#04070d]/90"
-                              aria-label="Próxima imagem da edição"
                             >
                               <ChevronRight className="h-4 w-4" />
                             </button>
@@ -221,14 +216,13 @@ export function HeroSection({
             </div>
           </motion.div>
 
-          {/* SELETOR DE CORES E DESCRIÇÃO - TERCEIRO LUGAR NO MOBILE */}
           <div className="order-3 flex flex-col justify-center text-center lg:text-left">
             
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="mb-8 space-y-4"
+              className="mb-6 space-y-4"
             >
               <p className="text-center font-display text-[11px] font-bold uppercase tracking-[0.2em] text-gold/80 lg:text-left">
                 Cores disponíveis:
@@ -247,7 +241,6 @@ export function HeroSection({
                           ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
                           : "border-white/10 hover:border-white/30"
                       )}
-                      aria-label={`Selecionar cor ${edition.name}`}
                     >
                       <div 
                         className="h-full w-full" 
@@ -266,19 +259,24 @@ export function HeroSection({
                 })}
               </div>
 
-              {/* Descrição em baixo das cores */}
-              <div className="mt-4 min-h-[4rem]">
+              {/* Título do modelo e Descrição juntos */}
+              <div className="mt-6 flex flex-col gap-2 min-h-[6rem]">
                 <AnimatePresence mode="wait">
-                  <motion.p
+                  <motion.div
                     key={selectedEdition}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="mx-auto max-w-xl text-lg font-medium leading-relaxed text-muted-foreground/90 lg:mx-0 md:text-xl"
+                    transition={{ duration: 0.35 }}
+                    className="flex flex-col gap-1.5"
                   >
-                    {selectedEditionData.shortDescription}
-                  </motion.p>
+                    <p className="font-display text-sm font-bold uppercase tracking-widest text-white">
+                      {selectedEditionData.name}
+                    </p>
+                    <p className="mx-auto max-w-xl text-base font-medium leading-relaxed text-muted-foreground/90 lg:mx-0">
+                      {selectedEditionData.shortDescription}
+                    </p>
+                  </motion.div>
                 </AnimatePresence>
               </div>
 
@@ -302,7 +300,6 @@ export function HeroSection({
               </div>
             </motion.div>
 
-            {/* SELO DE SATISFAÇÃO - QUARTO LUGAR NO MOBILE */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -319,7 +316,6 @@ export function HeroSection({
               </span>
             </motion.div>
 
-            {/* CAIXA DE COMPRA - FINAL NO MOBILE */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -331,23 +327,9 @@ export function HeroSection({
                   
                   <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                     <div className="text-center sm:text-left">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Modelo selecionado</p>
-                      <div className="h-6">
-                        <AnimatePresence mode="wait">
-                          <motion.p 
-                            key={selectedEdition}
-                            initial={{ opacity: 0, x: -5 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 5 }}
-                            className="mt-1 max-w-xs text-sm font-semibold text-white"
-                          >
-                            {selectedEditionData.name}
-                          </motion.p>
-                        </AnimatePresence>
-                      </div>
                       {!selectedEditionData.inProduction && (
                         <>
-                          <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Preço Exclusivo</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Preço Exclusivo</p>
                           <div className="mt-2 flex items-baseline justify-center gap-2 sm:justify-start">
                             <span className="text-sm text-muted-foreground line-through">R$ 149,00</span>
                             <span className="price-gold-glow font-display text-4xl font-bold text-gold-bright">{PRODUCT.priceFormatted}</span>

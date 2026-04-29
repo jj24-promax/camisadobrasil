@@ -16,7 +16,7 @@ import {
 } from "@/lib/product";
 import { SECTION_STAGGER } from "@/hooks/use-section-motion";
 import { useInlineMutedVideoAutoplay } from "@/hooks/use-inline-muted-video-autoplay";
-import { ChevronLeft, ChevronRight, ShieldCheck, Sparkles, Map, Heart, CameraOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShieldCheck, Sparkles, Map, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const benefits = [
@@ -266,9 +266,20 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
                     ) : null}
                   </motion.div>
                 ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-navy-deep/40 px-8 text-center">
-                    <CameraOff className="h-10 w-10 text-white/20" strokeWidth={1.5} />
-                    <p className="text-sm font-semibold text-white/60">Edição em Produção</p>
+                  <div className="absolute inset-0 flex h-full w-full flex-col">
+                    <Image
+                      src="/images/camisa-hero-produto-isolado.png"
+                      alt="Edição em Produção"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 90vw, 420px"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+                    <div className="absolute bottom-10 left-0 right-0 flex flex-col items-center text-center px-6 z-20">
+                      <div className="inline-flex rounded-full border border-white/10 bg-black/50 px-5 py-2.5 backdrop-blur-md">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-white">Edição em Produção</p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </AnimatePresence>

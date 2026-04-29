@@ -8,11 +8,9 @@ import { SectionReveal, SectionShell } from "@/components/landing/section-shell"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Maximize2, CameraOff } from "lucide-react";
+import { Maximize2 } from "lucide-react";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -93,75 +91,47 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
       <div className="mx-auto max-w-[1280px]">
         <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-x-10 xl:gap-x-14 lg:gap-y-0">
           
-          {/* Informações da Edição — Mobile */}
+          {/* Seletor de Cores — Mobile */}
           <SectionReveal className="order-1 lg:hidden">
-            <div className="mb-6 space-y-6">
-              <div className="space-y-4">
-                <p className="text-center font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80">
-                  Explore as edições
-                </p>
-                <div className="flex flex-wrap justify-center gap-5">
-                  {HERO_EDITIONS.map((edition) => {
-                    const isActive = selectedEdition === edition.id;
-                    return (
-                      <div key={edition.id} className="flex flex-col items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onEditionChange(edition.id)}
-                          className={cn(
-                            "group relative h-12 w-12 overflow-hidden rounded-full border-2 transition-all duration-300",
-                            isActive
-                              ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
-                              : "border-white/10 hover:border-white/30"
-                          )}
-                          aria-label={`Selecionar cor ${edition.name}`}
-                        >
-                          <div 
-                            className="h-full w-full" 
-                            style={{ backgroundColor: edition.color }}
-                          />
-                          {isActive && (
-                            <motion.div 
-                              layoutId="gallery-color-check-mobile"
-                              className="absolute inset-0 flex items-center justify-center bg-black/20"
-                            >
-                              <div className="h-2 w-2 rounded-full bg-white shadow-[0_0_8px_white]" />
-                            </motion.div>
-                          )}
-                        </button>
-                        <span className={cn("text-[8px] font-bold uppercase tracking-widest transition-colors", isActive ? "text-gold-bright" : "text-muted-foreground/60")}>
-                          {edition.name.split(' ')[1]}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Título e Descrição (Mobile) */}
-              <div className="flex flex-col items-center text-center">
-                <div className="mb-4 flex items-center justify-center gap-4" aria-hidden>
-                  <span className="h-px w-8 bg-gradient-to-r from-gold/0 via-gold/70 to-gold/0" />
-                  <span className="font-display text-[9px] font-semibold uppercase tracking-[0.48em] text-gold/55">
-                    Alpha Brasil
-                  </span>
-                  <span className="h-px w-8 bg-gradient-to-r from-gold/0 via-gold/70 to-gold/0" />
-                </div>
-                <motion.div
-                  key={selectedEdition}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                >
-                  <h2 className="font-display text-[clamp(2rem,6vw,2.5rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance">
-                    <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">
-                      {selectedEditionData.name}
-                    </span>
-                  </h2>
-                  <p className="mx-auto mt-4 max-w-[36ch] text-[14px] leading-[1.65] text-muted-foreground/95">
-                    {selectedEditionData.shortDescription}
-                  </p>
-                </motion.div>
+            <div className="mb-10 space-y-4">
+              <p className="text-center font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80">
+                Explore as edições
+              </p>
+              <div className="flex flex-wrap justify-center gap-5">
+                {HERO_EDITIONS.map((edition) => {
+                  const isActive = selectedEdition === edition.id;
+                  return (
+                    <div key={edition.id} className="flex flex-col items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEditionChange(edition.id)}
+                        className={cn(
+                          "group relative h-12 w-12 overflow-hidden rounded-full border-2 transition-all duration-300",
+                          isActive
+                            ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                            : "border-white/10 hover:border-white/30"
+                        )}
+                        aria-label={`Selecionar cor ${edition.name}`}
+                      >
+                        <div 
+                          className="h-full w-full" 
+                          style={{ backgroundColor: edition.color }}
+                        />
+                        {isActive && (
+                          <motion.div 
+                            layoutId="gallery-color-check"
+                            className="absolute inset-0 flex items-center justify-center bg-black/20"
+                          >
+                            <div className="h-2 w-2 rounded-full bg-white shadow-[0_0_8px_white]" />
+                          </motion.div>
+                        )}
+                      </button>
+                      <span className={cn("text-[8px] font-bold uppercase tracking-widest transition-colors", isActive ? "text-gold-bright" : "text-muted-foreground/60")}>
+                        {edition.name.split(' ')[1]}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </SectionReveal>
@@ -224,13 +194,22 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
                         </AnimatePresence>
                       </>
                     ) : (
-                      <div className="flex flex-col items-center gap-4 text-center px-8">
-                        <CameraOff className="h-10 w-10 text-white/20" strokeWidth={1.5} />
-                        <div>
-                          <p className="text-sm font-semibold text-white/60">Edição em Produção</p>
-                          <p className="mt-2 text-xs text-muted-foreground/60 leading-relaxed">
-                            Estamos finalizando as fotos exclusivas desta peça. Disponível em breve.
-                          </p>
+                      <div className="absolute inset-0 flex h-full w-full flex-col">
+                        <Image
+                          src="/images/camisa-hero-produto-isolado.png"
+                          alt="Edição em Produção"
+                          fill
+                          className="object-cover"
+                          sizes={MAIN_SIZES}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+                        <div className="absolute bottom-10 left-0 right-0 flex flex-col items-center text-center px-6">
+                          <div className="rounded-2xl border border-white/10 bg-black/50 px-6 py-4 backdrop-blur-md">
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-white">Edição em Produção</p>
+                            <p className="mt-2 mx-auto max-w-[250px] text-[11px] leading-relaxed text-white/70">
+                              Estamos finalizando as fotos exclusivas desta peça. Disponível em breve.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -324,76 +303,74 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
             </div>
           </SectionReveal>
 
-          {/* Coluna editorial (Desktop apenas, Mobile já renderizado em cima) */}
+          {/* Coluna editorial */}
           <SectionReveal
             className="order-3 flex flex-col lg:col-span-5 lg:pr-2 xl:pr-4"
           >
-            {/* Seletor de Cores e Título — Desktop */}
-            <div className="hidden lg:block">
-              <div className="mb-10 space-y-4">
-                <p className="font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80">
-                  Explore as edições
-                </p>
-                <div className="flex flex-wrap gap-5">
-                  {HERO_EDITIONS.map((edition) => {
-                    const isActive = selectedEdition === edition.id;
-                    return (
-                      <div key={edition.id} className="flex flex-col items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onEditionChange(edition.id)}
-                          className={cn(
-                            "group relative h-12 w-12 overflow-hidden rounded-full border-2 transition-all duration-300",
-                            isActive
-                              ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
-                              : "border-white/10 hover:border-white/30"
-                          )}
-                        >
-                          <div 
-                            className="h-full w-full" 
-                            style={{ backgroundColor: edition.color }}
-                          />
-                        </button>
-                        <span className={cn("text-[8px] font-bold uppercase tracking-widest", isActive ? "text-gold-bright" : "text-muted-foreground/60")}>
-                          {edition.name.split(' ')[1]}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+            {/* Seletor de Cores — Desktop */}
+            <div className="mb-10 hidden space-y-4 lg:block">
+              <p className="font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80">
+                Explore as edições
+              </p>
+              <div className="flex flex-wrap gap-5">
+                {HERO_EDITIONS.map((edition) => {
+                  const isActive = selectedEdition === edition.id;
+                  return (
+                    <div key={edition.id} className="flex flex-col items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEditionChange(edition.id)}
+                        className={cn(
+                          "group relative h-12 w-12 overflow-hidden rounded-full border-2 transition-all duration-300",
+                          isActive
+                            ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                            : "border-white/10 hover:border-white/30"
+                        )}
+                      >
+                        <div 
+                          className="h-full w-full" 
+                          style={{ backgroundColor: edition.color }}
+                        />
+                      </button>
+                      <span className={cn("text-[8px] font-bold uppercase tracking-widest", isActive ? "text-gold-bright" : "text-muted-foreground/60")}>
+                        {edition.name.split(' ')[1]}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
+            </div>
 
-              <div className="mb-8 flex items-center gap-4" aria-hidden>
-                <span className="h-px w-14 bg-gradient-to-r from-gold/70 to-gold/0" />
-                <span className="font-display text-[9px] font-semibold uppercase tracking-[0.48em] text-gold/55">
-                  Alpha Brasil
+            <div className="mb-6 flex items-center gap-4 md:mb-8" aria-hidden>
+              <span className="h-px w-10 bg-gradient-to-r from-gold/70 to-gold/0 md:w-14" />
+              <span className="font-display text-[9px] font-semibold uppercase tracking-[0.48em] text-gold/55">
+                Alpha Brasil
+              </span>
+            </div>
+
+            {/* Título e Descrição Dinâmicos da Galeria */}
+            <motion.div
+              key={selectedEdition}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <h2 id="gallery-heading" className="mt-2 font-display text-[clamp(2.15rem,4.5vw,3.35rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance md:mt-5">
+                 <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">
+                  {selectedEditionData.name}
                 </span>
-              </div>
+              </h2>
 
-              {/* Título e Descrição Dinâmicos da Galeria */}
-              <motion.div
-                key={selectedEdition}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
-                <h2 id="gallery-heading" className="mt-2 font-display text-[clamp(2.15rem,4.5vw,3.35rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance">
-                   <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">
-                    {selectedEditionData.name}
-                  </span>
-                </h2>
+              <p className="mt-6 max-w-[36ch] text-[15px] leading-[1.75] text-muted-foreground/95 md:text-base">
+                {selectedEditionData.shortDescription}
+              </p>
+            </motion.div>
 
-                <p className="mt-6 max-w-[36ch] text-[15px] leading-[1.75] text-muted-foreground/95 md:text-base">
-                  {selectedEditionData.shortDescription}
-                </p>
-              </motion.div>
-
-              <div className="mt-8 flex items-center gap-3 border-t border-white/[0.06] pt-8">
-                <div className="h-1 w-1 rounded-full bg-gold/50" />
-                <p className="max-w-[32ch] text-xs leading-relaxed text-muted-foreground/75">
-                  Selecione uma imagem ao lado para explorar os enquadramentos da coleção.
-                </p>
-              </div>
+            <div className="mt-8 hidden items-center gap-3 border-t border-white/[0.06] pt-8 lg:flex">
+              <div className="h-1 w-1 rounded-full bg-gold/50" />
+              <p className="max-w-[32ch] text-xs leading-relaxed text-muted-foreground/75">
+                Selecione uma imagem ao lado para explorar os enquadramentos da coleção.
+              </p>
             </div>
           </SectionReveal>
         </div>

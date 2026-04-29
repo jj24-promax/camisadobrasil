@@ -153,161 +153,163 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
           </div>
 
           <SectionReveal className="lg:col-span-5 lg:col-start-8">
-            {/* Quadrante de Informações da Edição */}
-            <div className="mb-10 space-y-6 text-center lg:text-left transition-all">
-              <div>
-                <p className="font-display text-[10px] font-semibold uppercase tracking-[0.38em] text-gold/75 mb-4">
-                  Escolha sua Edição:
-                </p>
-                <div className="flex flex-wrap justify-center gap-5 lg:justify-start">
-                  {HERO_EDITIONS.map((edition) => {
-                    const isActive = selectedEdition === edition.id;
-                    return (
-                      <div key={edition.id} className="flex flex-col items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onEditionChange(edition.id)}
-                          className={cn(
-                            "group relative h-12 w-12 overflow-hidden rounded-full border-2 transition-all duration-300",
-                            isActive
-                              ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
-                              : "border-white/10 hover:border-white/30"
-                          )}
-                          aria-label={`Ver detalhes da cor ${edition.name}`}
-                        >
-                          <div 
-                            className="h-full w-full" 
-                            style={{ backgroundColor: edition.color }}
-                          />
-                          {isActive && (
-                            <motion.div 
-                              layoutId="details-color-check"
-                              className="absolute inset-0 flex items-center justify-center bg-black/20"
-                            >
-                              <div className="h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_white]" />
-                            </motion.div>
-                          )}
-                        </button>
-                        <span className={cn("text-[8px] font-bold uppercase tracking-widest transition-colors", isActive ? "text-gold-bright" : "text-muted-foreground/60")}>
-                          {edition.name.split(' ')[1]}
-                        </span>
-                      </div>
-                    );
-                  })}
+            <div className="mx-auto w-full max-w-[420px]">
+              {/* Quadrante de Informações da Edição */}
+              <div className="mb-10 space-y-6 text-center lg:text-left transition-all">
+                <div>
+                  <p className="font-display text-[10px] font-semibold uppercase tracking-[0.38em] text-gold/75 mb-4">
+                    Escolha sua Edição:
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-5 lg:justify-start">
+                    {HERO_EDITIONS.map((edition) => {
+                      const isActive = selectedEdition === edition.id;
+                      return (
+                        <div key={edition.id} className="flex flex-col items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => onEditionChange(edition.id)}
+                            className={cn(
+                              "group relative h-12 w-12 overflow-hidden rounded-full border-2 transition-all duration-300",
+                              isActive
+                                ? "border-gold scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                                : "border-white/10 hover:border-white/30"
+                            )}
+                            aria-label={`Ver detalhes da cor ${edition.name}`}
+                          >
+                            <div 
+                              className="h-full w-full" 
+                              style={{ backgroundColor: edition.color }}
+                            />
+                            {isActive && (
+                              <motion.div 
+                                layoutId="details-color-check"
+                                className="absolute inset-0 flex items-center justify-center bg-black/20"
+                              >
+                                <div className="h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_white]" />
+                              </motion.div>
+                            )}
+                          </button>
+                          <span className={cn("text-[8px] font-bold uppercase tracking-widest transition-colors", isActive ? "text-gold-bright" : "text-muted-foreground/60")}>
+                            {edition.name.split(' ')[1]}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Nome e Descrição Dinâmicos do Modelo */}
+                <div className="min-h-[4rem] lg:min-h-0">
+                  <motion.div
+                    key={selectedEdition}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="space-y-2"
+                  >
+                    <p className="font-display text-[14px] font-bold uppercase tracking-[0.24em] text-gold-bright">
+                      {selectedEditionData.name}
+                    </p>
+                    <p className="mx-auto max-w-[32ch] text-[15px] font-medium leading-relaxed text-white/80 lg:mx-0 lg:max-w-none">
+                      {selectedEditionData.shortDescription}
+                    </p>
+                  </motion.div>
                 </div>
               </div>
 
-              {/* Nome e Descrição Dinâmicos do Modelo */}
-              <div className="min-h-[4rem] lg:min-h-0">
-                <motion.div
-                  key={selectedEdition}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                  className="space-y-2"
-                >
-                  <p className="font-display text-[14px] font-bold uppercase tracking-[0.24em] text-gold-bright">
-                    {selectedEditionData.name}
-                  </p>
-                  <p className="mx-auto max-w-[32ch] text-[15px] font-medium leading-relaxed text-white/80 lg:mx-0 lg:max-w-none">
-                    {selectedEditionData.shortDescription}
-                  </p>
-                </motion.div>
-              </div>
-            </div>
-
-            <div
-              className="group relative mx-auto aspect-[3/4] max-w-[420px] overflow-hidden rounded-[3rem] shadow-luxe transition-all duration-700 hover:shadow-gold/20 bg-[#05080f]"
-              onPointerDownCapture={onArtePointerDown}
-            >
-              <AnimatePresence mode="sync">
-                {activeSlide ? (
-                  <>
-                    <div className="absolute inset-0 z-10 bg-gradient-to-t from-navy-deep/80 via-transparent to-transparent opacity-60 transition-opacity group-hover:opacity-40" />
-                    <motion.div
-                      key={activeSlide.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                      className="absolute inset-0"
-                    >
-                      {!activeIsVideo || videoFailed ? (
-                        <Image
-                          src={activeSlide.imageSrc}
-                          alt={activeSlide.alt}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 90vw, 420px"
-                          loading="lazy"
-                        />
-                      ) : activeVideoSources ? (
-                        <video
-                          ref={arteVideoRef}
-                          key={`${activeSlide.id}-video`}
-                          className="video-embed-no-native-ui h-full w-full object-cover"
-                          muted
-                          loop
-                          playsInline
-                          preload="metadata"
-                          poster={activeSlide.imageSrc}
-                          aria-label={activeSlide.alt}
-                          controls={false}
-                          disablePictureInPicture
-                          controlsList="nodownload noremoteplayback nofullscreen"
-                          onError={() => setVideoFailed(true)}
-                        >
-                          <source src={activeVideoSources.mp4} type="video/mp4" />
-                          <source src={activeVideoSources.webm} type="video/webm" />
-                        </video>
-                      ) : null}
-                    </motion.div>
-                  </>
-                ) : (
-                  <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center bg-[#05080f]">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.05),transparent_70%)]" />
-                    <div className="inline-flex rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-4 backdrop-blur-md shadow-luxe z-10 text-center mx-6">
-                      <div>
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-white">Edição em Produção</p>
+              <div
+                className="group relative w-full aspect-[3/4] overflow-hidden rounded-[3rem] shadow-luxe transition-all duration-700 hover:shadow-gold/20 bg-[#05080f]"
+                onPointerDownCapture={onArtePointerDown}
+              >
+                <AnimatePresence mode="sync">
+                  {activeSlide ? (
+                    <>
+                      <div className="absolute inset-0 z-10 bg-gradient-to-t from-navy-deep/80 via-transparent to-transparent opacity-60 transition-opacity group-hover:opacity-40" />
+                      <motion.div
+                        key={activeSlide.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute inset-0"
+                      >
+                        {!activeIsVideo || videoFailed ? (
+                          <Image
+                            src={activeSlide.imageSrc}
+                            alt={activeSlide.alt}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 90vw, 420px"
+                            loading="lazy"
+                          />
+                        ) : activeVideoSources ? (
+                          <video
+                            ref={arteVideoRef}
+                            key={`${activeSlide.id}-video`}
+                            className="video-embed-no-native-ui h-full w-full object-cover"
+                            muted
+                            loop
+                            playsInline
+                            preload="metadata"
+                            poster={activeSlide.imageSrc}
+                            aria-label={activeSlide.alt}
+                            controls={false}
+                            disablePictureInPicture
+                            controlsList="nodownload noremoteplayback nofullscreen"
+                            onError={() => setVideoFailed(true)}
+                          >
+                            <source src={activeVideoSources.mp4} type="video/mp4" />
+                            <source src={activeVideoSources.webm} type="video/webm" />
+                          </video>
+                        ) : null}
+                      </motion.div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center bg-[#05080f]">
+                      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.05),transparent_70%)]" />
+                      <div className="inline-flex rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-4 backdrop-blur-md shadow-luxe z-10 text-center mx-6">
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-white">Edição em Produção</p>
+                        </div>
                       </div>
                     </div>
+                  )}
+                </AnimatePresence>
+
+                {slides.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={goPrev}
+                      className="absolute left-4 top-1/2 z-20 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/85 backdrop-blur transition-colors hover:border-gold/40 hover:text-gold-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 md:h-10 md:w-10"
+                      aria-label="Mostrar foto anterior"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={goNext}
+                      className="absolute right-4 top-1/2 z-20 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/85 backdrop-blur transition-colors hover:border-gold/40 hover:text-gold-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 md:h-10 md:w-10"
+                      aria-label="Mostrar próxima foto"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </>
+                )}
+
+                {activeSlide && (
+                  <div className="absolute bottom-8 left-8 right-8 z-20">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold-bright">
+                      {activeSlide.label}
+                    </p>
+                    {slides.length > 1 && (
+                      <p className="mt-1 text-sm font-medium text-white/90">
+                        Toque nas setas para alternar
+                      </p>
+                    )}
                   </div>
                 )}
-              </AnimatePresence>
-
-              {slides.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={goPrev}
-                    className="absolute left-4 top-1/2 z-20 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/85 backdrop-blur transition-colors hover:border-gold/40 hover:text-gold-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 md:h-10 md:w-10"
-                    aria-label="Mostrar foto anterior"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={goNext}
-                    className="absolute right-4 top-1/2 z-20 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/85 backdrop-blur transition-colors hover:border-gold/40 hover:text-gold-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 md:h-10 md:w-10"
-                    aria-label="Mostrar próxima foto"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </>
-              )}
-
-              {activeSlide && (
-                <div className="absolute bottom-8 left-8 right-8 z-20">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold-bright">
-                    {activeSlide.label}
-                  </p>
-                  {slides.length > 1 && (
-                    <p className="mt-1 text-sm font-medium text-white/90">
-                      Toque nas setas para alternar
-                    </p>
-                  )}
-                </div>
-              )}
+              </div>
             </div>
           </SectionReveal>
         </div>

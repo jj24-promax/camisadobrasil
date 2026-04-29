@@ -92,112 +92,11 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
     >
       <div className="mx-auto max-w-[1280px]">
         <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-x-10 xl:gap-x-14 lg:gap-y-0">
-          {/* Coluna editorial — texto */}
-          <SectionReveal
-            delay={0}
-            className="flex flex-col lg:col-span-5 lg:min-h-0 lg:pr-2 xl:pr-4"
-          >
-            <div
-              className="mb-6 flex items-center gap-4 md:mb-8"
-              aria-hidden
-            >
-              <span className="h-px w-10 bg-gradient-to-r from-gold/70 to-gold/0 md:w-14" />
-              <span className="font-display text-[9px] font-semibold uppercase tracking-[0.48em] text-gold/55">
-                Alpha Brasil
-              </span>
-            </div>
-
-            <p className="font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80">
-              Galeria da campanha
-            </p>
-            <p className="mt-3 inline-flex w-fit rounded-full border border-gold/35 bg-gold/[0.12] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-gold-bright">
-              Galeria: {galleryModel.name}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              {editionOptions.map((option) => {
-                const isActive = option.modelId === selectedEdition;
-                const isCanarinho = option.slug === "canarinho";
-                const isVermelha = option.slug === "vermelha";
-                
-                return (
-                  <button
-                    key={option.slug}
-                    type="button"
-                    onClick={() => onEditionChange(option.modelId)}
-                    className={cn(
-                      "group relative inline-flex min-h-[2.5rem] items-center justify-center overflow-hidden rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]",
-                      isActive
-                        ? cn(
-                            "border border-gold/75 text-white shadow-[0_0_0_1px_rgba(212,175,55,0.35),0_0_28px_-8px_rgba(212,175,55,0.65),0_4px_24px_-12px_rgba(0,0,0,0.5)]",
-                            isCanarinho
-                              ? "bg-gradient-to-br from-emerald-400/[0.22] via-gold/[0.18] to-gold/[0.06] ring-1 ring-emerald-300/45"
-                              : isVermelha
-                                ? "bg-gradient-to-br from-red-500/[0.22] via-gold/[0.18] to-gold/[0.06] ring-1 ring-red-400/45"
-                                : "bg-gradient-to-br from-gold/[0.28] via-gold/[0.12] to-transparent ring-1 ring-gold/50"
-                          )
-                        : "border border-white/22 bg-black/[0.35] text-muted-foreground backdrop-blur-[2px] hover:border-gold/45 hover:bg-white/[0.06] hover:text-gold-bright hover:shadow-[0_0_22px_-10px_rgba(212,175,55,0.45)] active:scale-[0.98]"
-                    )}
-                    aria-pressed={isActive}
-                  >
-                    {isActive ? (
-                      <>
-                        <span
-                          aria-hidden
-                          className={cn(
-                            "pointer-events-none absolute -inset-px rounded-full opacity-95 blur-[0.5px]",
-                            isCanarinho
-                              ? "bg-[radial-gradient(ellipse_at_50%_-10%,rgba(167,243,208,0.5)_0%,rgba(212,175,55,0.15)_42%,transparent_68%)]"
-                              : isVermelha
-                                ? "bg-[radial-gradient(ellipse_at_50%_-10%,rgba(239,68,68,0.5)_0%,rgba(212,175,55,0.15)_42%,transparent_68%)]"
-                                : "bg-[radial-gradient(ellipse_at_50%_-10%,rgba(255,223,128,0.45)_0%,rgba(212,175,55,0.2)_42%,transparent_68%)]"
-                          )}
-                        />
-                        <span
-                          aria-hidden
-                          className="pointer-events-none absolute inset-x-3 top-0 h-[42%] rounded-t-full bg-gradient-to-b from-white/25 via-white/[0.06] to-transparent opacity-60"
-                        />
-                      </>
-                    ) : null}
-                    <span className="relative z-[1] drop-shadow-[0_1px_8px_rgba(0,0,0,0.55)]">
-                      {option.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <h2
-              id="gallery-heading"
-              className="mt-4 font-display text-[clamp(2.15rem,4.5vw,3.35rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance md:mt-5"
-            >
-              Presença em{" "}
-              <span className="relative inline">
-                <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">
-                  cada detalhe
-                </span>
-                <span className="absolute -bottom-1 left-0 right-0 h-px bg-gradient-to-r from-gold/40 via-gold/15 to-transparent opacity-80" />
-              </span>
-            </h2>
-
-            <p className="mt-6 max-w-[36ch] text-[15px] leading-[1.75] text-muted-foreground/95 md:text-base md:leading-relaxed">
-              Fotos reais para mostrar o caimento, a presença e a identidade
-              da peça no corpo — a mesma linguagem visual da campanha Alpha
-              Brasil.
-            </p>
-
-            <div className="mt-8 hidden items-center gap-3 border-t border-white/[0.06] pt-8 lg:flex">
-              <div className="h-1 w-1 rounded-full bg-gold/50" />
-              <p className="max-w-[32ch] text-xs leading-relaxed text-muted-foreground/75">
-                Selecione uma imagem ao lado para explorar os enquadramentos da
-                coleção.
-              </p>
-            </div>
-          </SectionReveal>
-
-          {/* Vitrine — imagem + thumbs */}
+          
+          {/* Coluna de Mídia — No topo em mobile */}
           <SectionReveal
             delay={0.06}
-            className="relative lg:col-span-7"
+            className="relative order-1 lg:col-span-7 lg:order-2"
           >
             <div className="flex flex-col gap-6 sm:gap-7 lg:flex-row lg:items-start lg:justify-end lg:gap-6 xl:gap-8">
               {/* Moldura premium — centro nobre */}
@@ -383,16 +282,118 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
             </div>
 
             {hasImages && activeItem && (
-              <>
-                <p className="mt-5 text-center text-sm text-muted-foreground/90 lg:text-left">
+              <div className="mt-5 text-center lg:text-left">
+                <p className="text-sm text-muted-foreground/90">
                   {activeItem.caption}
                 </p>
-                <p className="mt-3 text-center text-[10px] uppercase tracking-[0.34em] text-muted-foreground/70 lg:mt-4 lg:text-left lg:tracking-[0.3em]">
+                <p className="mt-3 text-[10px] uppercase tracking-[0.34em] text-muted-foreground/70 lg:mt-4 lg:tracking-[0.3em]">
                   Toque para navegar ·{" "}
                   <span className="text-muted-foreground/50">{galleryModel.name}</span>
                 </p>
-              </>
+              </div>
             )}
+          </SectionReveal>
+
+          {/* Coluna editorial — texto */}
+          <SectionReveal
+            delay={0}
+            className="order-2 flex flex-col lg:col-span-5 lg:order-1 lg:min-h-0 lg:pr-2 xl:pr-4"
+          >
+            {/* Seletor de Edições — Movido para o topo para facilitar a visualização no mobile */}
+            <div className="mb-10 space-y-4">
+              <p className="text-center font-display text-[10px] font-semibold uppercase tracking-[0.46em] text-gold/80 lg:text-left">
+                Galeria da campanha
+              </p>
+              <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
+                {editionOptions.map((option) => {
+                  const isActive = option.modelId === selectedEdition;
+                  const isCanarinho = option.slug === "canarinho";
+                  const isVermelha = option.slug === "vermelha";
+                  
+                  return (
+                    <button
+                      key={option.slug}
+                      type="button"
+                      onClick={() => onEditionChange(option.modelId)}
+                      className={cn(
+                        "group relative inline-flex min-h-[2.5rem] items-center justify-center overflow-hidden rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]",
+                        isActive
+                          ? cn(
+                              "border border-gold/75 text-white shadow-[0_0_0_1px_rgba(212,175,55,0.35),0_0_28px_-8px_rgba(212,175,55,0.65),0_4px_24px_-12px_rgba(0,0,0,0.5)]",
+                              isCanarinho
+                                ? "bg-gradient-to-br from-emerald-400/[0.22] via-gold/[0.18] to-gold/[0.06] ring-1 ring-emerald-300/45"
+                                : isVermelha
+                                  ? "bg-gradient-to-br from-red-500/[0.22] via-gold/[0.18] to-gold/[0.06] ring-1 ring-red-400/45"
+                                  : "bg-gradient-to-br from-gold/[0.28] via-gold/[0.12] to-transparent ring-1 ring-gold/50"
+                            )
+                          : "border border-white/22 bg-black/[0.35] text-muted-foreground backdrop-blur-[2px] hover:border-gold/45 hover:bg-white/[0.06] hover:text-gold-bright hover:shadow-[0_0_22px_-10px_rgba(212,175,55,0.45)] active:scale-[0.98]"
+                      )}
+                      aria-pressed={isActive}
+                    >
+                      {isActive ? (
+                        <>
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "pointer-events-none absolute -inset-px rounded-full opacity-95 blur-[0.5px]",
+                              isCanarinho
+                                ? "bg-[radial-gradient(ellipse_at_50%_-10%,rgba(167,243,208,0.5)_0%,rgba(212,175,55,0.15)_42%,transparent_68%)]"
+                                : isVermelha
+                                  ? "bg-[radial-gradient(ellipse_at_50%_-10%,rgba(239,68,68,0.5)_0%,rgba(212,175,55,0.15)_42%,transparent_68%)]"
+                                  : "bg-[radial-gradient(ellipse_at_50%_-10%,rgba(255,223,128,0.45)_0%,rgba(212,175,55,0.2)_42%,transparent_68%)]"
+                            )}
+                          />
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute inset-x-3 top-0 h-[42%] rounded-t-full bg-gradient-to-b from-white/25 via-white/[0.06] to-transparent opacity-60"
+                          />
+                        </>
+                      ) : null}
+                      <span className="relative z-[1] drop-shadow-[0_1px_8px_rgba(0,0,0,0.55)]">
+                        {option.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div
+              className="mb-6 flex items-center gap-4 md:mb-8"
+              aria-hidden
+            >
+              <span className="h-px w-10 bg-gradient-to-r from-gold/70 to-gold/0 md:w-14" />
+              <span className="font-display text-[9px] font-semibold uppercase tracking-[0.48em] text-gold/55">
+                Alpha Brasil
+              </span>
+            </div>
+
+            <h2
+              id="gallery-heading"
+              className="mt-2 font-display text-[clamp(2.15rem,4.5vw,3.35rem)] font-bold leading-[1.04] tracking-[-0.02em] text-balance md:mt-5"
+            >
+              Presença em{" "}
+              <span className="relative inline">
+                <span className="bg-gradient-to-br from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">
+                  cada detalhe
+                </span>
+                <span className="absolute -bottom-1 left-0 right-0 h-px bg-gradient-to-r from-gold/40 via-gold/15 to-transparent opacity-80" />
+              </span>
+            </h2>
+
+            <p className="mt-6 max-w-[36ch] text-[15px] leading-[1.75] text-muted-foreground/95 md:text-base md:leading-relaxed">
+              Fotos reais para mostrar o caimento, a presença e a identidade
+              da peça no corpo — a mesma linguagem visual da campanha Alpha
+              Brasil.
+            </p>
+
+            <div className="mt-8 hidden items-center gap-3 border-t border-white/[0.06] pt-8 lg:flex">
+              <div className="h-1 w-1 rounded-full bg-gold/50" />
+              <p className="max-w-[32ch] text-xs leading-relaxed text-muted-foreground/75">
+                Selecione uma imagem ao lado para explorar os enquadramentos da
+                coleção.
+              </p>
+            </div>
           </SectionReveal>
         </div>
       </div>

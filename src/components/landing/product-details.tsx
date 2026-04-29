@@ -153,7 +153,6 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
           </div>
 
           <SectionReveal className="lg:col-span-5 lg:col-start-8">
-            {/* Seletor de Cores e Texto Dinâmico agora perto das fotos */}
             <div className="mb-10 space-y-6 text-center lg:text-left">
               <div>
                 <p className="font-display text-[10px] font-semibold uppercase tracking-[0.38em] text-gold/75 mb-4">
@@ -193,21 +192,21 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
                 </div>
               </div>
 
-              {/* Nome e Descrição Dinâmicos do Modelo */}
-              <div className="min-h-[5.5rem] border-l border-white/5 pl-5 lg:min-h-[auto]">
+              {/* Nome e Descrição Dinâmicos — Ajustado para Mobile */}
+              <div className="min-h-[5.5rem] border-white/5 lg:border-l lg:pl-5">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={selectedEdition}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     className="space-y-2"
                   >
                     <p className="font-display text-[13px] font-bold uppercase tracking-[0.24em] text-gold-bright">
                       {selectedEditionData.name}
                     </p>
-                    <p className="text-sm font-medium leading-relaxed text-muted-foreground/95">
+                    <p className="mx-auto max-w-[32ch] text-sm font-medium leading-relaxed text-muted-foreground/95 lg:mx-0 lg:max-w-none">
                       {selectedEditionData.shortDescription}
                     </p>
                   </motion.div>

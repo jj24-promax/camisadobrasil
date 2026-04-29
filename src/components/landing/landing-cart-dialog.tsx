@@ -130,19 +130,19 @@ export function LandingCartDialog({
                 </p>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {lineSizes.map((sz, index) => {
                   const itemModel = getProductModelById(lineModels[index] ?? selectedProduct);
                   return (
                     <div
                       key={index}
                       className={cn(
-                        "rounded-xl border bg-white/[0.02] p-3 transition-colors flex gap-3 sm:gap-4",
-                        clampedPreviewIndex === index ? "border-gold/35" : "border-white/[0.06]"
+                        "rounded-2xl border bg-white/[0.02] p-3.5 sm:p-4 transition-colors flex gap-4 sm:gap-5 items-center",
+                        clampedPreviewIndex === index ? "border-gold/35 bg-gold/[0.02]" : "border-white/[0.06]"
                       )}
                     >
                       {/* Miniatura do modelo atual */}
-                      <div className="relative aspect-square w-20 sm:w-24 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/40">
+                      <div className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-sm">
                         <Image
                           src={itemModel.images.checkout}
                           alt={itemModel.fullName}
@@ -152,12 +152,12 @@ export function LandingCartDialog({
                         />
                       </div>
                       
-                      <div className="min-w-0 flex-1 flex flex-col justify-center">
-                        <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <div className="min-w-0 flex-1 flex flex-col justify-center py-1">
+                        <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-white">
                           {safeQty > 1 ? `Camisa ${index + 1}` : "Camisa"}
                         </p>
                         
-                        <div className="mb-2 grid grid-cols-2 gap-1.5">
+                        <div className="mb-3 grid grid-cols-2 gap-2">
                           {PRODUCT_MODELS.filter(m => !m.inProduction).map((model) => {
                             const activeModel = lineModels[index] === model.id;
                             return (
@@ -166,10 +166,10 @@ export function LandingCartDialog({
                                 type="button"
                                 onClick={() => setModelAt(index, model.id)}
                                 className={cn(
-                                  "rounded-md border px-1 py-1.5 text-[9px] font-semibold uppercase tracking-wider truncate transition-colors",
+                                  "flex h-10 items-center justify-center rounded-lg border text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-colors",
                                   activeModel
                                     ? "border-gold/60 bg-gold/[0.14] text-gold-bright"
-                                    : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40"
+                                    : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40 hover:bg-white/[0.06]"
                                 )}
                               >
                                 {model.slug === "sagrada" ? "Sagrada" : "Canarinho"}
@@ -178,17 +178,17 @@ export function LandingCartDialog({
                           })}
                         </div>
                         
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-2">
                           {SIZES.map((s) => (
                             <button
                               key={s}
                               type="button"
                               onClick={() => setSizeAt(index, s)}
                               className={cn(
-                                "flex h-8 min-w-8 items-center justify-center rounded-lg px-1.5 text-[10px] font-bold transition-all",
+                                "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[13px] font-bold transition-all",
                                 sz === s
-                                  ? "bg-gold text-navy-deep"
-                                  : "border border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40"
+                                  ? "bg-gold text-navy-deep shadow-[0_0_12px_rgba(212,175,55,0.4)]"
+                                  : "border border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40 hover:bg-white/[0.08]"
                               )}
                             >
                               {s}

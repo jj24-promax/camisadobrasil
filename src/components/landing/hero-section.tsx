@@ -1,4 +1,3 @@
-Video -> Colors/Description -> Social Proof -> Buy Box">
 "use client";
 
 import { motion, useScroll, useTransform, useReducedMotion, AnimatePresence } from "framer-motion";

@@ -220,64 +220,58 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
             </div>
 
             <div
-              className="group relative mx-auto aspect-[3/4] max-w-[420px] overflow-hidden rounded-[3rem] shadow-luxe transition-all duration-700 hover:shadow-gold/20"
+              className="group relative mx-auto aspect-[3/4] max-w-[420px] overflow-hidden rounded-[3rem] shadow-luxe transition-all duration-700 hover:shadow-gold/20 bg-[#05080f]"
               onPointerDownCapture={onArtePointerDown}
             >
-              <div className="absolute inset-0 z-10 bg-gradient-to-t from-navy-deep/80 via-transparent to-transparent opacity-60 transition-opacity group-hover:opacity-40" />
-              
               <AnimatePresence mode="sync">
                 {activeSlide ? (
-                  <motion.div
-                    key={activeSlide.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute inset-0"
-                  >
-                    {!activeIsVideo || videoFailed ? (
-                      <Image
-                        src={activeSlide.imageSrc}
-                        alt={activeSlide.alt}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 90vw, 420px"
-                        loading="lazy"
-                      />
-                    ) : activeVideoSources ? (
-                      <video
-                        ref={arteVideoRef}
-                        key={`${activeSlide.id}-video`}
-                        className="video-embed-no-native-ui h-full w-full object-cover"
-                        muted
-                        loop
-                        playsInline
-                        preload="metadata"
-                        poster={activeSlide.imageSrc}
-                        aria-label={activeSlide.alt}
-                        controls={false}
-                        disablePictureInPicture
-                        controlsList="nodownload noremoteplayback nofullscreen"
-                        onError={() => setVideoFailed(true)}
-                      >
-                        <source src={activeVideoSources.mp4} type="video/mp4" />
-                        <source src={activeVideoSources.webm} type="video/webm" />
-                      </video>
-                    ) : null}
-                  </motion.div>
+                  <>
+                    <div className="absolute inset-0 z-10 bg-gradient-to-t from-navy-deep/80 via-transparent to-transparent opacity-60 transition-opacity group-hover:opacity-40" />
+                    <motion.div
+                      key={activeSlide.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                      className="absolute inset-0"
+                    >
+                      {!activeIsVideo || videoFailed ? (
+                        <Image
+                          src={activeSlide.imageSrc}
+                          alt={activeSlide.alt}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 90vw, 420px"
+                          loading="lazy"
+                        />
+                      ) : activeVideoSources ? (
+                        <video
+                          ref={arteVideoRef}
+                          key={`${activeSlide.id}-video`}
+                          className="video-embed-no-native-ui h-full w-full object-cover"
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                          poster={activeSlide.imageSrc}
+                          aria-label={activeSlide.alt}
+                          controls={false}
+                          disablePictureInPicture
+                          controlsList="nodownload noremoteplayback nofullscreen"
+                          onError={() => setVideoFailed(true)}
+                        >
+                          <source src={activeVideoSources.mp4} type="video/mp4" />
+                          <source src={activeVideoSources.webm} type="video/webm" />
+                        </video>
+                      ) : null}
+                    </motion.div>
+                  </>
                 ) : (
-                  <div className="absolute inset-0 flex h-full w-full flex-col">
-                    <Image
-                      src="/images/camisa-hero-produto-isolado.png"
-                      alt="Edição em Produção"
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 90vw, 420px"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
-                    <div className="absolute bottom-10 left-0 right-0 flex flex-col items-center text-center px-6 z-20">
-                      <div className="inline-flex rounded-full border border-white/10 bg-black/50 px-5 py-2.5 backdrop-blur-md">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-white">Edição em Produção</p>
+                  <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center bg-[#05080f]">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.05),transparent_70%)]" />
+                    <div className="inline-flex rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-4 backdrop-blur-md shadow-luxe z-10 text-center mx-6">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-white">Edição em Produção</p>
                       </div>
                     </div>
                   </div>

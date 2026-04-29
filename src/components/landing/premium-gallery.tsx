@@ -194,22 +194,13 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
                         </AnimatePresence>
                       </>
                     ) : (
-                      <div className="absolute inset-0 flex h-full w-full flex-col">
-                        <Image
-                          src="/images/camisa-hero-produto-isolado.png"
-                          alt="Edição em Produção"
-                          fill
-                          className="object-cover"
-                          sizes={MAIN_SIZES}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
-                        <div className="absolute bottom-10 left-0 right-0 flex flex-col items-center text-center px-6">
-                          <div className="rounded-2xl border border-white/10 bg-black/50 px-6 py-4 backdrop-blur-md">
-                            <p className="text-[11px] font-bold uppercase tracking-widest text-white">Edição em Produção</p>
-                            <p className="mt-2 mx-auto max-w-[250px] text-[11px] leading-relaxed text-white/70">
-                              Estamos finalizando as fotos exclusivas desta peça. Disponível em breve.
-                            </p>
-                          </div>
+                      <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center bg-[#05080f]">
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.05),transparent_70%)]" />
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-8 backdrop-blur-md text-center max-w-[80%] z-10 shadow-luxe">
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-white">Edição em Produção</p>
+                          <p className="mt-3 mx-auto text-[13px] leading-relaxed text-muted-foreground/80">
+                            Estamos finalizando as fotos exclusivas desta peça. Disponível em breve.
+                          </p>
                         </div>
                       </div>
                     )}

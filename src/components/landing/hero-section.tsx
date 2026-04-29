@@ -115,8 +115,8 @@ export function HeroSection({
 
         <div className="grid w-full grid-cols-1 gap-10 md:gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-14">
           
-          {/* TÍTULO - Centralizado no topo */}
-          <div className="order-1 text-center lg:col-start-1 lg:row-start-1 lg:text-left">
+          {/* TÍTULO - Centralizado no topo no Desktop (lg:col-span-2) */}
+          <div className="order-1 text-center lg:col-span-2 lg:row-start-1">
             <motion.h1
               id="hero-heading"
               initial={{ opacity: 0, y: 20 }}
@@ -133,10 +133,10 @@ export function HeroSection({
             </motion.h1>
           </div>
 
-          {/* VÍDEO/GIF - Direita (Desktop) / Cima (Mobile) */}
+          {/* VÍDEO/GIF - Direita (Desktop) na mesma linha do card (lg:row-start-2) / Cima (Mobile) */}
           <motion.div
             style={{ y: imgY }}
-            className="order-2 flex items-center justify-center lg:col-start-2 lg:row-start-1 lg:row-span-2"
+            className="order-2 flex items-center justify-center lg:col-start-2 lg:row-start-2"
           >
             <div className="relative w-full max-w-[380px] lg:max-w-[500px]">
               <div className="absolute -inset-4 rounded-[3rem] bg-gold/5 blur-3xl" />
@@ -230,7 +230,7 @@ export function HeroSection({
             </div>
           </motion.div>
 
-          {/* CAIXA DE COMPRA E AVALIAÇÃO - Coluna Esquerda */}
+          {/* CAIXA DE COMPRA E AVALIAÇÃO - Coluna Esquerda na mesma linha do GIF (lg:row-start-2) */}
           <div className="order-3 flex flex-col gap-8 lg:col-start-1 lg:row-start-2">
             
             {/* SELO DE SATISFAÇÃO */}
@@ -258,7 +258,6 @@ export function HeroSection({
               className="flex flex-col gap-6"
             >
               <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-white/[0.02] p-5 sm:p-6 shadow-luxe backdrop-blur-xl md:p-10">
-                {/* Ajuste nos gaps e margens (gap-4 em vez de gap-8/6) para compactar no mobile */}
                 <div className="flex flex-col gap-5 md:gap-6">
                   
                   {/* SEÇÃO 1: CORES E INFORMAÇÕES DA EDIÇÃO */}

@@ -60,6 +60,10 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
   );
   const total = galleryImages.length;
   const hasImages = total > 0;
+  const displayTotal =
+    selectedEdition === "edicao-sagrada" || selectedEdition === "edicao-canarinho"
+      ? Math.min(total, 4)
+      : total;
 
   /** Pré-carrega somente a próxima imagem para reduzir pico de rede sem alterar UX. */
   useEffect(() => {
@@ -250,7 +254,7 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
                           {String(active + 1).padStart(2, "0")}
                         </span>
                         <span className="mx-1.5 text-white/20">/</span>
-                        <span>{String(total).padStart(2, "0")}</span>
+                        <span>{String(displayTotal).padStart(2, "0")}</span>
                       </div>
 
                       <button

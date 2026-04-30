@@ -8,6 +8,8 @@ export const RETENTION_ROUTE = "/checkout/retencao" as const;
 const K = {
   /** Utilizador abriu `/checkout` nesta aba — ativa BackRedirect na landing só depois disto. */
   visitedCheckout: "ab_chk_visited_sess_v1",
+  /** BackRedirect da home já foi consumido neste ciclo de checkout. */
+  homeBackRedirectConsumed: "ab_home_back_redirect_consumed_v1",
   /** Usuário já consumiu a interceptação nesta sessão (subir versão zera estado antigo de testes). */
   sawRetention: "ab_chk_ret_exit_v4",
   /** Próximo carregamento de /checkout/retencao veio do Voltar/checkout (consome ao montar a página). */
@@ -51,11 +53,23 @@ function safeRemove(key: string) {
 /** Marca que o utilizador entrou no checkout nesta sessão (sessionStorage por aba). */
 export function flagCheckoutVisitedThisSession() {
   safeSet(K.visitedCheckout, "1");
+  // Novo ciclo de checkout: rearmar apenas 1 disparo do BackRedirect na home.
+  safeRemove(K.homeBackRedirectConsumed);
 }
 
 /** true se já abriu `/checkout` nesta aba — usado pela landing para só então aplicar interceptação ao «voltar». */
 export function hasVisitedCheckoutThisSession(): boolean {
   return safeGet(K.visitedCheckout) === "1";
+}
+
+/** Marca que o BackRedirect da home já disparou neste ciclo. */
+export function consumeHomeBackRedirectOnce() {
+  safeSet(K.homeBackRedirectConsumed, "1");
+}
+
+/** true se o BackRedirect da home já foi usado e não deve disparar de novo. */
+export function hasConsumedHomeBackRedirect(): boolean {
+  return safeGet(K.homeBackRedirectConsumed) === "1";
 }
 
 /** Desconto de retenção ainda dentro do prazo (aceite recente) — não mostrar interceptação de novo no checkout. */

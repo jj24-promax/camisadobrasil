@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { hasVisitedCheckoutThisSession } from "@/lib/checkout-retention-storage";
+import {
+  consumeHomeBackRedirectOnce,
+  hasConsumedHomeBackRedirect,
+  hasVisitedCheckoutThisSession,
+} from "@/lib/checkout-retention-storage";
 
 type BackRedirectProps = {
   link: string;
@@ -9,11 +13,13 @@ type BackRedirectProps = {
 
 export function BackRedirect({ link }: BackRedirectProps) {
   const initialized = useRef(false);
+  const STATE_KEY = "__ab_back_redirect";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (initialized.current) return;
     if (!hasVisitedCheckoutThisSession()) return;
+    if (hasConsumedHomeBackRedirect()) return;
     initialized.current = true;
 
     let urlBackRedirect = link.trim();
@@ -23,11 +29,18 @@ export function BackRedirect({ link }: BackRedirectProps) {
       (urlBackRedirect.indexOf("?") > 0 ? "&" : "?") +
       window.location.search.replace("?", "");
 
-    window.history.pushState({}, "", window.location.href);
-    window.history.pushState({}, "", window.location.href);
-    window.history.pushState({}, "", window.location.href);
+    window.history.pushState({ [STATE_KEY]: 1 }, "", window.location.href);
+    window.history.pushState({ [STATE_KEY]: 1 }, "", window.location.href);
+    window.history.pushState({ [STATE_KEY]: 1 }, "", window.location.href);
 
-    const onPopState = () => {
+    const onPopState = (event: PopStateEvent) => {
+      const shouldRedirect = Boolean(
+        event.state &&
+          typeof event.state === "object" &&
+          (event.state as Record<string, unknown>)[STATE_KEY] === 1
+      );
+      if (!shouldRedirect) return;
+      consumeHomeBackRedirectOnce();
       setTimeout(() => {
         window.location.href = urlBackRedirect;
       }, 1);

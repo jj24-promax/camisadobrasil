@@ -72,8 +72,9 @@ export function PostPurchaseUpsellShell({
 
           <div
             className={cn(
-              "relative mb-10 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#060a12]/90",
-              "shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+              "relative mb-10 overflow-hidden rounded-2xl border-2 border-gold/55 bg-[#060a12]/90",
+              "shadow-[0_0_32px_-8px_hsl(var(--gold)/0.4),inset_0_1px_0_rgba(255,255,255,0.06)]",
+              "ring-1 ring-gold/25"
             )}
           >
             {visual}

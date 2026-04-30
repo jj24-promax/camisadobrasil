@@ -132,7 +132,7 @@ serve(async (req) => {
           };
 
           const fbToken = "EAAU1iftq7uUBRXQ1dp8SV02oj8P1bMppFJEarZAuZCSOoF6oqu0QORBBpxGavr5AOPlRv99rZBVcelsf7kTBTXXpGDVF2ZCaGdVcsJ5lidrZAKcA2Fn0EYemF09b1IqKlKjQmsZCALTFwOBBOMktmcaJ3IUm1lbq5tZAVEq8ZB3nXuKi7tHrZBIprfGpCFZBkzQhSXewZDZD";
-          const pixelId = "1603071560994242";
+          const pixelId = "1145077732578582";
 
           await fetch(`https://graph.facebook.com/v19.0/${pixelId}/events?access_token=${fbToken}`, {
               method: "POST",

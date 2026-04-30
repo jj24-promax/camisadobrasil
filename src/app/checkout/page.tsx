@@ -41,7 +41,6 @@ import {
   useRetentionBannerCountdown,
 } from "@/hooks/use-checkout-retention";
 import { qrDataUrlForImg } from "@/lib/pix-gateway-response";
-import { grantMetaPurchasePixelAfterConfirmedPix } from "@/lib/meta-purchase-gate";
 
 const SalesNotifications = dynamic(() => import("@/components/landing/sales-notifications").then(m => m.SalesNotifications), { ssr: false });
 
@@ -200,7 +199,6 @@ function CheckoutContent() {
   useEffect(() => {
     (window as any).paymentApproved = () => {
       toast.success("Pagamento confirmado!");
-      grantMetaPurchasePixelAfterConfirmedPix();
       window.location.href = 'https://www.alphabrasil.store/pos-compra/upsell-1';
     };
     
@@ -438,13 +436,6 @@ function CheckoutContent() {
 
         toast.success("Pix gerado! Escaneie o QR ou copie o código.");
 
-        if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
-          const dedupeKey = `alpha_fbq_initiate_checkout_mangofy_${Date.now()}`;
-          if (sessionStorage.getItem(dedupeKey) !== "1") {
-            (window as any).fbq("track", "InitiateCheckout", { value: amount, currency: "BRL", num_items: quantity });
-            try { sessionStorage.setItem(dedupeKey, "1"); } catch {}
-          }
-        }
       } else {
         throw new Error(response.message || "Erro ao gerar Pix. Verifique os dados e tente novamente.");
       }

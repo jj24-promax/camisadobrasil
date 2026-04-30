@@ -34,13 +34,6 @@ function isFailed(status: string, event: string) {
   return false;
 }
 
-async function hashSHA256(text: string) {
-  const msgUint8 = new TextEncoder().encode(text.toLowerCase().trim());
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -89,58 +82,15 @@ serve(async (req) => {
           .select("id, lead_id, valor");
         if (vendaErr) console.error("[pix-webhook] Erro Vendas:", vendaErr);
 
-        let leadEmail = "";
-        let leadPhone = "";
-        let valueCents = vendaData?.[0]?.valor || 0;
-
         if (vendaData && vendaData.length > 0 && vendaData[0].lead_id) {
-           const { data: leadData, error: leadErr } = await supabase
+           const { error: leadErr } = await supabase
             .from("leads")
             .update({ status: "convertido" })
             .eq("id", vendaData[0].lead_id)
-            .select("email, telefone")
+            .select("id")
             .maybeSingle();
            
            if (leadErr) console.error("[pix-webhook] Erro Leads:", leadErr);
-           if (leadData) {
-             leadEmail = leadData.email;
-             leadPhone = leadData.telefone;
-           }
-        }
-        
-        // CAPI Purchase Event
-        try {
-          const hashedEmail = leadEmail ? await hashSHA256(leadEmail) : undefined;
-          const hashedPhone = leadPhone ? await hashSHA256(leadPhone.replace(/\D/g, '')) : undefined;
-
-          const fbPayload = {
-              data: [
-                  {
-                      event_name: "Purchase",
-                      event_time: Math.floor(Date.now() / 1000),
-                      action_source: "website",
-                      user_data: {
-                          em: hashedEmail ? [hashedEmail] : undefined,
-                          ph: hashedPhone ? [hashedPhone] : undefined,
-                      },
-                      custom_data: {
-                          currency: "BRL",
-                          value: valueCents > 0 ? valueCents / 100 : 0
-                      }
-                  }
-              ]
-          };
-
-          const fbToken = "EAAU1iftq7uUBRXQ1dp8SV02oj8P1bMppFJEarZAuZCSOoF6oqu0QORBBpxGavr5AOPlRv99rZBVcelsf7kTBTXXpGDVF2ZCaGdVcsJ5lidrZAKcA2Fn0EYemF09b1IqKlKjQmsZCALTFwOBBOMktmcaJ3IUm1lbq5tZAVEq8ZB3nXuKi7tHrZBIprfGpCFZBkzQhSXewZDZD";
-          const pixelId = "1145077732578582";
-
-          await fetch(`https://graph.facebook.com/v19.0/${pixelId}/events?access_token=${fbToken}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(fbPayload)
-          });
-        } catch (fbErr) {
-            console.error("[pix-webhook] Erro ao enviar CAPI Purchase:", fbErr);
         }
         
       } else if (failed) {

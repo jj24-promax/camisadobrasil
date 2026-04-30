@@ -9,7 +9,6 @@ import { Check, Lock, Package, Copy, ExternalLink, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import { generateMockTrackingCode } from "@/lib/tracking-utils";
-import { takeMetaPurchasePixelAllowed } from "@/lib/meta-purchase-gate";
 import { supabase } from "@/integrations/supabase/client";
 
 function ObrigadoContent() {
@@ -21,13 +20,6 @@ function ObrigadoContent() {
   
   const [trackingCode, setTrackingCode] = useState("");
   const [trackingLinkUrl, setTrackingLinkUrl] = useState("https://rastrearlog.online");
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!takeMetaPurchasePixelAllowed()) return;
-    if (typeof (window as any).fbq !== "function") return;
-    (window as any).fbq("track", "Purchase", { currency: "BRL" });
-  }, []);
 
   useEffect(() => {
     const fromSession = sessionStorage.getItem("alpha_tracking_code");

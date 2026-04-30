@@ -70,14 +70,26 @@ export function HomePageClient() {
   };
 
   useEffect(() => {
-    const handleScroll = () => {
+    let rafId = 0;
+
+    const updateSticky = () => {
       const threshold = window.innerHeight * 0.5;
-      setIsStickyVisible(window.scrollY > threshold);
+      const nextVisible = window.scrollY > threshold;
+      setIsStickyVisible((prev) => (prev === nextVisible ? prev : nextVisible));
+      rafId = 0;
+    };
+
+    const handleScroll = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(updateSticky);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    updateSticky();
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
   }, []);
 
   return (

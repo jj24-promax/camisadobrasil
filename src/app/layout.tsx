@@ -73,20 +73,6 @@ export default function RootLayout({
           src="https://checkout.mangofy.com.br/js/new/fast_api.min.js?key=vstg4q2k-0f058fda-5659-4bf9-9054-1e3b9539fe6c"
           strategy="beforeInteractive"
         />
-        <Script id="meta-pixel" strategy="afterInteractive">
-          {`
-            !function(f,b,e,v,n,t,s)
-            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-            n.queue=[];t=b.createElement(e);t.async=!0;
-            t.src=v;s=b.getElementsByTagName(e)[0];
-            s.parentNode.insertBefore(t,s)}(window, document,'script',
-            'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '1145077732578582');
-            fbq('track', 'PageView');
-          `}
-        </Script>
         <Script id="microsoft-clarity" strategy="afterInteractive">
           {`(function(c,l,a,r,i,t,y){
               c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -99,16 +85,6 @@ export default function RootLayout({
         className={`${sans.variable} ${display.variable} font-sans min-h-[100dvh] bg-transparent text-foreground antialiased`}
         suppressHydrationWarning
       >
-        <noscript>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            height="1"
-            width="1"
-            style={{ display: "none" }}
-            src="https://www.facebook.com/tr?id=1145077732578582&ev=PageView&noscript=1"
-            alt=""
-          />
-        </noscript>
         <Providers>
           <AmbientBackground />
           <div className="relative z-10 flex min-h-[100dvh] flex-col">{children}</div>

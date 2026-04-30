@@ -255,7 +255,7 @@ export function ProductDetails({ selectedEdition, onEditionChange }: ProductDeta
                             fill
                             className="object-cover object-center"
                             sizes="(max-width: 768px) 90vw, 420px"
-                            quality={90}
+                            quality={84}
                             loading="lazy"
                           />
                         ) : activeVideoSources ? (

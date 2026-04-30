@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
     /** Entrega WebP via otimizador do Next (melhor em 4G); fontes podem ser PNG. */
     formats: ["image/webp"],
     // Configura as qualidades permitidas para evitar avisos de versões futuras do Next.js
-    qualities: [75, 90, 95],
+    qualities: [75, 84, 90, 95],
     remotePatterns: [
       {
         protocol: "https",

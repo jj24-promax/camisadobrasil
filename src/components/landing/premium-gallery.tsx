@@ -227,7 +227,7 @@ export function PremiumGallery({ selectedEdition, onEditionChange }: PremiumGall
                               priority={active === 0}
                               loading={active === 0 ? "eager" : "lazy"}
                               fetchPriority={active === 0 ? "high" : "auto"}
-                              quality={90}
+                              quality={84}
                               sizes={MAIN_SIZES}
                               className="object-cover object-center"
                             />

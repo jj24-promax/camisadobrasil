@@ -260,7 +260,7 @@ export function HeroSection({
                 <div className="flex flex-col gap-5 md:gap-6">
                   
                   {/* SEÇÃO 1: CORES E INFORMAÇÕES DA EDIÇÃO */}
-                  <div className="flex flex-col gap-3 md:gap-4">
+                  <div id="hero-color-selector" className="flex flex-col gap-3 md:gap-4">
                     <p className="text-center font-display text-[10px] font-bold uppercase tracking-[0.2em] text-gold/80 sm:text-left">
                       Escolha sua Edição:
                     </p>

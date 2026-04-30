@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 
 const NAMES = ["João S.", "Maria V.", "Ricardo F.", "Fernanda M.", "Lucas A.", "Beatriz R.", "Rafael C.", "Juliana P.", "Gustavo T.", "Ana L."];
@@ -13,10 +13,58 @@ type SalesNotificationsProps = {
 
 export function SalesNotifications({ isVisible }: SalesNotificationsProps) {
   const [notification, setNotification] = useState<{ name: string; city: string } | null>(null);
+  const [hideOnMobileColorSelection, setHideOnMobileColorSelection] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => setIsMobile(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const target = document.getElementById("hero-color-selector");
+    if (!target) return;
+
+    const mq = window.matchMedia("(max-width: 767px)");
+    const updateByIntersect = (isIntersecting: boolean) => {
+      if (!mq.matches) {
+        setHideOnMobileColorSelection(false);
+        return;
+      }
+      setHideOnMobileColorSelection(isIntersecting);
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        updateByIntersect(Boolean(entry?.isIntersecting));
+      },
+      { threshold: 0.2 }
+    );
+    observer.observe(target);
+
+    const onMediaChange = () => {
+      if (!mq.matches) setHideOnMobileColorSelection(false);
+    };
+    mq.addEventListener("change", onMediaChange);
+
+    return () => {
+      observer.disconnect();
+      mq.removeEventListener("change", onMediaChange);
+    };
+  }, []);
+
+  const effectiveVisible = isVisible && !hideOnMobileColorSelection;
 
   useEffect(() => {
     // Se a barra não estiver visível, limpamos qualquer notificação ativa e não fazemos nada
-    if (!isVisible) {
+    if (!effectiveVisible) {
       setNotification(null);
       return;
     }
@@ -28,30 +76,42 @@ export function SalesNotifications({ isVisible }: SalesNotificationsProps) {
 
       setTimeout(() => {
         setNotification(null);
-      }, 4000);
+      }, isMobile ? 2800 : 4000);
     };
 
     // Agenda a primeira notificação após 1.5s de a barra aparecer
-    const initialTimer = setTimeout(showNotification, 1500);
+    const initialTimer = setTimeout(showNotification, isMobile ? 2200 : 1500);
 
     const interval = setInterval(() => {
       showNotification();
-    }, 8000 + Math.random() * 7000);
+    }, (isMobile ? 13000 : 8000) + Math.random() * (isMobile ? 9000 : 7000));
 
     return () => {
       clearTimeout(initialTimer);
       clearInterval(interval);
     };
-  }, [isVisible]);
+  }, [effectiveVisible, isMobile]);
 
   return (
     <div className="fixed bottom-24 left-4 z-[60] md:bottom-6 md:left-6">
       <AnimatePresence>
-        {isVisible && notification && (
+        {effectiveVisible && notification && (
           <motion.div
-            initial={{ opacity: 0, x: -20, scale: 0.95 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: -20, scale: 0.95 }}
+            initial={
+              isMobile || reduced
+                ? { opacity: 0 }
+                : { opacity: 0, x: -20, scale: 0.95 }
+            }
+            animate={
+              isMobile || reduced
+                ? { opacity: 1 }
+                : { opacity: 1, x: 0, scale: 1 }
+            }
+            exit={
+              isMobile || reduced
+                ? { opacity: 0 }
+                : { opacity: 0, x: -20, scale: 0.95 }
+            }
             className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#060a12]/90 p-3 shadow-2xl backdrop-blur-xl md:gap-4 md:p-4"
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-500/20 text-green-500 md:h-10 md:w-10">

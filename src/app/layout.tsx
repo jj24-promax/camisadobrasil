@@ -73,6 +73,16 @@ export default function RootLayout({
           src="https://checkout.mangofy.com.br/js/new/fast_api.min.js?key=vstg4q2k-0f058fda-5659-4bf9-9054-1e3b9539fe6c"
           strategy="beforeInteractive"
         />
+        <Script id="utmify-pixel" strategy="afterInteractive">
+          {`
+            window.pixelId = "69f3ad11e9c48c1f97bcb46b";
+            var a = document.createElement("script");
+            a.setAttribute("async", "");
+            a.setAttribute("defer", "");
+            a.setAttribute("src", "https://cdn.utmify.com.br/scripts/pixel/pixel.js");
+            document.head.appendChild(a);
+          `}
+        </Script>
         <Script id="microsoft-clarity" strategy="afterInteractive">
           {`(function(c,l,a,r,i,t,y){
               c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};

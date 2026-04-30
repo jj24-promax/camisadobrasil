@@ -9,11 +9,10 @@ import { Copy, Loader2, Lock, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { extractPixGatewayPayload, qrDataUrlForImg } from "@/lib/pix-gateway-response";
 import { readPosCompraPixClient } from "@/lib/pos-compra-pix-storage";
-import { computeUpsellAddonCents, UPSELL_CARD_CENTS, UPSELL_VIP_CENTS } from "@/lib/pos-compra-upsell-pricing";
+import { computeUpsellAddonCents, UPSELL_CAP_CENTS, UPSELL_BAG_CENTS, UPSELL_CUP_CENTS } from "@/lib/pos-compra-upsell-pricing";
 import { posCompraObrigadoQuery } from "@/lib/pos-compra-routes";
 import { usePixPaymentConfirmation } from "@/hooks/use-pix-payment-confirmation";
 import { supabaseEdgeInvokeHeaders } from "@/lib/supabase/edge-invoke-headers";
-import { extractTrackingFromSearch, sendUtmifyPaidOrderOnce } from "@/lib/utmify-client";
 
 type PixState = {
   paymentCode: string;
@@ -21,17 +20,18 @@ type PixState = {
   idTransaction?: string;
 } | null;
 
-function cacheKey(vip: boolean, card: boolean) {
-  return `alpha_pos_compra_addon_pix_${vip ? "v" : ""}${card ? "c" : ""}`;
+function cacheKey(cap: boolean, bag: boolean, cup: boolean) {
+  return `alpha_pos_compra_addon_pix_${cap ? "c" : ""}${bag ? "b" : ""}${cup ? "u" : ""}`;
 }
 
 function PixAddonsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const vip = searchParams.get("vip") === "1";
-  const card = searchParams.get("card") === "1";
+  const cap = searchParams.get("cap") === "1";
+  const bag = searchParams.get("bag") === "1";
+  const cup = searchParams.get("cup") === "1";
 
-  const addonCents = useMemo(() => computeUpsellAddonCents(vip, card), [vip, card]);
+  const addonCents = useMemo(() => computeUpsellAddonCents(cap, bag, cup), [cap, bag, cup]);
   const [pixResult, setPixResult] = useState<PixState>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,9 +55,9 @@ function PixAddonsContent() {
 
   useEffect(() => {
     if (addonCents === 0) {
-      router.replace(posCompraObrigadoQuery(vip, card));
+      router.replace(posCompraObrigadoQuery(cap, bag, cup));
     }
-  }, [addonCents, vip, card, router]);
+  }, [addonCents, cap, bag, cup, router]);
 
   const pixAddonAutoRedirectDoneRef = useRef(false);
   useEffect(() => {
@@ -72,58 +72,23 @@ function PixAddonsContent() {
     if (pixAddonAutoRedirectDoneRef.current) return;
     const tx = (pixResult.idTransaction ?? "").trim();
     if (!tx) return;
+    
     pixAddonAutoRedirectDoneRef.current = true;
-    const client = readPosCompraPixClient();
-    if (client) {
-      void sendUtmifyPaidOrderOnce({
-        orderId: tx,
-        paymentMethod: "pix",
-        status: "paid",
-        createdAt: new Date().toISOString(),
-        approvedDate: new Date().toISOString(),
-        customer: {
-          name: client.name,
-          email: client.email,
-          phone: client.telefone,
-        },
-        totalPriceInCents: addonCents,
-        trackingParameters: extractTrackingFromSearch(searchParams),
-        products: [
-          {
-            name: "Adicionais pós-compra",
-            priceInCents: addonCents,
-            quantity: 1,
-          },
-        ],
-      }).catch(() => {
-        // Falha no postback não bloqueia a navegação.
-      });
-    }
+    
     toast.success("Pagamento confirmado!");
-    router.push(posCompraObrigadoQuery(vip, card));
-  }, [
-    loading,
-    pixResult?.paymentCode,
-    pixResult?.idTransaction,
-    pixTrackingAvailable,
-    pixPaymentConfirmed,
-    vip,
-    card,
-    router,
-    addonCents,
-    searchParams,
-  ]);
+    router.push(posCompraObrigadoQuery(cap, bag, cup));
+  }, [loading, pixResult?.paymentCode, pixResult?.idTransaction, pixTrackingAvailable, pixPaymentConfirmed, cap, bag, cup, router, addonCents, searchParams]);
 
   const generatePix = useCallback(async () => {
-    const client = readPosCompraPixClient();
-    if (!client) {
+    const clientRef = readPosCompraPixClient();
+    if (!clientRef || !clientRef.leadId) {
       setMissingClient(true);
       setLoading(false);
       setError(null);
       return;
     }
 
-    const key = cacheKey(vip, card);
+    const key = cacheKey(cap, bag, cup);
     try {
       const cached = sessionStorage.getItem(key);
       if (cached) {
@@ -135,9 +100,7 @@ function PixAddonsContent() {
           return;
         }
       }
-    } catch {
-      /* continuar e gerar de novo */
-    }
+    } catch {}
 
     setLoading(true);
     setError(null);
@@ -146,12 +109,11 @@ function PixAddonsContent() {
     try {
       const amount = Number((addonCents / 100).toFixed(2));
       const parts: string[] = [];
-      if (vip) parts.push("Garantia VIP");
-      if (card) parts.push("Proteção cartão");
-      const productSummaryAddon =
-        parts.length > 0 ? `Adicionais pós-compra · ${parts.join(" · ")}` : "Adicionais pós-compra";
+      if (cap) parts.push("Boné Alpha");
+      if (bag) parts.push("Shoulder Bag");
+      if (cup) parts.push("Copo Térmico");
+      const productSummaryAddon = parts.length > 0 ? `Adicionais pós-compra · ${parts.join(" · ")}` : "Adicionais pós-compra";
 
-      // Faz fetch DIRETO na Supabase Edge Function criada
       const res = await fetch("https://ulrigywayovxuyiktnlr.supabase.co/functions/v1/pix-create", {
         method: "POST",
         headers: supabaseEdgeInvokeHeaders(),
@@ -159,49 +121,33 @@ function PixAddonsContent() {
           amount,
           amountCents: addonCents,
           productSummary: productSummaryAddon,
-          client: {
-            name: client.name,
-            document: client.document,
-            telefone: client.telefone,
-            email: client.email,
-          },
+          leadId: clientRef.leadId,
         }),
       });
+      
       const text = await res.text();
       let raw: Record<string, unknown>;
       try {
         raw = text.trim() ? (JSON.parse(text) as Record<string, unknown>) : {};
       } catch {
-        throw new Error(
-          res.status >= 500
-            ? `Erro ${res.status} no servidor (resposta não JSON).`
-            : "Resposta inválida do servidor ao gerar Pix."
-        );
+        throw new Error(res.status >= 500 ? `Erro ${res.status} no servidor (resposta não JSON).` : "Resposta inválida.");
       }
       if (!res.ok) {
-        const msg =
-          typeof raw.error === "string"
-            ? raw.error
-            : typeof raw.message === "string"
-              ? raw.message
-              : `Erro ${res.status} ao gerar Pix.`;
+        const msg = typeof raw.error === "string" ? raw.error : typeof raw.message === "string" ? raw.message : `Erro ${res.status} ao gerar Pix.`;
         throw new Error(msg);
       }
       const data = extractPixGatewayPayload(raw);
-      if (!data.paymentCode) {
-        throw new Error("Gateway não retornou o código Pix.");
-      }
+      if (!data.paymentCode) throw new Error("Gateway não retornou o código Pix.");
+      
       const next: PixState = {
         paymentCode: data.paymentCode,
         paymentCodeBase64: data.paymentCodeBase64,
         idTransaction: data.idTransaction,
       };
+      
       setPixResult(next);
-      try {
-        sessionStorage.setItem(key, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
+      try { sessionStorage.setItem(key, JSON.stringify(next)); } catch {}
+      
       toast.success("Pix dos adicionais gerado!");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Não foi possível gerar o Pix.";
@@ -210,15 +156,15 @@ function PixAddonsContent() {
     } finally {
       setLoading(false);
     }
-  }, [addonCents, vip, card]);
+  }, [addonCents, cap, bag, cup]);
 
   useEffect(() => {
     if (addonCents === 0) return;
-    const runKey = `${vip}-${card}-${addonCents}`;
+    const runKey = `${cap}-${bag}-${cup}-${addonCents}`;
     if (fetchStartedFor.current === runKey) return;
     fetchStartedFor.current = runKey;
     void generatePix();
-  }, [addonCents, vip, card, generatePix]);
+  }, [addonCents, cap, bag, cup, generatePix]);
 
   const copyCode = async () => {
     if (!pixResult?.paymentCode) return;
@@ -249,170 +195,70 @@ function PixAddonsContent() {
     >
       <header className="border-b border-white/5 bg-navy-deep/50 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5">
-          <Link
-            href="/"
-            className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-gold"
-          >
-            Início
-          </Link>
+          <Link href="/" className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-gold">Início</Link>
           <p className="font-display text-xs font-bold tracking-[0.3em] text-gold-bright">ALPHA BRASIL</p>
           <Lock size={16} className="text-muted-foreground/40" aria-hidden />
         </div>
       </header>
 
-      <div className="pointer-events-none absolute inset-x-0 top-16 h-72 bg-[radial-gradient(ellipse_65%_55%_at_50%_0%,hsl(38_30%_22%/0.35),transparent)]" />
-
       <main className="relative mx-auto mt-10 min-w-0 max-w-lg px-4 sm:px-5 md:mt-14 md:max-w-xl">
-        <p className="mb-2 text-center font-display text-[10px] font-semibold uppercase tracking-[0.38em] text-gold/75">
-          Pagamento dos adicionais
-        </p>
-        <h1 className="text-center font-display text-[clamp(1.15rem,4vw,1.5rem)] font-extrabold uppercase leading-snug tracking-tight text-white">
-          Pix — VIP e card
-        </h1>
-        <p className="mx-auto mt-3 max-w-md text-center text-sm leading-relaxed text-muted-foreground">
-          Valor extra dos upsells que escolheu. Pague com Pix para concluir a reserva dos adicionais.
-        </p>
+        <p className="mb-2 text-center font-display text-[10px] font-semibold uppercase tracking-[0.38em] text-gold/75">Pagamento dos adicionais</p>
+        <h1 className="text-center font-display text-[clamp(1.15rem,4vw,1.5rem)] font-extrabold uppercase leading-snug tracking-tight text-white">Pix — Extras</h1>
+        <p className="mx-auto mt-3 max-w-md text-center text-sm leading-relaxed text-muted-foreground">Valor extra dos itens que escolheu. Pague com Pix para concluir a reserva.</p>
 
         <div className="mt-8 space-y-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 text-[13px] text-muted-foreground">
-          {vip && (
-            <div className="flex justify-between gap-3">
-              <span>Fila VIP</span>
-              <span className="shrink-0 font-semibold text-white">
-                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(UPSELL_VIP_CENTS / 100)}
-              </span>
-            </div>
-          )}
-          {card && (
-            <div className="flex justify-between gap-3">
-              <span>Card colecionável</span>
-              <span className="shrink-0 font-semibold text-white">
-                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(UPSELL_CARD_CENTS / 100)}
-              </span>
-            </div>
-          )}
+          {cap && <div className="flex justify-between gap-3"><span>Boné Oficial</span><span className="shrink-0 font-semibold text-white">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(UPSELL_CAP_CENTS / 100)}</span></div>}
+          {bag && <div className="flex justify-between gap-3"><span>Shoulder Bag</span><span className="shrink-0 font-semibold text-white">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(UPSELL_BAG_CENTS / 100)}</span></div>}
+          {cup && <div className="flex justify-between gap-3"><span>Copo Térmico</span><span className="shrink-0 font-semibold text-white">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(UPSELL_CUP_CENTS / 100)}</span></div>}
           <div className="border-t border-white/10 pt-3 font-display text-lg font-bold text-gold-bright">Total: {fmt}</div>
         </div>
 
         {missingClient && (
           <div className="mt-8 rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] px-4 py-4 text-sm text-amber-100">
-            <p className="font-medium text-amber-50">Não encontrámos os seus dados para gerar o Pix.</p>
-            <p className="mt-2 text-xs leading-relaxed text-amber-100/90">
-              Volte ao checkout, gere o Pix da compra principal e siga de novo para os upsells nesta sessão (ou use o mesmo
-              dispositivo).
-            </p>
-            <Button asChild className="mt-4 w-full font-bold uppercase tracking-widest" size="lg">
-              <Link href="/checkout">Ir ao checkout</Link>
-            </Button>
+            <p className="font-medium text-amber-50">Sessão expirada.</p>
+            <p className="mt-2 text-xs leading-relaxed text-amber-100/90">Volte ao checkout e refaça a operação para continuar com a sua reserva.</p>
+            <Button asChild className="mt-4 w-full font-bold uppercase tracking-widest" size="lg"><Link href="/checkout">Ir ao checkout</Link></Button>
           </div>
         )}
 
         {error && !missingClient && (
           <div className="mt-8 space-y-4 rounded-2xl border border-red-500/20 bg-red-500/[0.06] px-4 py-4 text-sm text-red-100">
             <p>{error}</p>
-            <Button type="button" variant="outline" className="w-full border-white/20" onClick={() => void generatePix()}>
-              Tentar novamente
-            </Button>
+            <Button type="button" variant="outline" className="w-full border-white/20" onClick={() => void generatePix()}>Tentar novamente</Button>
           </div>
         )}
 
         {loading && !missingClient && (
-          <div className="mt-12 flex flex-col items-center gap-4">
-            <Loader2 className="h-10 w-10 animate-spin text-gold" aria-hidden />
-            <p className="text-center text-xs uppercase tracking-widest text-muted-foreground">A gerar Pix…</p>
-          </div>
+          <div className="mt-12 flex flex-col items-center gap-4"><Loader2 className="h-10 w-10 animate-spin text-gold" aria-hidden /><p className="text-center text-xs uppercase tracking-widest text-muted-foreground">A gerar Pix…</p></div>
         )}
 
         {!loading && pixResult != null && (
           <div className="mt-10 min-w-0 max-w-full space-y-6 overflow-hidden rounded-[2rem] border border-gold/25 bg-[#060a12]/90 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:p-6">
-            <div className="flex items-center justify-center gap-2 text-gold-bright">
-              <QrCode size={22} className="shrink-0" aria-hidden />
-              <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em]">Pague com Pix</p>
-            </div>
+            <div className="flex items-center justify-center gap-2 text-gold-bright"><QrCode size={22} className="shrink-0" aria-hidden /><p className="font-display text-[10px] font-bold uppercase tracking-[0.28em]">Pague com Pix</p></div>
             {pixResult.paymentCode ? (
               <div className="flex w-full justify-center px-1">
                 <div className="relative aspect-square w-full max-w-[min(220px,calc(100vw-2.5rem))] overflow-hidden rounded-xl border border-white/10 bg-white p-2 sm:max-w-[220px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img 
-                    src={qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixResult.paymentCode)}`} 
-                    alt="QR Code Pix" 
-                    className="h-full w-full max-h-full max-w-full object-contain" 
-                    onError={(e) => {
-                      e.currentTarget.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixResult.paymentCode)}`;
-                    }}
-                  />
+                  <img src={qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixResult.paymentCode)}`} alt="QR Code Pix" className="h-full w-full max-h-full max-w-full object-contain" onError={(e) => { e.currentTarget.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixResult.paymentCode)}`; }} />
                 </div>
               </div>
             ) : null}
-            <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Pix copia e cola
-            </p>
-            <div className="max-h-28 min-h-0 max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-[10px] leading-relaxed text-white/90 [overflow-wrap:anywhere]">
-              {pixResult.paymentCode}
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full max-w-full border-gold/30 text-[11px] font-bold uppercase tracking-widest"
-              onClick={() => void copyCode()}
-            >
-              <Copy className="mr-2 h-4 w-4 shrink-0" />
-              Copiar código
+            <div className="max-h-28 min-h-0 max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-[10px] leading-relaxed text-white/90 [overflow-wrap:anywhere]">{pixResult.paymentCode}</div>
+            <Button type="button" variant="outline" size="sm" className="w-full max-w-full shrink-0 border-gold/30 text-[11px] font-bold uppercase tracking-widest" onClick={copyCode}>
+              <Copy className="mr-2 h-4 w-4 shrink-0" /> Copiar código
             </Button>
-            {pixResult.idTransaction ? (
-              <p className="text-center text-[9px] text-muted-foreground">Ref. {pixResult.idTransaction}</p>
-            ) : null}
+            {pixResult.idTransaction ? <p className="text-center text-[9px] text-muted-foreground">Ref. {pixResult.idTransaction}</p> : null}
           </div>
         )}
 
         {!loading && pixResult != null && (
           <div className="mt-10 space-y-3">
-            {pixMissingTransactionId ? (
-              <p className="text-center text-[10px] leading-snug text-amber-200/90">
-                Sem referência da transação — não é possível confirmar o Pix automaticamente.
-              </p>
-            ) : pixResult.idTransaction ? (
-              !pixTrackingAvailable ? (
-                <p className="text-center text-[10px] leading-snug text-amber-200/90">
-                  Confirmação automática: configure{" "}
-                  <code className="rounded bg-black/30 px-1 text-[9px]">SUPABASE_SERVICE_ROLE_KEY</code> e{" "}
-                  <code className="rounded bg-black/30 px-1 text-[9px]">docs/supabase-pix-payments.sql</code>.
-                </p>
-              ) : !pixPaymentConfirmed ? (
-                <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-gold-bright/90">
-                  À espera da confirmação do pagamento…
-                </p>
-              ) : (
-                <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-emerald-400/90">
-                  Pagamento confirmado — pode continuar.
-                </p>
-              )
+            {pixMissingTransactionId ? <p className="text-center text-[10px] leading-snug text-amber-200/90">Sem referência da transação — não é possível confirmar o Pix automaticamente.</p> :
+             pixResult.idTransaction ? (
+              !pixTrackingAvailable ? <p className="text-center text-[10px] leading-snug text-amber-200/90">Confirmação automática indisponível.</p> :
+              !pixPaymentConfirmed ? <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-gold-bright/90">À espera da confirmação do pagamento…</p> :
+              <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-emerald-400/90">Pagamento confirmado — pode continuar.</p>
             ) : null}
-            <Button
-              type="button"
-              size="xl"
-              disabled={pixContinueDisabled}
-              className="w-full font-bold uppercase tracking-[0.12em] disabled:opacity-60"
-              onClick={() => {
-                if (pixMissingTransactionId) {
-                  toast.error("Sem identificador da transação para confirmar o Pix.");
-                  return;
-                }
-                if (!pixTrackingAvailable) {
-                  toast.error(
-                    "Confirmação automática indisponível. Configure SUPABASE_SERVICE_ROLE_KEY e a tabela no Supabase."
-                  );
-                  return;
-                }
-                if (!pixPaymentConfirmed) {
-                  toast.error("Aguarde a confirmação do Pix antes de continuar.");
-                  return;
-                }
-                router.push(posCompraObrigadoQuery(vip, card));
-              }}
-            >
-              Continuar para confirmação
-            </Button>
+            <Button type="button" size="xl" disabled={pixContinueDisabled} className="w-full font-bold uppercase tracking-[0.12em] disabled:opacity-60" onClick={() => router.push(posCompraObrigadoQuery(cap, bag, cup))}>Continuar para confirmação</Button>
           </div>
         )}
       </main>

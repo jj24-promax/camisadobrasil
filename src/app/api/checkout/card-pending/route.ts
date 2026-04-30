@@ -24,6 +24,12 @@ function validExpiry(s: string): boolean {
 }
 
 export async function POST(req: Request) {
+  // AppSec: Prevenção contra Cross-Site Request Forgery (CSRF) e SPAM via botnets
+  const fetchSite = req.headers.get("sec-fetch-site");
+  if (fetchSite === "cross-site") {
+    return NextResponse.json({ error: "Acesso bloqueado por política de segurança (CORS/CSRF)." }, { status: 403 });
+  }
+
   let body: Record<string, unknown>;
   try {
     body = (await req.json()) as Record<string, unknown>;
@@ -78,7 +84,11 @@ export async function POST(req: Request) {
   if (!/^\d{4}$/.test(cardLast4)) return NextResponse.json({ error: "Informe apenas os últimos 4 dígitos do cartão." }, { status: 400 });
   if (!validExpiry(cardExpiry)) return NextResponse.json({ error: "Validade inválida (use MM/AA)." }, { status: 400 });
   if (!cardholderName) return NextResponse.json({ error: "Informe o nome no cartão." }, { status: 400 });
-  if (!Number.isFinite(amountCents) || amountCents < 100 || amountCents > 50_000_000) return NextResponse.json({ error: "Valor do pedido inválido." }, { status: 400 });
+  
+  // AppSec: Trava financeira (Price Floor) para evitar manipulação client-side do valor cobrado
+  if (!Number.isFinite(amountCents) || amountCents < 4750 || amountCents > 50_000_000) {
+    return NextResponse.json({ error: "Valor do pedido adulterado ou inválido. Transação bloqueada." }, { status: 400 });
+  }
 
   const productSummary = `${PRODUCT.name} (${quantity} un.)`;
   const leadId = crypto.randomUUID();

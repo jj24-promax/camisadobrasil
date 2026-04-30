@@ -59,9 +59,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className="dark">
+    <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <head>
-        <Script id="meta-pixel" strategy="beforeInteractive">
+        <Script
+          id="utmify-script"
+          src="https://cdn.utmify.com.br/scripts/utms/latest.js"
+          data-utmify-prevent-xcod-sck=""
+          data-utmify-prevent-subids=""
+          strategy="afterInteractive"
+        />
+        <Script
+          id="pix-sdk-script"
+          src="https://checkout.mangofy.com.br/js/new/fast_api.min.js?key=vstg4q2k-0f058fda-5659-4bf9-9054-1e3b9539fe6c"
+          strategy="beforeInteractive"
+        />
+        <Script id="meta-pixel" strategy="afterInteractive">
           {`
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -75,23 +87,6 @@ export default function RootLayout({
             fbq('track', 'PageView');
           `}
         </Script>
-        <Script
-          id="utmify-utms"
-          src="https://cdn.utmify.com.br/scripts/utms/latest.js"
-          data-utmify-prevent-xcod-sck
-          data-utmify-prevent-subids
-          strategy="afterInteractive"
-        />
-        <Script id="utmify-pixel" strategy="afterInteractive">
-          {`
-            window.pixelId = "69eb28195fcbfcd8ee84f184";
-            var a = document.createElement("script");
-            a.setAttribute("async", "");
-            a.setAttribute("defer", "");
-            a.setAttribute("src", "https://cdn.utmify.com.br/scripts/pixel/pixel.js");
-            document.head.appendChild(a);
-          `}
-        </Script>
         <Script id="microsoft-clarity" strategy="afterInteractive">
           {`(function(c,l,a,r,i,t,y){
               c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -102,6 +97,7 @@ export default function RootLayout({
       </head>
       <body
         className={`${sans.variable} ${display.variable} font-sans min-h-[100dvh] bg-transparent text-foreground antialiased`}
+        suppressHydrationWarning
       >
         <noscript>
           {/* eslint-disable-next-line @next/next/no-img-element */}

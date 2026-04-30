@@ -1,25 +1,12 @@
 /**
- * Dados do comprador para gerar Pix dos adicionais pós-checkout (sessionStorage).
- * Preenchido no checkout ao gerar Pix ou ao seguir para os upsells.
+ * Guardamos apenas a referência opaca (leadId) para evitar a exposição
+ * de dados sensíveis (PII) em caso de XSS no front-end.
  */
 
-const STORAGE_KEY = "alpha_pos_compra_pix_client_v1";
+const STORAGE_KEY = "alpha_pos_compra_pix_client_v2";
 
 export type PosCompraPixClient = {
-  name: string;
-  email: string;
-  /** Só dígitos */
-  telefone: string;
-  /** CPF ou CNPJ só dígitos */
-  document: string;
-  /** Endereço de entrega (checkout) — opcional para compatibilidade com sessões antigas */
-  cep?: string;
-  endereco?: string;
-  numero?: string;
-  complemento?: string;
-  bairro?: string;
-  cidade?: string;
-  estado?: string;
+  leadId: string;
 };
 
 export function savePosCompraPixClient(c: PosCompraPixClient): void {
@@ -36,17 +23,9 @@ export function readPosCompraPixClient(): PosCompraPixClient | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const o = JSON.parse(raw) as unknown;
-    if (!o || typeof o !== "object") return null;
-    const r = o as Record<string, unknown>;
-    const name = typeof r.name === "string" ? r.name.trim() : "";
-    const email = typeof r.email === "string" ? r.email.trim() : "";
-    const telefone = typeof r.telefone === "string" ? r.telefone.replace(/\D/g, "") : "";
-    const document = typeof r.document === "string" ? r.document.replace(/\D/g, "") : "";
-    if (!name || !email || telefone.length < 10 || (document.length !== 11 && document.length !== 14)) {
-      return null;
-    }
-    return { name, email, telefone, document };
+    const o = JSON.parse(raw) as Record<string, unknown>;
+    if (typeof o.leadId !== "string" || !o.leadId) return null;
+    return { leadId: o.leadId };
   } catch {
     return null;
   }

@@ -20,13 +20,49 @@ serve(async (req) => {
   }
 
   try {
-    console.log("[pix-create] Iniciando requisição...");
     const body = await req.json();
-    const { amount, amountCents, productSummary, shippingSummary, client } = body;
+    let { amount, amountCents, productSummary, shippingSummary, client, leadId } = body;
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const isUpsell = !client && leadId;
+
+    if (isUpsell) {
+      const { data: lead } = await supabase.from("leads").select("*").eq("id", leadId).single();
+      if (lead) {
+        client = {
+          name: lead.nome,
+          document: lead.cpf,
+          telefone: lead.telefone,
+          email: lead.email,
+        };
+      } else {
+        return new Response(JSON.stringify({ error: "Lead não encontrado." }), { status: 404, headers: corsHeaders });
+      }
+    }
+
+    // AppSec: Basic Input Validation to prevent massive payloads and missing data
+    if (!client || !client.name || !client.document || !client.email) {
+      return new Response(JSON.stringify({ error: "Dados do cliente inválidos ou ausentes." }), { status: 400, headers: corsHeaders });
+    }
+    if (client.name.length > 150 || client.email.length > 150) {
+      return new Response(JSON.stringify({ error: "Payload excedeu o tamanho permitido." }), { status: 400, headers: corsHeaders });
+    }
+
+    // AppSec: Prevenção contra Price Tampering (Fraude do PIX de R$ 1,00)
+    if (isUpsell && amount < 19.90) {
+      console.warn(`[AppSec] Tentativa de fraude de preço detectada no Upsell: ${amount}`);
+      return new Response(JSON.stringify({ error: "Valor da transação inválido ou adulterado." }), { status: 400, headers: corsHeaders });
+    }
+    if (!isUpsell && amount < 47.50) {
+      console.warn(`[AppSec] Tentativa de fraude de preço detectada no Checkout: ${amount}`);
+      return new Response(JSON.stringify({ error: "Valor do pedido adulterado. Transação bloqueada." }), { status: 400, headers: corsHeaders });
+    }
 
     const apiKey = Deno.env.get("ROYALBANKING_API_KEY");
     if (!apiKey) {
-      console.error("[pix-create] ROYALBANKING_API_KEY não encontrada nos secrets.");
       return new Response(JSON.stringify({ error: "API Key não configurada." }), { 
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
@@ -34,9 +70,11 @@ serve(async (req) => {
 
     const callbackUrl = "https://ulrigywayovxuyiktnlr.supabase.co/functions/v1/pix-webhook";
     const trackingCode = generateMockTrackingCode();
-    const leadId = crypto.randomUUID();
+    
+    if (!leadId) {
+      leadId = crypto.randomUUID();
+    }
 
-    console.log("[pix-create] Chamando Royal Banking API...");
     const upstream = await fetch("https://api.royalbanking.com.br/v1/gateway/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -69,30 +107,26 @@ serve(async (req) => {
     const idTransaction = idTxRaw == null ? undefined : String(idTxRaw);
 
     if (idTransaction) {
-      console.log(`[pix-create] Inserindo dados no banco (tx: ${idTransaction})...`);
-      
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
-
-      const { error: leadError } = await supabase.from("leads").insert({
-        id: leadId,
-        nome: client.name.trim(),
-        email: client.email.trim().toLowerCase(),
-        telefone: client.telefone.replace(/\D/g, ""),
-        produto_interesse: productSummary || "Camisa do Brasil",
-        status: "em_contato",
-        cpf: client.document.replace(/\D/g, ""),
-        codigo_rastreio: trackingCode,
-        cidade: client.address?.cidade,
-        estado: client.address?.estado,
-        cep: client.address?.cep,
-        endereco: client.address?.endereco,
-        numero: client.address?.numero,
-        complemento: client.address?.complemento,
-        bairro: client.address?.bairro,
-      });
-      if (leadError) console.error("[pix-create] Erro ao inserir Lead:", leadError);
+      if (!isUpsell) {
+        const { error: leadError } = await supabase.from("leads").insert({
+          id: leadId,
+          nome: client.name.trim(),
+          email: client.email.trim().toLowerCase(),
+          telefone: client.telefone.replace(/\D/g, ""),
+          produto_interesse: productSummary || "Camisa do Brasil",
+          status: "em_contato",
+          cpf: client.document.replace(/\D/g, ""),
+          codigo_rastreio: trackingCode,
+          cidade: client.address?.cidade,
+          estado: client.address?.estado,
+          cep: client.address?.cep,
+          endereco: client.address?.endereco,
+          numero: client.address?.numero,
+          complemento: client.address?.complemento,
+          bairro: client.address?.bairro,
+        });
+        if (leadError) console.error("[pix-create] Erro ao inserir Lead:", leadError);
+      }
 
       const base = `${productSummary} · Pix`;
       const line = shippingSummary ? `${base} · Entrega: ${shippingSummary}` : base;
@@ -109,8 +143,7 @@ serve(async (req) => {
       if (vendaError) console.error("[pix-create] Erro ao inserir Venda:", vendaError);
     }
 
-    console.log("[pix-create] Sucesso!");
-    return new Response(JSON.stringify({ paymentCode, paymentCodeBase64, idTransaction, trackingCode }), {
+    return new Response(JSON.stringify({ paymentCode, paymentCodeBase64, idTransaction, trackingCode, leadId }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 

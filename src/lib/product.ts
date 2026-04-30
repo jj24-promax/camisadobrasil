@@ -245,7 +245,7 @@ const CANARINHO_GALLERY: CampaignGalleryItem[] = [
 
 const FENIX_GALLERY: CampaignGalleryItem[] = [
   {
-    src: "/images/campaign/edicao-fenix-frente.png",
+    src: "/images/campaign/modelo-frente.webp",
     alt: "Modelo com camisa Alpha Brasil Edição Fênix vermelha — vista frontal em estúdio",
     caption: "Editorial frontal da Edição Fênix.",
   },
@@ -330,10 +330,10 @@ export const PRODUCT_MODELS: readonly ProductModel[] = [
         kind: "video",
         alt: "Camisa Alpha Brasil Edição Fênix Vermelha",
         mp4Src: FENIX_VIDEO_MP4,
-        posterSrc: "/images/campaign/edicao-fenix-frente.png",
+        posterSrc: "/images/campaign/modelo-frente.webp",
       },
       heroGallery: [
-        "/images/campaign/edicao-fenix-frente.png",
+        "/images/campaign/modelo-frente.webp",
         "/images/campaign/edicao-fenix-costas.png",
       ],
       checkout: "/images/camisa-vermelha-carrinho.png",

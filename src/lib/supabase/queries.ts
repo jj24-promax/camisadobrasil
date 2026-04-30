@@ -1,9 +1,10 @@
 import "server-only";
 
 import { unstable_noStore as noStore } from "next/cache";
-import { supabase } from "@/lib/supabase";
 import { isSupabasePublicEnvConfigured } from "@/lib/supabase/env-check";
 import { mapClienteRow, mapLeadRow, mapVendaRow } from "@/lib/supabase/mappers";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { isAdminSessionValid } from "@/lib/admin-auth/verify-session.server";
 import type { Client, Lead, Sale } from "@/types/admin";
 
 const ROW_LIMIT = 2_000;
@@ -30,15 +31,21 @@ function friendlyMessage(message: string, code?: string): string {
 export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
   noStore();
 
+  if (!(await isAdminSessionValid())) {
+    return { ok: false, error: "Acesso Negado: Sessão inválida." };
+  }
+
   if (!isSupabasePublicEnvConfigured()) {
     return {
       ok: false,
-      error:
-        "Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY (.env.local ou variáveis de ambiente na Vercel).",
+      error: "Configuração do Supabase ausente.",
     };
   }
 
-  const { data, error } = await supabase.from("leads").select("*").limit(ROW_LIMIT);
+  const admin = createSupabaseAdminClient();
+  if (!admin) return { ok: false, error: "Chave de serviço ausente." };
+
+  const { data, error } = await admin.from("leads").select("*").limit(ROW_LIMIT);
 
   if (error) {
     return { ok: false, error: friendlyMessage(error.message, error.code), code: error.code };
@@ -52,15 +59,21 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
 export async function fetchAdminVendas(): Promise<AdminFetchResult<Sale[]>> {
   noStore();
 
+  if (!(await isAdminSessionValid())) {
+    return { ok: false, error: "Acesso Negado: Sessão inválida." };
+  }
+
   if (!isSupabasePublicEnvConfigured()) {
     return {
       ok: false,
-      error:
-        "Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY (.env.local ou variáveis de ambiente na Vercel).",
+      error: "Configuração do Supabase ausente.",
     };
   }
 
-  const { data, error } = await supabase.from("vendas").select("*").limit(ROW_LIMIT);
+  const admin = createSupabaseAdminClient();
+  if (!admin) return { ok: false, error: "Chave de serviço ausente." };
+
+  const { data, error } = await admin.from("vendas").select("*").limit(ROW_LIMIT);
 
   if (error) {
     return { ok: false, error: friendlyMessage(error.message, error.code), code: error.code };
@@ -74,15 +87,21 @@ export async function fetchAdminVendas(): Promise<AdminFetchResult<Sale[]>> {
 export async function fetchAdminClientes(): Promise<AdminFetchResult<Client[]>> {
   noStore();
 
+  if (!(await isAdminSessionValid())) {
+    return { ok: false, error: "Acesso Negado: Sessão inválida." };
+  }
+
   if (!isSupabasePublicEnvConfigured()) {
     return {
       ok: false,
-      error:
-        "Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY (.env.local ou variáveis de ambiente na Vercel).",
+      error: "Configuração do Supabase ausente.",
     };
   }
 
-  const { data, error } = await supabase.from("clientes").select("*").limit(ROW_LIMIT);
+  const admin = createSupabaseAdminClient();
+  if (!admin) return { ok: false, error: "Chave de serviço ausente." };
+
+  const { data, error } = await admin.from("clientes").select("*").limit(ROW_LIMIT);
 
   if (error) {
     return { ok: false, error: friendlyMessage(error.message, error.code), code: error.code };

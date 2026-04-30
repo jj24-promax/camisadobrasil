@@ -5,6 +5,21 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      {
+        // Aplica cabeçalhos de segurança a todas as rotas do projeto
+        source: "/(.*)",
+        headers: [
+          { key: "X-DNS-Prefetch-Control", value: "on" },
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" }, // Previne Clickjacking
+          { key: "X-Content-Type-Options", value: "nosniff" }, // Previne MIME type sniffing
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       { source: "/dashboard", destination: "/admin", permanent: true },

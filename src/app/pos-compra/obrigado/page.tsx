@@ -4,7 +4,8 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Check, Lock, Package, Copy, ExternalLink } from "lucide-react";
+import Image from "next/image";
+import { Check, Lock, Package, Copy, ExternalLink, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import { generateMockTrackingCode } from "@/lib/tracking-utils";
@@ -13,14 +14,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 function ObrigadoContent() {
   const searchParams = useSearchParams();
-  const vip = searchParams.get("vip") === "1";
-  const card = searchParams.get("card") === "1";
+  const cap = searchParams.get("cap") === "1";
+  const bag = searchParams.get("bag") === "1";
+  const cup = searchParams.get("cup") === "1";
   const trackingCodeFromUrl = searchParams.get("code") || "";
   
   const [trackingCode, setTrackingCode] = useState("");
   const [trackingLinkUrl, setTrackingLinkUrl] = useState("https://rastrearlog.online");
 
-  // Meta Pixel — Purchase só após confirmação de PIX no checkout (flag em sessão).
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!takeMetaPurchasePixelAllowed()) return;
@@ -29,23 +30,16 @@ function ObrigadoContent() {
   }, []);
 
   useEffect(() => {
-    // Ordem de prioridade:
-    // 1) code na URL
-    // 2) sessionStorage (mesma aba)
-    // 3) localStorage (volta em outra aba/sessão)
-    // 4) fallback final
     const fromSession = sessionStorage.getItem("alpha_tracking_code");
     const fromLocal = localStorage.getItem("alpha_tracking_code");
     const resolvedCode = trackingCodeFromUrl || fromSession || fromLocal || generateMockTrackingCode();
 
     setTrackingCode(resolvedCode);
-    // Mantém sincronizado para não gerar novo código ao voltar à página.
     sessionStorage.setItem("alpha_tracking_code", resolvedCode);
     localStorage.setItem("alpha_tracking_code", resolvedCode);
   }, [trackingCodeFromUrl]);
 
   useEffect(() => {
-    // Busca os links dinâmicos no Supabase
     const fetchSettings = async () => {
       const { data } = await supabase.from("store_settings").select("tracking_link").eq("id", 1).maybeSingle();
       if (data?.tracking_link) {
@@ -94,8 +88,39 @@ function ObrigadoContent() {
             Recebemos o seu pedido com sucesso. Abaixo estão os detalhes para acompanhar a sua entrega.
           </p>
 
-          <div className="mt-10 overflow-hidden rounded-2xl border border-gold/20 bg-gold/5 p-6 text-left">
-            <div className="flex items-center gap-3 text-gold-bright mb-4">
+          {/* BANNER DO SORTEIO DA COPA COM O GOLDEN TICKET */}
+          <div className="mt-8 mb-4 overflow-hidden rounded-2xl border border-gold/40 bg-gradient-to-br from-[#1a1505] to-[#0a0802] shadow-[0_0_30px_-10px_rgba(212,175,55,0.35)] relative">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.15),transparent_70%)]" />
+            
+            <div className="relative z-10 p-6 md:p-8 flex flex-col sm:flex-row items-center gap-6">
+              <div className="w-full sm:w-1/3 flex justify-center shrink-0">
+                <div className="relative h-28 w-full max-w-[140px] sm:max-w-[180px] drop-shadow-[0_0_20px_rgba(212,175,55,0.5)] animate-pulse-soft">
+                  <Image
+                    src="/images/golden-ticket.png"
+                    alt="Golden Ticket Copa do Mundo"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-2 text-gold-bright mb-3">
+                  <Trophy size={18} />
+                  <h2 className="text-[14px] font-black uppercase tracking-widest text-white">Sorteio Copa 2026</h2>
+                </div>
+                <p className="text-[13px] text-gold/90 leading-relaxed font-medium">
+                  Parabéns! Sua participação no sorteio de <strong className="text-white">2 ingressos + viagem</strong> já está validada!
+                </p>
+                <p className="mt-3 text-[11px] text-muted-foreground">
+                  Seus números da sorte serão processados pelo sistema e enviados para o seu e-mail cadastrado em até 48 horas úteis.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] p-6 text-left">
+            <div className="flex items-center gap-3 text-white mb-4">
               <Package size={20} />
               <h2 className="text-xs font-bold uppercase tracking-widest">Rastreamento do Pedido</h2>
             </div>
@@ -123,7 +148,7 @@ function ObrigadoContent() {
                   href={trackingLinkUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gold/10 border border-gold/30 text-[11px] font-bold uppercase tracking-widest text-gold-bright hover:bg-gold/20 transition-all"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold uppercase tracking-widest text-white hover:bg-white/10 transition-all"
                 >
                   Acompanhar pedido agora
                   <ExternalLink size={14} />
@@ -136,24 +161,30 @@ function ObrigadoContent() {
             </p>
           </div>
 
-          {(vip || card) && (
-            <ul className="mx-auto mt-8 max-w-sm space-y-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-4 text-left text-[13px] text-muted-foreground">
-              {vip && (
+          {(cap || bag || cup) && (
+            <ul className="mx-auto mt-6 max-w-sm space-y-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-4 text-left text-[13px] text-muted-foreground">
+              {cap && (
                 <li className="flex gap-2">
                   <span className="text-gold-bright">✓</span>
-                  <span>Fila VIP de produção incluída no seu pedido.</span>
+                  <span>Boné Oficial incluído no seu pedido.</span>
                 </li>
               )}
-              {card && (
+              {bag && (
                 <li className="flex gap-2">
                   <span className="text-gold-bright">✓</span>
-                  <span>Card colecionável da edição reservado para envio com a peça.</span>
+                  <span>Shoulder Bag incluída no seu pedido.</span>
+                </li>
+              )}
+              {cup && (
+                <li className="flex gap-2">
+                  <span className="text-gold-bright">✓</span>
+                  <span>Copo Térmico incluído no seu pedido.</span>
                 </li>
               )}
             </ul>
           )}
 
-          <Button asChild size="xl" className="mt-10 w-full font-bold uppercase tracking-[0.1em]">
+          <Button asChild size="xl" className="mt-8 w-full font-bold uppercase tracking-[0.1em] border border-white/10 bg-transparent text-white hover:bg-white/5">
             <Link href="/">Voltar à loja</Link>
           </Button>
         </div>

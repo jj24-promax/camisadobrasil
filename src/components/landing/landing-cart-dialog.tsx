@@ -147,7 +147,10 @@ export function LandingCartDialog({
                           src={itemModel.images.checkout}
                           alt={itemModel.fullName}
                           fill
-                          className="object-contain p-1"
+                          className={cn(
+                            "object-contain transition-transform duration-300",
+                            itemModel.id === "edicao-vermelha" ? "scale-[0.85]" : "scale-[1.05] p-1"
+                          )}
                           sizes="80px"
                         />
                       </div>

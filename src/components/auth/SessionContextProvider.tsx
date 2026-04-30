@@ -25,18 +25,26 @@ export const SessionContextProvider = ({ children }: { children: React.ReactNode
   const pathname = usePathname();
 
   useEffect(() => {
-    // Buscar sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+      
+      if (session) {
+        document.cookie = `sb-access-token=${session.access_token}; path=/admin; max-age=86400; SameSite=Lax; Secure`;
+      }
     });
 
-    // Monitorizar mudanças no estado de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+
+      if (session) {
+        document.cookie = `sb-access-token=${session.access_token}; path=/admin; max-age=86400; SameSite=Lax; Secure`;
+      } else {
+        document.cookie = `sb-access-token=; path=/admin; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      }
 
       if (event === 'SIGNED_IN' && pathname.startsWith('/admin/login')) {
         router.push('/admin');

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { parseRoyalBankingPixWebhook } from "@/lib/royalbanking-webhook-parse";
 import {
-  getVendaContextByGatewayId,
   markPixVendaCanceledByGatewayId,
   markPixVendaPaidByGatewayId,
 } from "@/lib/supabase/pending-venda-pix";
@@ -10,7 +9,6 @@ import {
   markPixGatewayPaymentFailed,
   markPixGatewayPaymentPaid,
 } from "@/lib/supabase/pix-payment-store";
-import { postUtmifyPaidOrder } from "@/lib/utmify-server";
 
 function isRoyalWebhookAuthorized(req: Request): boolean {
   const expected = process.env.ROYALBANKING_WEBHOOK_SECRET?.trim();
@@ -63,48 +61,12 @@ export async function POST(req: Request) {
   const gwPaid = await markPixGatewayPaymentPaid(tx, payload);
   const vendaPaid = await markPixVendaPaidByGatewayId(tx);
 
-  let utmify = { sent: false, skipped: false, error: "" };
-  if (alreadyPaid) {
-    utmify.skipped = true;
-  } else {
-    const vendaCtx = await getVendaContextByGatewayId(tx);
-    if (vendaCtx.ok && vendaCtx.data && vendaCtx.data.leadEmail) {
-      const now = new Date().toISOString();
-      const utmRes = await postUtmifyPaidOrder({
-        orderId: vendaCtx.data.pedidoCodigo,
-        paymentMethod: "pix",
-        status: "paid",
-        createdAt: vendaCtx.data.createdAt || now,
-        approvedDate: now,
-        customer: {
-          name: vendaCtx.data.clienteNome || "Cliente Alpha Brasil",
-          email: vendaCtx.data.leadEmail,
-          phone: vendaCtx.data.leadPhone,
-        },
-        totalPriceInCents: Math.round(vendaCtx.data.valor || 0),
-        trackingParameters: {},
-        products: [
-          {
-            name: vendaCtx.data.produto || "Pedido Alpha Brasil",
-            priceInCents: Math.round(vendaCtx.data.valor || 0),
-            quantity: 1,
-          },
-        ],
-      });
-      utmify.sent = utmRes.ok;
-      utmify.error = utmRes.ok ? "" : utmRes.error;
-    } else {
-      utmify.error = vendaCtx.error || "Lead/email não encontrado para envio UTMify no webhook.";
-    }
-  }
-
   return NextResponse.json({
     ok: true,
     idTransaction: tx,
     paid: true,
     gatewayStored: gwPaid.ok,
     vendaUpdated: vendaPaid.updated,
-    utmify,
     errors: [gwPaid.error, vendaPaid.error].filter(Boolean),
   });
 }

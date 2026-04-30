@@ -41,7 +41,7 @@ export function PromoBundle({ onBuyBundle }: PromoBundleProps) {
 
           <div className="relative order-1 mx-auto aspect-square w-full max-w-[780px] overflow-hidden rounded-[2.5rem] md:order-2 lg:max-w-none shadow-luxe">
             <Image
-              src="/images/promo-bundle.png"
+              src="/images/promo-bundle-2.png"
               alt="Promoção Leve 3 Pague 2"
               fill
               className="object-cover"

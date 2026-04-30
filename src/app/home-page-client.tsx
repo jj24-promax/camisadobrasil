@@ -18,13 +18,15 @@ import { SizeChart } from "@/components/landing/size-chart";
 import { FaqSection } from "@/components/landing/faq-section";
 import { FeedbackSection } from "@/components/landing/feedback-section";
 import { FinalCta } from "@/components/landing/final-cta";
+import { BackRedirect } from "@/components/landing/back-redirect";
+import { GiveawaySection } from "@/components/landing/giveaway-section";
+import { WelcomeGiveawayDialog } from "@/components/landing/welcome-giveaway-dialog";
 
 const StickyBuyBar = dynamic(() => import("@/components/landing/sticky-buy-bar").then(m => m.StickyBuyBar), { ssr: false });
 const SalesNotifications = dynamic(() => import("@/components/landing/sales-notifications").then(m => m.SalesNotifications), { ssr: false });
 const LandingCartDialog = dynamic(() => import("@/components/landing/landing-cart-dialog").then(m => m.LandingCartDialog), { ssr: false });
 
 export function HomePageClient() {
-  const backRedirectUrl = process.env.NEXT_PUBLIC_UTMIFY_BACK_REDIRECT_URL?.trim() ?? "";
   const [selectedSize, setSelectedSize] = useState<Size>("M");
   const [selectedProduct, setSelectedProduct] = useState<ProductModelId>("edicao-sagrada");
   const [isStickyVisible, setIsStickyVisible] = useState(false);
@@ -78,28 +80,10 @@ export function HomePageClient() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    if (!backRedirectUrl) return;
-
-    const query = window.location.search.replace("?", "").trim();
-    const destination = `${backRedirectUrl}${backRedirectUrl.includes("?") ? "&" : "?"}${query}`;
-
-    history.pushState({}, "", location.href);
-    history.pushState({}, "", location.href);
-    history.pushState({}, "", location.href);
-
-    const onPopState = () => {
-      window.setTimeout(() => {
-        location.href = destination;
-      }, 1);
-    };
-
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [backRedirectUrl]);
-
   return (
     <>
+      <WelcomeGiveawayDialog />
+      <BackRedirect link="/checkout/retencao" />
       <header className="fixed left-0 right-0 top-0 z-40 border-b border-white/[0.05] bg-[hsl(222,48%,3%)]/82 backdrop-blur-2xl">
         <AnnouncementBar />
         <div className="mx-auto flex h-[3.75rem] max-w-[1600px] items-center gap-3 px-5 md:gap-6 md:px-10 xl:px-14">
@@ -134,6 +118,9 @@ export function HomePageClient() {
           onEditionChange={setSelectedProduct}
           onBuyNow={() => openCart(1)}
         />
+        
+        <GiveawaySection onParticipate={() => openCart(1)} />
+
         <ProductDetails 
           selectedEdition={selectedProduct} 
           onEditionChange={setSelectedProduct} 

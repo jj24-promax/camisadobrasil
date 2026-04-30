@@ -47,10 +47,19 @@ serve(async (req) => {
   }
 
   try {
-    const payload = await req.json();
-    console.log("[pix-webhook] Payload recebido:", JSON.stringify(payload));
+    const secret = Deno.env.get("ROYALBANKING_WEBHOOK_SECRET");
+    const authHeader = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() || req.headers.get("x-webhook-secret")?.trim() || req.headers.get("x-royal-webhook-secret")?.trim();
+    
+    if (secret && authHeader !== secret) {
+      console.warn("[AppSec] Bloqueado: Tentativa de spoofing no webhook (Assinatura inválida).");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    }
 
+    const payload = await req.json();
     const idTransaction = pickTransactionId(payload);
+    
+    console.log(`[pix-webhook] Processando webhook para transação: ${idTransaction || 'Desconhecida'}`);
+
     const status = norm(payload.status ?? payload.payment_status ?? payload.state ?? payload.providerStatus);
     const event = norm(payload.event);
 
@@ -99,7 +108,7 @@ serve(async (req) => {
            }
         }
         
-        // CAPI Purchase Event (Meta Pixel Webhook Link)
+        // CAPI Purchase Event
         try {
           const hashedEmail = leadEmail ? await hashSHA256(leadEmail) : undefined;
           const hashedPhone = leadPhone ? await hashSHA256(leadPhone.replace(/\D/g, '')) : undefined;
@@ -125,13 +134,11 @@ serve(async (req) => {
           const fbToken = "EAAU1iftq7uUBRXQ1dp8SV02oj8P1bMppFJEarZAuZCSOoF6oqu0QORBBpxGavr5AOPlRv99rZBVcelsf7kTBTXXpGDVF2ZCaGdVcsJ5lidrZAKcA2Fn0EYemF09b1IqKlKjQmsZCALTFwOBBOMktmcaJ3IUm1lbq5tZAVEq8ZB3nXuKi7tHrZBIprfGpCFZBkzQhSXewZDZD";
           const pixelId = "1603071560994242";
 
-          const capiRes = await fetch(`https://graph.facebook.com/v19.0/${pixelId}/events?access_token=${fbToken}`, {
+          await fetch(`https://graph.facebook.com/v19.0/${pixelId}/events?access_token=${fbToken}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(fbPayload)
           });
-          const capiJson = await capiRes.json();
-          console.log("[pix-webhook] CAPI Purchase resposta:", capiJson);
         } catch (fbErr) {
             console.error("[pix-webhook] Erro ao enviar CAPI Purchase:", fbErr);
         }
@@ -150,8 +157,6 @@ serve(async (req) => {
           .from("vendas")
           .update({ status_pagamento: "cancelado" })
           .eq("pedido_codigo", idTransaction);
-      } else {
-        console.log(`[pix-webhook] Evento ignorado (não é pago nem falhado): status=${status}, event=${event}`);
       }
     }
 

@@ -65,7 +65,7 @@ const arteRedencaoSlides = [
     edition: "edicao-vermelha",
     label: "Fênix frontal",
     alt: "Modelo com camisa Alpha Brasil Edição Fênix vermelha — vista frontal",
-    imageSrc: "/images/campaign/edicao-fenix-frente.png",
+    imageSrc: "/images/campaign/modelo-frente.webp",
   },
   {
     id: "fenix-back",

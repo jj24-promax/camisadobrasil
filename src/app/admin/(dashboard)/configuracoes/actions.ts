@@ -2,8 +2,13 @@
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { revalidatePath } from "next/cache";
+import { isAdminSessionValid } from "@/lib/admin-auth/verify-session.server";
 
 export async function updateStoreSettings(prevState: any, formData: FormData) {
+  if (!(await isAdminSessionValid())) {
+    return { error: "Acesso negado: Sessão de administrador inválida ou expirada.", success: false };
+  }
+
   const tracking_link = String(formData.get("tracking_link") || "").trim();
   const whatsapp = String(formData.get("whatsapp") || "").trim();
   const contact_email = String(formData.get("contact_email") || "").trim();

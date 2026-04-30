@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { hasVisitedCheckoutThisSession } from "@/lib/checkout-retention-storage";
 
 type BackRedirectProps = {
   link: string;
@@ -12,6 +13,7 @@ export function BackRedirect({ link }: BackRedirectProps) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (initialized.current) return;
+    if (!hasVisitedCheckoutThisSession()) return;
     initialized.current = true;
 
     let urlBackRedirect = link.trim();

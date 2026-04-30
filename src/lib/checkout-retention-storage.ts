@@ -6,6 +6,8 @@
 export const RETENTION_ROUTE = "/checkout/retencao" as const;
 
 const K = {
+  /** Utilizador abriu `/checkout` nesta aba — ativa BackRedirect na landing só depois disto. */
+  visitedCheckout: "ab_chk_visited_sess_v1",
   /** Usuário já consumiu a interceptação nesta sessão (subir versão zera estado antigo de testes). */
   sawRetention: "ab_chk_ret_exit_v4",
   /** Próximo carregamento de /checkout/retencao veio do Voltar/checkout (consome ao montar a página). */
@@ -44,6 +46,16 @@ function safeRemove(key: string) {
   } catch {
     /* ignore */
   }
+}
+
+/** Marca que o utilizador entrou no checkout nesta sessão (sessionStorage por aba). */
+export function flagCheckoutVisitedThisSession() {
+  safeSet(K.visitedCheckout, "1");
+}
+
+/** true se já abriu `/checkout` nesta aba — usado pela landing para só então aplicar interceptação ao «voltar». */
+export function hasVisitedCheckoutThisSession(): boolean {
+  return safeGet(K.visitedCheckout) === "1";
 }
 
 /** Desconto de retenção ainda dentro do prazo (aceite recente) — não mostrar interceptação de novo no checkout. */

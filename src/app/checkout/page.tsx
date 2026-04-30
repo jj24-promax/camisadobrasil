@@ -30,6 +30,7 @@ import { parseOrderModels, parseOrderSizes } from "@/lib/cart-sizes";
 import { leve3Pague2DiscountCents } from "@/lib/offer-pricing";
 import { cn } from "@/lib/utils";
 import {
+  flagCheckoutVisitedThisSession,
   flagRetentionNavigationFromCheckout,
   getRetentionHref,
   RETENTION_PERCENT,
@@ -190,6 +191,10 @@ function CheckoutContent() {
     () => (pixResult?.paymentCodeBase64 ? qrDataUrlForImg(pixResult.paymentCodeBase64) : null),
     [pixResult?.paymentCodeBase64]
   );
+
+  useEffect(() => {
+    flagCheckoutVisitedThisSession();
+  }, []);
 
   // Mangofy SDK Callback - Registrado na montagem do componente
   useEffect(() => {

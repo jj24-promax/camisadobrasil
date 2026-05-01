@@ -130,15 +130,15 @@ export function HomePageClient() {
           onEditionChange={setSelectedProduct}
           onBuyNow={() => openCart(1)}
         />
-        
-        <GiveawaySection onParticipate={() => openCart(1)} />
+
+        <PremiumGallery selectedEdition={selectedProduct} onEditionChange={setSelectedProduct} />
 
         <ProductDetails 
           selectedEdition={selectedProduct} 
           onEditionChange={setSelectedProduct} 
         />
         <PromoBundle onBuyBundle={() => openCart(3)} />
-        <PremiumGallery selectedEdition={selectedProduct} onEditionChange={setSelectedProduct} />
+        <GiveawaySection onParticipate={() => openCart(1)} />
         <SocialProof />
         <GuaranteeSection />
         <SizeChart />

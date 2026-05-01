@@ -61,10 +61,13 @@ function RastreioContent() {
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-gold">
             <ChevronLeft size={18} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Voltar à loja</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">
+              <span className="sm:hidden">Voltar</span>
+              <span className="hidden sm:inline">Voltar à loja</span>
+            </span>
           </Link>
-          <p className="font-display text-xs font-bold tracking-[0.3em] text-gold-bright">ALPHA BRASIL</p>
-          <div className="w-[82px]" />
+          <p className="font-display text-[11px] font-bold tracking-[0.2em] text-gold-bright sm:text-xs sm:tracking-[0.3em]">ALPHA BRASIL</p>
+          <div className="w-[60px] sm:w-[82px]" />
         </div>
       </header>
 
@@ -81,18 +84,18 @@ function RastreioContent() {
           </p>
         </div>
 
-        <form onSubmit={handleSearch} className="mb-12 flex items-center gap-3">
-          <div className="relative flex-1">
+        <form onSubmit={handleSearch} className="mb-12 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 w-full flex-1">
             <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground/50" />
             <input
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="Digite o código de rastreio (Ex: BR1234A567BR)"
+              placeholder="Digite o código de rastreio"
               className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.03] pl-12 pr-4 text-sm font-bold text-white placeholder:text-muted-foreground/50 placeholder:font-normal focus:border-gold/50 focus:outline-none focus:ring-1 focus:ring-gold/50 transition-all uppercase"
             />
           </div>
-          <Button type="submit" size="xl" className="h-14 rounded-2xl font-bold uppercase tracking-widest px-8" disabled={loading || !code.trim()}>
+          <Button type="submit" size="xl" className="h-14 w-full rounded-2xl px-8 font-bold uppercase tracking-widest sm:w-auto" disabled={loading || !code.trim()}>
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Buscar"}
           </Button>
         </form>

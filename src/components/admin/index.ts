@@ -17,6 +17,7 @@ export { AdminPagination } from "./admin-pagination";
 export { AdminLeadsView } from "./admin-leads-view";
 export { AdminLeadQuickContact } from "./admin-lead-quick-contact";
 export { AdminDashboardCommercialSummary } from "./admin-dashboard-commercial-summary";
+export { AdminLeadsGeography } from "./admin-leads-geography";
 export { AdminSalesView } from "./admin-sales-view";
 export { AdminStatCardsGroup } from "./admin-stat-cards-group";
 export { AdminClientsView } from "./admin-clients-view";

@@ -11,11 +11,13 @@ import {
   AdminPaymentBadge,
 } from "@/components/admin";
 import { AdminDashboardCommercialSummary } from "@/components/admin/admin-dashboard-commercial-summary";
+import { AdminLeadsGeography } from "@/components/admin/admin-leads-geography";
 import { AdminErrorBanner } from "@/components/admin/admin-error-banner";
 import { AdminLeadQuickContact } from "@/components/admin/admin-lead-quick-contact";
 import { mockSalesPerformanceByDay, mockSalesPerformanceByWeek } from "@/data/mock";
 import { formatBRL, formatDate, formatDateTime, formatLeadSource, formatRelativeTimePt } from "@/lib/admin-format";
 import { cn } from "@/lib/utils";
+import { aggregateLeadGeography } from "@/lib/admin/leads-geography";
 import { computeDashboardKpisFromData } from "@/lib/supabase/dashboard-kpis";
 import { fetchAdminLeads, fetchAdminVendas } from "@/lib/supabase/queries";
 
@@ -30,6 +32,7 @@ export async function AdminDashboardBody() {
   const vendas = vendasRes.ok ? vendasRes.data : [];
   const k = computeDashboardKpisFromData(leads, vendas);
 
+  const geo = aggregateLeadGeography(leads);
   const leadsRecentes = leads.slice(0, 5);
   const pedidosRecentes = vendas.slice(0, 5);
 
@@ -83,6 +86,10 @@ export async function AdminDashboardBody() {
           leadStatusCounts={k.leadStatusCounts}
           orderStatusCounts={k.orderStatusCounts}
         />
+      </section>
+
+      <section>
+        <AdminLeadsGeography data={geo} />
       </section>
 
       <section>

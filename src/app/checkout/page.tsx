@@ -81,7 +81,7 @@ function validateShippingAddress(fd: {
   const cep = fd.cep.replace(/\D/g, "");
   if (cep.length !== 8) return "Informe o CEP com 8 dígitos.";
   if (!fd.endereco.trim()) return "Informe o logradouro (rua, avenida…).";
-  if (!fd.numero.trim()) return "Informe o número.";
+  if (!fd.numero.trim()) return "Informe o número da residência.";
   if (!fd.bairro.trim()) return "Informe o bairro.";
   if (!fd.cidade.trim()) return "Informe a cidade.";
   const uf = fd.estado.replace(/\s/g, "").toUpperCase();
@@ -552,19 +552,24 @@ function CheckoutContent() {
         </div>
       </header>
 
-      <section className="relative w-full overflow-hidden border-b border-white/[0.06] bg-[#050a14]">
+      <a
+        href="#checkout-dados-pessoais"
+        className="group relative block w-full overflow-hidden border-b border-white/[0.06] bg-[#050a14] outline-none transition-[opacity,filter] hover:opacity-[0.96] focus-visible:ring-2 focus-visible:ring-gold/45 focus-visible:ring-inset"
+        aria-label="Ir para dados pessoais"
+      >
         <div className="relative mx-auto max-w-[1600px]">
-          <Image 
-            src="/images/checkout-hero-banner.webp" 
-            alt="Finalize sua compra" 
+          <Image
+            src="/images/checkout-hero-banner.webp"
+            alt="Finalize sua compra — toque para preencher seus dados"
             width={1600}
             height={450}
-            className="w-full h-auto" 
-            priority 
-            sizes="(max-width: 1024px) 100vw, 1600px" 
+            className="w-full h-auto"
+            priority
+            sizes="(max-width: 1024px) 100vw, 1600px"
           />
+          <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden />
         </div>
-      </section>
+      </a>
 
       <main className="mx-auto mt-8 max-w-7xl px-4 sm:px-5 lg:mt-12">
         <div className="grid min-w-0 gap-8 lg:grid-cols-[1fr_400px]">
@@ -580,7 +585,10 @@ function CheckoutContent() {
               </p>
             </div>
 
-            <section className="glass-dark rounded-[2rem] p-6 md:p-8">
+            <section
+              id="checkout-dados-pessoais"
+              className="glass-dark scroll-mt-[calc(10rem+env(safe-area-inset-top,0px))] rounded-[2rem] p-6 md:p-8"
+            >
               <SectionHeader number={1} title="Dados Pessoais" />
               <div className="grid gap-4 md:grid-cols-2">
                 <InputGroup label="Nome Completo" placeholder="Digite seu nome completo" className="md:col-span-2" value={formData.name} onChange={(e) => handleInputChange("name", e.target.value)} />

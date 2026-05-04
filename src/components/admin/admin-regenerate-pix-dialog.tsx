@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { Copy, Loader2, QrCode } from "lucide-react";
+import { Copy, FileDown, Loader2, QrCode } from "lucide-react";
 
 import { prepareRegeneratePixAction } from "@/app/admin/(dashboard)/leads/actions";
+import { downloadPixBrandedPdf } from "@/lib/admin/download-pix-branded-pdf";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,6 +31,7 @@ export function AdminRegeneratePixDialog({
   onOpenChange,
 }: AdminRegeneratePixDialogProps) {
   const [busy, setBusy] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pixCode, setPixCode] = useState("");
   const [pixB64, setPixB64] = useState("");
@@ -38,6 +40,7 @@ export function AdminRegeneratePixDialog({
 
   const reset = useCallback(() => {
     setBusy(false);
+    setPdfBusy(false);
     setErrorMsg(null);
     setPixCode("");
     setPixB64("");
@@ -105,6 +108,24 @@ export function AdminRegeneratePixDialog({
     }
   };
 
+  const downloadPdf = async () => {
+    if (!pixCode) return;
+    setPdfBusy(true);
+    try {
+      await downloadPixBrandedPdf({
+        leadName,
+        pixCode,
+        qrImageRaw: pixB64 || undefined,
+      });
+      toast.success("PDF baixado.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Não foi possível gerar o PDF.";
+      toast.error(msg);
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -165,19 +186,33 @@ export function AdminRegeneratePixDialog({
               <p className="break-all rounded-lg border border-white/10 bg-white/[0.04] p-3 font-mono text-xs leading-relaxed text-white/90">
                 {pixCode}
               </p>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" className="flex-1 border-white/15" onClick={() => void copyCode()}>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button type="button" variant="outline" className="border-white/15" onClick={() => void copyCode()}>
                   <Copy className="mr-2 h-4 w-4" />
                   Copiar código
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1 border-white/15"
+                  className="border-white/15"
+                  disabled={pdfBusy}
+                  onClick={() => void downloadPdf()}
+                >
+                  {pdfBusy ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <FileDown className="mr-2 h-4 w-4" />
+                  )}
+                  Baixar PDF
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-white/15 sm:col-span-2"
                   disabled={busy}
                   onClick={() => void runGenerate()}
                 >
-                  Gerar outro
+                  Gerar outro Pix
                 </Button>
               </div>
             </div>

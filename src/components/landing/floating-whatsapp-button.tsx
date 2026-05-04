@@ -14,12 +14,12 @@ function WhatsAppGlyph({ className }: { className?: string }) {
 
 /**
  * FAB WhatsApp — não cobre modais (z &lt; 50), evita barra sticky mobile à direita,
- * respeita safe-area em iPhones.
+ * respeita safe-area em iPhones. Oculto no checkout para não competir com o fluxo de pagamento.
  */
 export function FloatingWhatsAppButton() {
   const pathname = usePathname();
 
-  if (pathname?.startsWith("/admin")) {
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/checkout")) {
     return null;
   }
 

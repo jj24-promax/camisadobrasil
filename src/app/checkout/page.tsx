@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef, Suspense, useCallback } from "react";
+import React, { useState, useMemo, useEffect, Suspense, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -89,6 +89,27 @@ function validateShippingAddress(fd: {
   return null;
 }
 
+/** ViaCEP às vezes devolve número junto ao logradouro (ex.: "Rua X, 2521"). */
+function splitLogradouroENumero(raw: string): { street: string; numero: string | null } {
+  const s = raw.trim();
+  if (!s) return { street: "", numero: null };
+
+  const commaTail = s.match(/^(.+),\s*(S\/N|s\/n|\d+[A-Za-z]?)\s*$/i);
+  if (commaTail) {
+    const street = commaTail[1]!.trim();
+    const tail = commaTail[2]!;
+    const numero = /^s\/n$/i.test(tail) ? "S/N" : tail;
+    return { street, numero };
+  }
+
+  const dashTail = s.match(/^(.+?)\s+-\s+(\d+[A-Za-z]?)\s*$/);
+  if (dashTail) {
+    return { street: dashTail[1]!.trim(), numero: dashTail[2]! };
+  }
+
+  return { street: s, numero: null };
+}
+
 const SectionHeader = ({ number, title }: { number: number; title: string }) => (
   <div className="mb-6 flex min-w-0 items-center gap-3">
     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold text-sm font-bold text-navy-deep">
@@ -167,7 +188,7 @@ function CheckoutContent() {
 
   const [personalizationMaster, setPersonalizationMaster] = useState(defaultPersonalizeOn);
   const [shirtPaidPersonalization, setShirtPaidPersonalization] = useState<boolean[]>(() =>
-    Array(quantity).fill(defaultPersonalizeOn)
+    Array(quantity).fill(false)
   );
   const [giftFreePersonalization, setGiftFreePersonalization] = useState(false);
 
@@ -218,15 +239,9 @@ function CheckoutContent() {
   const hasSecondShirtBump = selectedBumps.includes("second_shirt");
   const personalizationSlots = quantity + (hasSecondShirtBump ? 1 : 0);
 
-  const personalizationMasterRef = useRef(personalizationMaster);
-  personalizationMasterRef.current = personalizationMaster;
-
   useEffect(() => {
     setShirtPaidPersonalization((prev) =>
-      Array.from({ length: quantity }, (_, i) => {
-        if (i < prev.length) return prev[i]!;
-        return personalizationMasterRef.current;
-      })
+      Array.from({ length: quantity }, (_, i) => (i < prev.length ? prev[i]! : false))
     );
   }, [quantity]);
 
@@ -261,7 +276,7 @@ function CheckoutContent() {
         setShirtPaidPersonalization(Array(quantity).fill(false));
         return false;
       }
-      setShirtPaidPersonalization(Array(quantity).fill(true));
+      setShirtPaidPersonalization(Array(quantity).fill(false));
       return true;
     });
   };
@@ -323,9 +338,12 @@ function CheckoutContent() {
         toast.error("CEP não encontrado. Confira os dígitos.");
         return;
       }
+      const log = (j.logradouro ?? "").trim();
+      const { street, numero: numeroFromLog } = splitLogradouroENumero(log);
       setFormData((prev) => ({
         ...prev,
-        endereco: j.logradouro?.trim() || prev.endereco,
+        endereco: street || prev.endereco,
+        ...(numeroFromLog ? { numero: numeroFromLog } : {}),
         bairro: j.bairro?.trim() || prev.bairro,
         cidade: j.localidade?.trim() || prev.cidade,
         estado: (j.uf || prev.estado).replace(/\s/g, "").toUpperCase().slice(0, 2),

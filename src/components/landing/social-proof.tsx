@@ -49,7 +49,7 @@ const ugcReviewPhotos: ReviewPhotoEntry[] = [
     name: "Bruno T.",
     text: "Montei o kit completo: presença absurda e tecido leve. Nota máxima.",
     rating: 5,
-    profileImageSrc: reviewPortraitMan(61),
+    profileImageSrc: "/images/testimonials/profiles/bruno-t.jpg",
     imageSrc: "/images/testimonials/ugc/ugc-2.png",
     photoKind: "person",
     jerseyColor: "azul",

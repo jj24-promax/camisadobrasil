@@ -139,3 +139,57 @@ export function parseRoyalBankingPixWebhook(payload: unknown): { idTransaction?:
   }
   return { idTransaction, paid, failed };
 }
+
+const WEBHOOK_TX_KEYS = [
+  "idTransaction",
+  "id_transaction",
+  "transactionId",
+  "transaction_id",
+  "externalReference",
+  "external_reference",
+  "paymentId",
+  "payment_id",
+  "txId",
+  "tx_id",
+] as const;
+
+function isLikelyGatewayTransactionIdString(s: string): boolean {
+  const t = s.trim();
+  if (t.length < 4 || t.length > 128) return false;
+  return /^[a-zA-Z0-9_.:-]+$/.test(t);
+}
+
+/** Recolhe candidatos a ID de transação no corpo do webhook (vários formatos Royal / Mangofy). */
+export function collectRoyalWebhookTransactionIds(payload: unknown): string[] {
+  const found = new Set<string>();
+  function walk(o: unknown, depth: number) {
+    if (depth > 12 || o == null) return;
+    if (Array.isArray(o)) {
+      for (const item of o) walk(item, depth + 1);
+      return;
+    }
+    if (typeof o !== "object") return;
+    const r = o as Record<string, unknown>;
+    for (const k of WEBHOOK_TX_KEYS) {
+      const v = r[k];
+      if (v == null || v === "") continue;
+      const s = String(v).trim();
+      if (isLikelyGatewayTransactionIdString(s)) found.add(s);
+    }
+    for (const v of Object.values(r)) walk(v, depth + 1);
+  }
+  walk(payload, 0);
+  return [...found];
+}
+
+const UUID_LOOSE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Prioriza IDs nativos do gateway (ex. VPAY…) face a UUID usado como referência interna. */
+export function sortWebhookTransactionIdsGatewayFirst(ids: string[]): string[] {
+  return [...new Set(ids.map((x) => x.trim()).filter(Boolean))].sort((a, b) => {
+    const au = UUID_LOOSE_RE.test(a) ? 1 : 0;
+    const bu = UUID_LOOSE_RE.test(b) ? 1 : 0;
+    if (au !== bu) return au - bu;
+    return a.length - b.length;
+  });
+}

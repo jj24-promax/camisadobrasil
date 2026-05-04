@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import { isAdminSessionValid } from "@/lib/admin-auth/verify-session.server";
-import { prepareAdminRegeneratePixForLead, type MangofyRegenPayload } from "@/lib/supabase/admin-pix-regenerate";
+import {
+  prepareAdminRegeneratePixForLead,
+  syncLeadPendingVendaPedidoCodigoToGateway,
+  type MangofyRegenPayload,
+} from "@/lib/supabase/admin-pix-regenerate";
 import { updateLeadStatus, deleteLeadAndRelatedData } from "@/lib/supabase/lead-mutations";
 import type { LeadStatus } from "@/types/admin";
 
@@ -50,4 +54,14 @@ export async function prepareRegeneratePixAction(leadId: string): Promise<Prepar
     return { ok: false, error: "Sessão expirada ou inválida. Entre novamente no painel." };
   }
   return prepareAdminRegeneratePixForLead(leadId);
+}
+
+export async function syncPendingVendaGatewayIdAction(
+  leadId: string,
+  gatewayTransactionId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!(await isAdminSessionValid())) {
+    return { ok: false, error: "Sessão expirada ou inválida. Entre novamente no painel." };
+  }
+  return syncLeadPendingVendaPedidoCodigoToGateway(leadId, gatewayTransactionId);
 }

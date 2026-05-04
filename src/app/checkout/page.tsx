@@ -40,7 +40,7 @@ import {
   useRetentionDiscountOnTotal,
   useRetentionBannerCountdown,
 } from "@/hooks/use-checkout-retention";
-import { qrDataUrlForImg } from "@/lib/pix-gateway-response";
+import { coercePixGatewayResponseRecord, extractPixGatewayPayload, qrDataUrlForImg } from "@/lib/pix-gateway-response";
 import { grantMetaPurchasePixelAfterConfirmedPix } from "@/lib/meta-purchase-gate";
 import { savePosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 
@@ -455,6 +455,7 @@ function CheckoutContent() {
       const response = await (window as any).generatePix(config);
 
       if (response && response.success) {
+        const gw = extractPixGatewayPayload(coercePixGatewayResponseRecord(response));
         setPixResult({
           paymentCode: response.pixCode,
           paymentCodeBase64: response.qrCodeImage,
@@ -478,6 +479,7 @@ function CheckoutContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             orderRef,
+            gatewayTransactionId: gw.idTransaction,
             amountCents: finalTotalCents,
             quantity,
             name,

@@ -128,3 +128,47 @@ export async function prepareAdminRegeneratePixForLead(
 
   return { ok: true, orderRef, mangofyPayload };
 }
+
+const GW_ID_RE = /^[a-zA-Z0-9_.:-]{6,128}$/;
+
+/**
+ * Após `generatePix` no admin, grava o `pedido_codigo` com o ID do gateway para o webhook marcar pago.
+ */
+export async function syncLeadPendingVendaPedidoCodigoToGateway(
+  leadId: string,
+  gatewayTransactionId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const lid = leadId.trim();
+  const gw = gatewayTransactionId.trim();
+  if (!lid || !GW_ID_RE.test(gw)) return { ok: false, error: "ID de transação do gateway inválido." };
+
+  const admin = createSupabaseAdminClient();
+  if (!admin) return { ok: false, error: "SUPABASE_SERVICE_ROLE_KEY não configurada." };
+
+  const { data: rows, error: selErr } = await admin
+    .from("vendas")
+    .select("id, created_at, date")
+    .eq("lead_id", lid)
+    .eq("status_pagamento", "pendente");
+
+  if (selErr) return { ok: false, error: selErr.message };
+  if (!rows?.length) return { ok: false, error: "Nenhuma venda pendente para este lead." };
+
+  const ts = (r: Record<string, unknown>) => {
+    const raw = r.created_at ?? r.date;
+    const t = raw ? new Date(String(raw)).getTime() : 0;
+    return Number.isNaN(t) ? 0 : t;
+  };
+  const sorted = [...(rows as Record<string, unknown>[])].sort((a, b) => ts(b) - ts(a));
+  const vendaId = str(pick(sorted[0]!, ["id"]));
+  if (!vendaId) return { ok: false, error: "ID da venda inválido." };
+
+  const { error: updErr } = await admin
+    .from("vendas")
+    .update({ pedido_codigo: gw })
+    .eq("id", vendaId)
+    .eq("status_pagamento", "pendente");
+
+  if (updErr) return { ok: false, error: updErr.message };
+  return { ok: true };
+}

@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Copy, FileDown, Loader2, QrCode } from "lucide-react";
 
-import { prepareRegeneratePixAction } from "@/app/admin/(dashboard)/leads/actions";
+import { prepareRegeneratePixAction, syncPendingVendaGatewayIdAction } from "@/app/admin/(dashboard)/leads/actions";
+import { coercePixGatewayResponseRecord, extractPixGatewayPayload } from "@/lib/pix-gateway-response";
 import { downloadPixBrandedPdf } from "@/lib/admin/download-pix-branded-pdf";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,7 +86,20 @@ export function AdminRegeneratePixDialog({
       if (response?.success && response.pixCode) {
         setPixCode(response.pixCode);
         setPixB64(typeof response.qrCodeImage === "string" ? response.qrCodeImage : "");
-        toast.success("Novo Pix gerado. Copie o código ou envie o print do QR ao cliente.");
+        const gw = extractPixGatewayPayload(coercePixGatewayResponseRecord(response));
+        if (leadId && gw.idTransaction) {
+          const sync = await syncPendingVendaGatewayIdAction(leadId, gw.idTransaction);
+          if (!sync.ok) {
+            console.warn("[admin] sync pedido_codigo com gateway:", sync.error);
+            toast.error(
+              "Pix gerado, mas não foi possível associar o ID do gateway à venda. O pagamento pode não marcar como pago sozinho — contacte suporte técnico."
+            );
+          } else {
+            toast.success("Novo Pix gerado. Copie o código ou envie o print do QR ao cliente.");
+          }
+        } else {
+          toast.success("Novo Pix gerado. Copie o código ou envie o print do QR ao cliente.");
+        }
       } else {
         throw new Error(response?.message || "Não foi possível gerar o Pix.");
       }

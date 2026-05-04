@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
-import { parseRoyalBankingPixWebhook } from "@/lib/royalbanking-webhook-parse";
+import {
+  collectRoyalWebhookTransactionIds,
+  parseRoyalBankingPixWebhook,
+  sortWebhookTransactionIdsGatewayFirst,
+} from "@/lib/royalbanking-webhook-parse";
 import {
   markPixVendaCanceledByGatewayId,
   markPixVendaPaidByGatewayId,
 } from "@/lib/supabase/pending-venda-pix";
 import {
-  isPixGatewayPaymentPaid,
   markPixGatewayPaymentFailed,
   markPixGatewayPaymentPaid,
 } from "@/lib/supabase/pix-payment-store";
@@ -21,6 +24,12 @@ function isRoyalWebhookAuthorized(req: Request): boolean {
   return got === expected;
 }
 
+function mergeCandidateIds(payload: unknown, parsedId?: string): string[] {
+  const fromPayload = collectRoyalWebhookTransactionIds(payload);
+  const merged = [...(parsedId?.trim() ? [parsedId.trim()] : []), ...fromPayload];
+  return sortWebhookTransactionIdsGatewayFirst(merged);
+}
+
 export async function POST(req: Request) {
   if (!isRoyalWebhookAuthorized(req)) {
     return NextResponse.json({ ok: false, error: "Unauthorized webhook." }, { status: 401 });
@@ -34,39 +43,66 @@ export async function POST(req: Request) {
   }
 
   const parsed = parseRoyalBankingPixWebhook(payload);
-  const tx = (parsed.idTransaction ?? "").trim();
-  if (!tx) {
-    return NextResponse.json({ ok: true, ignored: true, reason: "Webhook sem idTransaction." });
+  const candidateIds = mergeCandidateIds(payload, parsed.idTransaction);
+
+  if (candidateIds.length === 0) {
+    return NextResponse.json({ ok: true, ignored: true, reason: "Webhook sem id de transação reconhecível." });
   }
 
+  const primaryTx = candidateIds[0]!;
+
   if (parsed.failed) {
-    const gwFail = await markPixGatewayPaymentFailed(tx, payload);
-    const vendaFail = await markPixVendaCanceledByGatewayId(tx);
+    const errors: string[] = [];
+    let gatewayStored = false;
+    let vendaUpdated = 0;
+    for (const tx of candidateIds) {
+      const gwFail = await markPixGatewayPaymentFailed(tx, payload);
+      if (gwFail.ok) gatewayStored = true;
+      if (gwFail.error) errors.push(gwFail.error);
+      const vendaFail = await markPixVendaCanceledByGatewayId(tx);
+      vendaUpdated += vendaFail.updated;
+      if (vendaFail.error) errors.push(vendaFail.error);
+    }
     return NextResponse.json({
       ok: true,
-      idTransaction: tx,
+      idTransaction: primaryTx,
+      candidateIds,
       paid: false,
       canceled: true,
-      gatewayStored: gwFail.ok,
-      vendaUpdated: vendaFail.updated,
-      errors: [gwFail.error, vendaFail.error].filter(Boolean),
+      gatewayStored,
+      vendaUpdated,
+      errors: errors.filter(Boolean),
     });
   }
 
   if (!parsed.paid) {
-    return NextResponse.json({ ok: true, idTransaction: tx, ignored: true, reason: "Evento não conclusivo." });
+    return NextResponse.json({
+      ok: true,
+      idTransaction: primaryTx,
+      candidateIds,
+      ignored: true,
+      reason: "Evento não conclusivo.",
+    });
   }
 
-  const alreadyPaid = await isPixGatewayPaymentPaid(tx);
-  const gwPaid = await markPixGatewayPaymentPaid(tx, payload);
-  const vendaPaid = await markPixVendaPaidByGatewayId(tx);
+  const gwPaid = await markPixGatewayPaymentPaid(primaryTx, payload);
+
+  let vendaUpdated = 0;
+  const vendaErrors: string[] = [];
+  for (const tx of candidateIds) {
+    const vendaPaid = await markPixVendaPaidByGatewayId(tx);
+    vendaUpdated += vendaPaid.updated;
+    if (vendaPaid.error) vendaErrors.push(vendaPaid.error);
+    if (vendaPaid.updated > 0) break;
+  }
 
   return NextResponse.json({
     ok: true,
-    idTransaction: tx,
+    idTransaction: primaryTx,
+    candidateIds,
     paid: true,
     gatewayStored: gwPaid.ok,
-    vendaUpdated: vendaPaid.updated,
-    errors: [gwPaid.error, vendaPaid.error].filter(Boolean),
+    vendaUpdated,
+    errors: [gwPaid.error, ...vendaErrors].filter(Boolean),
   });
 }

@@ -7,6 +7,8 @@ import { generateMockTrackingCode } from "@/lib/tracking-utils";
 
 /** Referência gerada no browser (`crypto.randomUUID`) ou fallback alfanumérico curto. */
 const ORDER_REF_RE = /^[a-zA-Z0-9_-]{8,80}$/;
+/** ID devolvido pelo Mangofy/Royal no `generatePix` (ex. VPAY…); deve coincidir com o webhook. */
+const GATEWAY_TX_RE = /^[a-zA-Z0-9_.:-]{6,128}$/;
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
@@ -29,6 +31,11 @@ export async function POST(req: Request) {
   if (!orderRef || !ORDER_REF_RE.test(orderRef)) {
     return NextResponse.json({ error: "Referência do pedido inválida." }, { status: 400 });
   }
+
+  const gatewayRaw = isNonEmptyString(body.gatewayTransactionId) ? body.gatewayTransactionId.trim() : "";
+  const gatewayTransactionId = GATEWAY_TX_RE.test(gatewayRaw) ? gatewayRaw : "";
+  /** Webhook casa com o ID do gateway; `orderRef` fica só em metadata do checkout. */
+  const pedidoCodigoParaWebhook = gatewayTransactionId || orderRef;
 
   const amountCents = typeof body.amountCents === "number" && Number.isFinite(body.amountCents) ? Math.round(body.amountCents) : NaN;
   const quantity = typeof body.quantity === "number" && body.quantity > 0 ? Math.floor(body.quantity) : 1;
@@ -110,7 +117,7 @@ export async function POST(req: Request) {
     customerName: name,
     amountCents,
     productSummary,
-    idTransaction: orderRef,
+    idTransaction: pedidoCodigoParaWebhook,
     shippingSummary,
   });
 

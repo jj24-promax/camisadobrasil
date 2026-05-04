@@ -57,6 +57,17 @@ export function humanizePixGatewayError(data: unknown): string | null {
   return null;
 }
 
+/** Achata `response.data` do Mangofy/SDK para um único objeto antes de `extractPixGatewayPayload`. */
+export function coercePixGatewayResponseRecord(response: unknown): Record<string, unknown> {
+  if (!response || typeof response !== "object" || Array.isArray(response)) return {};
+  const r = response as Record<string, unknown>;
+  const d = r.data;
+  if (d && typeof d === "object" && !Array.isArray(d)) {
+    return { ...r, ...(d as Record<string, unknown>) };
+  }
+  return r;
+}
+
 /**
  * Normaliza respostas do gateway Royal Banking (campos podem variar).
  */
@@ -73,8 +84,24 @@ export function extractPixGatewayPayload(data: Record<string, unknown>): {
   const paymentCodeBase64 =
     rawB64 == null ? "" : String(rawB64).trim().replace(/\s/g, "");
 
-  const idRaw = data.idTransaction ?? data.id_transaction ?? data.transactionId;
-  const idTransaction = idRaw == null ? undefined : String(idRaw);
+  const idRaw =
+    data.idTransaction ??
+    data.id_transaction ??
+    data.transactionId ??
+    data.transaction_id ??
+    data.paymentId ??
+    data.payment_id ??
+    data.txId ??
+    data.tx_id ??
+    data.reference ??
+    data.external_id;
+  let idTransaction = idRaw == null ? undefined : String(idRaw).trim() || undefined;
+
+  const nested = data.data;
+  if (!idTransaction && nested && typeof nested === "object" && !Array.isArray(nested)) {
+    const inner = extractPixGatewayPayload(nested as Record<string, unknown>);
+    idTransaction = inner.idTransaction;
+  }
 
   return { paymentCode, paymentCodeBase64, idTransaction };
 }

@@ -2,8 +2,9 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import toast from "react-hot-toast";
-import { Trash2, Loader2 } from "lucide-react";
+import { Trash2, Loader2, QrCode } from "lucide-react";
 import { updateLeadStatusAction, deleteLeadAction } from "@/app/admin/(dashboard)/leads/actions";
+import { AdminRegeneratePixDialog } from "@/components/admin/admin-regenerate-pix-dialog";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
 import { AdminLeadStatusSelect } from "@/components/admin/admin-lead-status-select";
 import { AdminSearchField } from "@/components/admin/admin-search-field";
@@ -41,6 +42,11 @@ type AdminLeadsViewProps = {
 
 export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
   const [localLeads, setLocalLeads] = useState<Lead[]>(leads);
+  const [pixDlg, setPixDlg] = useState<{ open: boolean; leadId: string | null; leadName: string }>({
+    open: false,
+    leadId: null,
+    leadName: "",
+  });
   const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
   const [deletingLeadId, setDeletingLeadId] = useState<string | null>(null);
 
@@ -131,6 +137,12 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
 
   return (
     <div className="w-full space-y-7 sm:space-y-8">
+      <AdminRegeneratePixDialog
+        leadId={pixDlg.leadId}
+        leadName={pixDlg.leadName}
+        open={pixDlg.open}
+        onOpenChange={(open) => setPixDlg((d) => ({ ...d, open, leadId: open ? d.leadId : null }))}
+      />
       <section className="admin-filter-surface" aria-label="Filtros da lista de leads">
         <div className="flex flex-col gap-5 lg:flex-row lg:flex-wrap lg:items-end lg:gap-x-8 lg:gap-y-5">
           <AdminSearchField
@@ -180,7 +192,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
           <AdminTableLoadingOverlay show={listLoading} />
           <AdminDataTable
             getRowKey={(r) => r.id}
-            tableClassName="min-w-[1380px] lg:min-w-[1440px]"
+            tableClassName="min-w-[1420px] lg:min-w-[1480px]"
             rows={items}
             emptyMessage={emptyMessage}
             footer={
@@ -258,17 +270,27 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
               {
                 key: "actions",
                 header: "",
-                className: "w-12 text-right",
+                className: "w-[4.5rem] text-right",
                 cell: (r) => (
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteLead(r.id)}
-                    disabled={deletingLeadId === r.id}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
-                    title="Excluir lead"
-                  >
-                    {deletingLeadId === r.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                  </button>
+                  <div className="flex justify-end gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setPixDlg({ open: true, leadId: r.id, leadName: r.name || r.email || "Lead" })}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-gold/15 hover:text-gold"
+                      title="Gerar novo Pix (venda pendente)"
+                    >
+                      <QrCode className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteLead(r.id)}
+                      disabled={deletingLeadId === r.id}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                      title="Excluir lead"
+                    >
+                      {deletingLeadId === r.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    </button>
+                  </div>
                 ),
               },
             ]}

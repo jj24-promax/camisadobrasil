@@ -1,13 +1,37 @@
 /**
- * Guardamos apenas a referência opaca (leadId) para evitar a exposição
- * de dados sensíveis (PII) em caso de XSS no front-end.
+ * Referência opaca (leadId legado) e/ou snapshot do cliente para Pix Mangofy,
+ * para não expor mais dados do que o necessário no front-end.
  */
 
 const STORAGE_KEY = "alpha_pos_compra_pix_client_v2";
 
-export type PosCompraPixClient = {
-  leadId: string;
+export type MangofyCustomerSnapshot = {
+  name: string;
+  email: string;
+  phoneDigits: string;
+  docDigits: string;
+  cep: string;
+  street: string;
+  city: string;
+  state: string;
 };
+
+export type PosCompraPixClient = {
+  /** Legado Royal Banking / pix-create — opcional */
+  leadId?: string;
+  /** Snapshot gravado no checkout ao gerar Pix pela Mangofy */
+  mangofyCustomer?: MangofyCustomerSnapshot;
+};
+
+function validMangofySnapshot(v: unknown): v is MangofyCustomerSnapshot {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return false;
+  const o = v as Record<string, unknown>;
+  const req = ["name", "email", "phoneDigits", "docDigits", "cep", "street", "city", "state"] as const;
+  for (const k of req) {
+    if (typeof o[k] !== "string" || !String(o[k]).trim()) return false;
+  }
+  return true;
+}
 
 export function savePosCompraPixClient(c: PosCompraPixClient): void {
   if (typeof window === "undefined") return;
@@ -24,8 +48,29 @@ export function readPosCompraPixClient(): PosCompraPixClient | null {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const o = JSON.parse(raw) as Record<string, unknown>;
-    if (typeof o.leadId !== "string" || !o.leadId) return null;
-    return { leadId: o.leadId };
+
+    let leadId: string | undefined;
+    if (typeof o.leadId === "string" && o.leadId.trim()) {
+      leadId = o.leadId.trim();
+    }
+
+    let mangofyCustomer: MangofyCustomerSnapshot | undefined;
+    if (validMangofySnapshot(o.mangofyCustomer)) {
+      const m = o.mangofyCustomer;
+      mangofyCustomer = {
+        name: m.name.trim(),
+        email: m.email.trim().toLowerCase(),
+        phoneDigits: m.phoneDigits.replace(/\D/g, ""),
+        docDigits: m.docDigits.replace(/\D/g, ""),
+        cep: m.cep.replace(/\D/g, ""),
+        street: m.street.trim(),
+        city: m.city.trim(),
+        state: m.state.replace(/\s/g, "").toUpperCase().slice(0, 2),
+      };
+    }
+
+    if (!leadId && !mangofyCustomer) return null;
+    return { leadId, mangofyCustomer };
   } catch {
     return null;
   }

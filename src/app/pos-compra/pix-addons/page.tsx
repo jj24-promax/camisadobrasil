@@ -7,17 +7,14 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { Copy, Loader2, Lock, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { extractPixGatewayPayload, qrDataUrlForImg } from "@/lib/pix-gateway-response";
+import { qrDataUrlForImg } from "@/lib/pix-gateway-response";
 import { readPosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 import { computeUpsellAddonCents, UPSELL_CAP_CENTS, UPSELL_BAG_CENTS, UPSELL_CUP_CENTS } from "@/lib/pos-compra-upsell-pricing";
 import { posCompraObrigadoQuery } from "@/lib/pos-compra-routes";
-import { usePixPaymentConfirmation } from "@/hooks/use-pix-payment-confirmation";
-import { supabaseEdgeInvokeHeaders } from "@/lib/supabase/edge-invoke-headers";
 
 type PixState = {
   paymentCode: string;
   paymentCodeBase64: string;
-  idTransaction?: string;
 } | null;
 
 function cacheKey(cap: boolean, bag: boolean, cup: boolean) {
@@ -43,45 +40,30 @@ function PixAddonsContent() {
     [pixResult?.paymentCodeBase64]
   );
 
-  const { confirmed: pixPaymentConfirmed, trackingAvailable: pixTrackingAvailable } =
-    usePixPaymentConfirmation(pixResult?.idTransaction);
-
-  const pixAwaitingConfirm = pixResult != null;
-  const pixMissingTransactionId = pixAwaitingConfirm && !(pixResult?.idTransaction ?? "").trim();
-  const pixContinueDisabled =
-    loading ||
-    (pixAwaitingConfirm &&
-      (pixMissingTransactionId || !pixTrackingAvailable || !pixPaymentConfirmed));
-
   useEffect(() => {
     if (addonCents === 0) {
       router.replace(posCompraObrigadoQuery(cap, bag, cup));
     }
   }, [addonCents, cap, bag, cup, router]);
 
-  const pixAddonAutoRedirectDoneRef = useRef(false);
+  // Mangofy Fast API — mesmo fluxo do checkout principal
   useEffect(() => {
-    pixAddonAutoRedirectDoneRef.current = false;
-  }, [pixResult?.idTransaction]);
-
-  useEffect(() => {
-    if (loading) return;
     if (!pixResult?.paymentCode?.trim()) return;
-    if (!(pixResult.idTransaction ?? "").trim()) return;
-    if (!pixTrackingAvailable || !pixPaymentConfirmed) return;
-    if (pixAddonAutoRedirectDoneRef.current) return;
-    const tx = (pixResult.idTransaction ?? "").trim();
-    if (!tx) return;
-    
-    pixAddonAutoRedirectDoneRef.current = true;
-    
-    toast.success("Pagamento confirmado!");
-    router.push(posCompraObrigadoQuery(cap, bag, cup));
-  }, [loading, pixResult?.paymentCode, pixResult?.idTransaction, pixTrackingAvailable, pixPaymentConfirmed, cap, bag, cup, router, addonCents, searchParams]);
+
+    (window as unknown as { paymentApproved?: () => void }).paymentApproved = () => {
+      toast.success("Pagamento confirmado!");
+      router.push(posCompraObrigadoQuery(cap, bag, cup));
+    };
+
+    return () => {
+      delete (window as unknown as { paymentApproved?: () => void }).paymentApproved;
+    };
+  }, [pixResult?.paymentCode, cap, bag, cup, router]);
 
   const generatePix = useCallback(async () => {
     const clientRef = readPosCompraPixClient();
-    if (!clientRef || !clientRef.leadId) {
+    const snap = clientRef?.mangofyCustomer;
+    if (!snap) {
       setMissingClient(true);
       setLoading(false);
       setError(null);
@@ -100,7 +82,9 @@ function PixAddonsContent() {
           return;
         }
       }
-    } catch {}
+    } catch {
+      /* ignore */
+    }
 
     setLoading(true);
     setError(null);
@@ -114,41 +98,52 @@ function PixAddonsContent() {
       if (cup) parts.push("Copo Térmico");
       const productSummaryAddon = parts.length > 0 ? `Adicionais pós-compra · ${parts.join(" · ")}` : "Adicionais pós-compra";
 
-      const res = await fetch("https://ulrigywayovxuyiktnlr.supabase.co/functions/v1/pix-create", {
-        method: "POST",
-        headers: supabaseEdgeInvokeHeaders(),
-        body: JSON.stringify({
-          amount,
-          amountCents: addonCents,
-          productSummary: productSummaryAddon,
-          leadId: clientRef.leadId,
-        }),
-      });
-      
-      const text = await res.text();
-      let raw: Record<string, unknown>;
-      try {
-        raw = text.trim() ? (JSON.parse(text) as Record<string, unknown>) : {};
-      } catch {
-        throw new Error(res.status >= 500 ? `Erro ${res.status} no servidor (resposta não JSON).` : "Resposta inválida.");
+      const gen = (window as unknown as { generatePix?: (c: unknown) => Promise<unknown> }).generatePix;
+      if (typeof gen !== "function") {
+        throw new Error("Forma de pagamento ainda a carregar. Atualize a página e tente de novo.");
       }
-      if (!res.ok) {
-        const msg = typeof raw.error === "string" ? raw.error : typeof raw.message === "string" ? raw.message : `Erro ${res.status} ao gerar Pix.`;
-        throw new Error(msg);
-      }
-      const data = extractPixGatewayPayload(raw);
-      if (!data.paymentCode) throw new Error("Gateway não retornou o código Pix.");
-      
-      const next: PixState = {
-        paymentCode: data.paymentCode,
-        paymentCodeBase64: data.paymentCodeBase64,
-        idTransaction: data.idTransaction,
+
+      const config = {
+        total_price: amount,
+        customer: {
+          name: snap.name,
+          document: snap.docDigits,
+          email: snap.email,
+          phone: snap.phoneDigits,
+        },
+        shipping: {
+          zip_code: snap.cep,
+          street: snap.street,
+          city: snap.city,
+          state: snap.state,
+          country: "BR",
+        },
+        metadata: Object.fromEntries(searchParams.entries()),
+        items: [{ name: productSummaryAddon, price: amount, quantity: 1 }],
       };
-      
-      setPixResult(next);
-      try { sessionStorage.setItem(key, JSON.stringify(next)); } catch {}
-      
-      toast.success("Pix dos adicionais gerado!");
+
+      const response = (await gen(config)) as {
+        success?: boolean;
+        message?: string;
+        pixCode?: string;
+        qrCodeImage?: string;
+      };
+
+      if (response && response.success && response.pixCode && response.qrCodeImage) {
+        const next: PixState = {
+          paymentCode: response.pixCode,
+          paymentCodeBase64: response.qrCodeImage,
+        };
+        setPixResult(next);
+        try {
+          sessionStorage.setItem(key, JSON.stringify(next));
+        } catch {
+          /* ignore */
+        }
+        toast.success("Pix dos adicionais gerado!");
+      } else {
+        throw new Error(response?.message || "Erro ao gerar Pix. Verifique os dados e tente novamente.");
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Não foi possível gerar o Pix.";
       setError(msg);
@@ -156,7 +151,7 @@ function PixAddonsContent() {
     } finally {
       setLoading(false);
     }
-  }, [addonCents, cap, bag, cup]);
+  }, [addonCents, cap, bag, cup, searchParams]);
 
   useEffect(() => {
     if (addonCents === 0) return;
@@ -195,7 +190,9 @@ function PixAddonsContent() {
     >
       <header className="border-b border-white/5 bg-navy-deep/50 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5">
-          <Link href="/" className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-gold">Início</Link>
+          <Link href="/" className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-gold">
+            Início
+          </Link>
           <p className="font-display text-xs font-bold tracking-[0.3em] text-gold-bright">ALPHA BRASIL</p>
           <Lock size={16} className="text-muted-foreground/40" aria-hidden />
         </div>
@@ -204,62 +201,108 @@ function PixAddonsContent() {
       <main className="relative mx-auto mt-10 min-w-0 max-w-lg px-4 sm:px-5 md:mt-14 md:max-w-xl">
         <p className="mb-2 text-center font-display text-[10px] font-semibold uppercase tracking-[0.38em] text-gold/75">Pagamento dos adicionais</p>
         <h1 className="text-center font-display text-[clamp(1.15rem,4vw,1.5rem)] font-extrabold uppercase leading-snug tracking-tight text-white">Pix — Extras</h1>
-        <p className="mx-auto mt-3 max-w-md text-center text-sm leading-relaxed text-muted-foreground">Valor extra dos itens que escolheu. Pague com Pix para concluir a reserva.</p>
+        <p className="mx-auto mt-3 max-w-md text-center text-sm leading-relaxed text-muted-foreground">
+          Valor extra dos itens que escolheu. Pague com Pix para concluir a reserva. Após o pagamento confirmado, será redirecionado automaticamente.
+        </p>
 
         <div className="mt-8 space-y-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 text-[13px] text-muted-foreground">
-          {cap && <div className="flex justify-between gap-3"><span>Boné Oficial</span><span className="shrink-0 font-semibold text-white">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(UPSELL_CAP_CENTS / 100)}</span></div>}
-          {bag && <div className="flex justify-between gap-3"><span>Shoulder Bag</span><span className="shrink-0 font-semibold text-white">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(UPSELL_BAG_CENTS / 100)}</span></div>}
-          {cup && <div className="flex justify-between gap-3"><span>Copo Térmico</span><span className="shrink-0 font-semibold text-white">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(UPSELL_CUP_CENTS / 100)}</span></div>}
+          {cap && (
+            <div className="flex justify-between gap-3">
+              <span>Boné Oficial</span>
+              <span className="shrink-0 font-semibold text-white">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(UPSELL_CAP_CENTS / 100)}
+              </span>
+            </div>
+          )}
+          {bag && (
+            <div className="flex justify-between gap-3">
+              <span>Shoulder Bag</span>
+              <span className="shrink-0 font-semibold text-white">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(UPSELL_BAG_CENTS / 100)}
+              </span>
+            </div>
+          )}
+          {cup && (
+            <div className="flex justify-between gap-3">
+              <span>Copo Térmico</span>
+              <span className="shrink-0 font-semibold text-white">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(UPSELL_CUP_CENTS / 100)}
+              </span>
+            </div>
+          )}
           <div className="border-t border-white/10 pt-3 font-display text-lg font-bold text-gold-bright">Total: {fmt}</div>
         </div>
 
         {missingClient && (
           <div className="mt-8 rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] px-4 py-4 text-sm text-amber-100">
-            <p className="font-medium text-amber-50">Sessão expirada.</p>
-            <p className="mt-2 text-xs leading-relaxed text-amber-100/90">Volte ao checkout e refaça a operação para continuar com a sua reserva.</p>
-            <Button asChild className="mt-4 w-full font-bold uppercase tracking-widest" size="lg"><Link href="/checkout">Ir ao checkout</Link></Button>
+            <p className="font-medium text-amber-50">Não encontramos os dados da sua compra neste dispositivo.</p>
+            <p className="mt-2 text-xs leading-relaxed text-amber-100/90">
+              Gere o Pix principal no checkout neste mesmo navegador e volte aos adicionais, ou refaça o checkout para continuar.
+            </p>
+            <Button asChild className="mt-4 w-full font-bold uppercase tracking-widest" size="lg">
+              <Link href="/checkout">Ir ao checkout</Link>
+            </Button>
           </div>
         )}
 
         {error && !missingClient && (
           <div className="mt-8 space-y-4 rounded-2xl border border-red-500/20 bg-red-500/[0.06] px-4 py-4 text-sm text-red-100">
             <p>{error}</p>
-            <Button type="button" variant="outline" className="w-full border-white/20" onClick={() => void generatePix()}>Tentar novamente</Button>
+            <Button type="button" variant="outline" className="w-full border-white/20" onClick={() => void generatePix()}>
+              Tentar novamente
+            </Button>
           </div>
         )}
 
         {loading && !missingClient && (
-          <div className="mt-12 flex flex-col items-center gap-4"><Loader2 className="h-10 w-10 animate-spin text-gold" aria-hidden /><p className="text-center text-xs uppercase tracking-widest text-muted-foreground">A gerar Pix…</p></div>
+          <div className="mt-12 flex flex-col items-center gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-gold" aria-hidden />
+            <p className="text-center text-xs uppercase tracking-widest text-muted-foreground">A gerar Pix…</p>
+          </div>
         )}
 
         {!loading && pixResult != null && (
           <div className="mt-10 min-w-0 max-w-full space-y-6 overflow-hidden rounded-[2rem] border border-gold/25 bg-[#060a12]/90 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:p-6">
-            <div className="flex items-center justify-center gap-2 text-gold-bright"><QrCode size={22} className="shrink-0" aria-hidden /><p className="font-display text-[10px] font-bold uppercase tracking-[0.28em]">Pague com Pix</p></div>
+            <div className="flex items-center justify-center gap-2 text-gold-bright">
+              <QrCode size={22} className="shrink-0" aria-hidden />
+              <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em]">Pague com Pix</p>
+            </div>
             {pixResult.paymentCode ? (
               <div className="flex w-full justify-center px-1">
                 <div className="relative aspect-square w-full max-w-[min(220px,calc(100vw-2.5rem))] overflow-hidden rounded-xl border border-white/10 bg-white p-2 sm:max-w-[220px]">
-                  <img src={qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixResult.paymentCode)}`} alt="QR Code Pix" className="h-full w-full max-h-full max-w-full object-contain" onError={(e) => { e.currentTarget.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixResult.paymentCode)}`; }} />
+                  <img
+                    src={
+                      qrDataUrl ||
+                      `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixResult.paymentCode)}`
+                    }
+                    alt="QR Code Pix"
+                    className="h-full w-full max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixResult.paymentCode)}`;
+                    }}
+                  />
                 </div>
               </div>
             ) : null}
-            <div className="max-h-28 min-h-0 max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-[10px] leading-relaxed text-white/90 [overflow-wrap:anywhere]">{pixResult.paymentCode}</div>
-            <Button type="button" variant="outline" size="sm" className="w-full max-w-full shrink-0 border-gold/30 text-[11px] font-bold uppercase tracking-widest" onClick={copyCode}>
+            <div className="max-h-28 min-h-0 max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-[10px] leading-relaxed text-white/90 [overflow-wrap:anywhere]">
+              {pixResult.paymentCode}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full max-w-full shrink-0 border-gold/30 text-[11px] font-bold uppercase tracking-widest"
+              onClick={copyCode}
+            >
               <Copy className="mr-2 h-4 w-4 shrink-0" /> Copiar código
             </Button>
-            {pixResult.idTransaction ? <p className="text-center text-[9px] text-muted-foreground">Ref. {pixResult.idTransaction}</p> : null}
           </div>
         )}
 
         {!loading && pixResult != null && (
-          <div className="mt-10 space-y-3">
-            {pixMissingTransactionId ? <p className="text-center text-[10px] leading-snug text-amber-200/90">Sem referência da transação — não é possível confirmar o Pix automaticamente.</p> :
-             pixResult.idTransaction ? (
-              !pixTrackingAvailable ? <p className="text-center text-[10px] leading-snug text-amber-200/90">Confirmação automática indisponível.</p> :
-              !pixPaymentConfirmed ? <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-gold-bright/90">À espera da confirmação do pagamento…</p> :
-              <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-emerald-400/90">Pagamento confirmado — pode continuar.</p>
-            ) : null}
-            <Button type="button" size="xl" disabled={pixContinueDisabled} className="w-full font-bold uppercase tracking-[0.12em] disabled:opacity-60" onClick={() => router.push(posCompraObrigadoQuery(cap, bag, cup))}>Continuar para confirmação</Button>
-          </div>
+          <p className="mt-8 text-center text-[10px] font-semibold uppercase tracking-widest text-gold-bright/90">
+            À espera da confirmação do pagamento…
+          </p>
         )}
       </main>
     </motion.div>
@@ -278,7 +321,9 @@ function PixAddonsFallback() {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-[#04070d] px-6">
       <Loader2 className="h-8 w-8 animate-spin text-gold" aria-hidden />
-      <p className="font-display text-[10px] font-bold uppercase tracking-[0.32em] text-gold-bright">A preparar Pix…</p>
+      <p className="font-display text-[10px] font-bold uppercase tracking-[0.32em] text-gold-bright">
+        A preparar Pix…
+      </p>
     </div>
   );
 }

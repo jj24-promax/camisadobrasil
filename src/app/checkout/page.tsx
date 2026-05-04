@@ -41,6 +41,7 @@ import {
   useRetentionBannerCountdown,
 } from "@/hooks/use-checkout-retention";
 import { qrDataUrlForImg } from "@/lib/pix-gateway-response";
+import { savePosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 
 const SalesNotifications = dynamic(() => import("@/components/landing/sales-notifications").then(m => m.SalesNotifications), { ssr: false });
 
@@ -432,6 +433,19 @@ function CheckoutContent() {
         setPixResult({
           paymentCode: response.pixCode,
           paymentCodeBase64: response.qrCodeImage,
+        });
+
+        savePosCompraPixClient({
+          mangofyCustomer: {
+            name,
+            email,
+            phoneDigits,
+            docDigits,
+            cep: formData.cep.replace(/\D/g, ""),
+            street: formData.endereco.trim(),
+            city: formData.cidade.trim(),
+            state: formData.estado.replace(/\s/g, "").toUpperCase().slice(0, 2),
+          },
         });
 
         toast.success("Pix gerado! Escaneie o QR ou copie o código.");

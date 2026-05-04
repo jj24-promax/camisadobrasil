@@ -402,9 +402,13 @@ function CheckoutContent() {
     }
 
     const amount = Number((finalTotalCents / 100).toFixed(2));
+    const orderRef = crypto.randomUUID();
 
     setPixLoading(true);
     try {
+      const meta = Object.fromEntries(searchParams.entries()) as Record<string, string>;
+      meta.alpha_order_ref = orderRef;
+
       const config = {
         total_price: amount,
         customer: {
@@ -420,7 +424,7 @@ function CheckoutContent() {
             state: formData.estado.trim(), 
             country: 'BR' 
         },
-        metadata: Object.fromEntries(searchParams.entries()),
+        metadata: meta,
         items: [
             { name: 'CamisaBrasil', price: amount, quantity: 1 }
         ]
@@ -446,6 +450,35 @@ function CheckoutContent() {
             city: formData.cidade.trim(),
             state: formData.estado.replace(/\s/g, "").toUpperCase().slice(0, 2),
           },
+        });
+
+        void fetch("/api/checkout/pix-record", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderRef,
+            amountCents: finalTotalCents,
+            quantity,
+            name,
+            email,
+            confirmEmail: formData.confirmEmail.trim(),
+            phone: formData.phone.trim(),
+            cpf: formData.cpf.trim(),
+            cep: formData.cep.replace(/\D/g, ""),
+            endereco: formData.endereco.trim(),
+            numero: formData.numero.trim(),
+            complemento: formData.complemento.trim(),
+            bairro: formData.bairro.trim(),
+            cidade: formData.cidade.trim(),
+            estado: formData.estado.replace(/\s/g, "").toUpperCase().slice(0, 2),
+          }),
+        }).then(async (rec) => {
+          if (!rec.ok) {
+            const j = (await rec.json().catch(() => ({}))) as { error?: string };
+            console.warn("[checkout] registo Supabase do Pix falhou:", j.error ?? rec.status);
+          }
+        }).catch((err) => {
+          console.warn("[checkout] registo Supabase do Pix falhou:", err);
         });
 
         toast.success("Pix gerado! Escaneie o QR ou copie o código.");

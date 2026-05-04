@@ -8,6 +8,9 @@ import Image from "next/image";
 import { Check, Lock, Package, Copy, ExternalLink, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
+import { takeMetaPurchasePixelAllowed } from "@/lib/meta-purchase-gate";
+import { metaPixelTrackPurchase } from "@/lib/meta-pixel";
+import { PRODUCT } from "@/lib/product";
 import { generateMockTrackingCode } from "@/lib/tracking-utils";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -39,6 +42,31 @@ function ObrigadoContent() {
       }
     };
     fetchSettings();
+  }, []);
+
+  useEffect(() => {
+    if (!takeMetaPurchasePixelAllowed()) return;
+    const params = {
+      value: PRODUCT.priceCents / 100,
+      currency: "BRL",
+      content_ids: [PRODUCT.id] as string[],
+      content_type: "product",
+      num_items: 1,
+    };
+    let cancelled = false;
+    const id = window.setInterval(() => {
+      if (cancelled) return;
+      if (typeof window.fbq === "function") {
+        metaPixelTrackPurchase(params);
+        window.clearInterval(id);
+      }
+    }, 120);
+    const stop = window.setTimeout(() => window.clearInterval(id), 5000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+      window.clearTimeout(stop);
+    };
   }, []);
   
   const copyTracking = () => {

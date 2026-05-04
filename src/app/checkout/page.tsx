@@ -41,6 +41,7 @@ import {
   useRetentionBannerCountdown,
 } from "@/hooks/use-checkout-retention";
 import { qrDataUrlForImg } from "@/lib/pix-gateway-response";
+import { grantMetaPurchasePixelAfterConfirmedPix } from "@/lib/meta-purchase-gate";
 import { savePosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 
 const SalesNotifications = dynamic(() => import("@/components/landing/sales-notifications").then(m => m.SalesNotifications), { ssr: false });
@@ -221,6 +222,7 @@ function CheckoutContent() {
   // Mangofy SDK Callback - Registrado na montagem do componente
   useEffect(() => {
     (window as any).paymentApproved = () => {
+      grantMetaPurchasePixelAfterConfirmedPix();
       toast.success("Pagamento confirmado!");
       window.location.href = 'https://www.alphabrasil.store/pos-compra/upsell-1';
     };

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { qrDataUrlForImg } from "@/lib/pix-gateway-response";
 import { readPosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 import { computeUpsellAddonCents, UPSELL_CAP_CENTS, UPSELL_BAG_CENTS, UPSELL_CUP_CENTS } from "@/lib/pos-compra-upsell-pricing";
+import { grantMetaPurchasePixelAfterConfirmedPix } from "@/lib/meta-purchase-gate";
 import { posCompraObrigadoQuery } from "@/lib/pos-compra-routes";
 
 type PixState = {
@@ -51,6 +52,7 @@ function PixAddonsContent() {
     if (!pixResult?.paymentCode?.trim()) return;
 
     (window as unknown as { paymentApproved?: () => void }).paymentApproved = () => {
+      grantMetaPurchasePixelAfterConfirmedPix();
       toast.success("Pagamento confirmado!");
       router.push(posCompraObrigadoQuery(cap, bag, cup));
     };

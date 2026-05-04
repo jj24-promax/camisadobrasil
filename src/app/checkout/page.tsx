@@ -180,13 +180,14 @@ function CheckoutContent() {
   const orderModels = parseOrderModels(searchParams, quantity);
   const selectedProductModel = getProductModelById(orderModels[0] ?? searchParams.get("modelo"));
   const orderSizes = parseOrderSizes(searchParams, quantity);
-  const defaultPersonalizeOn = searchParams.get("personalize") !== "0";
+  /** Só vem marcado com ?personalize=1 (link de campanha). Sem query = desmarcado. */
+  const personalizationMasterInitial = searchParams.get("personalize") === "1";
 
   const [paymentMethod, setPaymentMethod] = useState<"pix" | "card">("pix");
   const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
   const [timeLeft, setTimeLeft] = useState(899);
 
-  const [personalizationMaster, setPersonalizationMaster] = useState(defaultPersonalizeOn);
+  const [personalizationMaster, setPersonalizationMaster] = useState(personalizationMasterInitial);
   const [shirtPaidPersonalization, setShirtPaidPersonalization] = useState<boolean[]>(() =>
     Array(quantity).fill(false)
   );

@@ -87,22 +87,22 @@ Content-Type: application/json
 
 ## Webhook (`callbackUrl`)
 
-O projeto expõe `POST /api/webhooks/royalbanking/pix`. Quando o payload é interpretado como **pago** (`src/lib/royalbanking-webhook-parse.ts`), grava-se `status = paid` na tabela `pix_gateway_payments` (Supabase, **service role**). O checkout consulta `GET /api/pix/payment-status` até o botão “Continuar” ser libertado.
+O checkout em produção usa **Mangofy** no browser; o Next recebe notificações em **`POST /api/webhooks/mangofy/pix`** (recomendado). A rota legada **`POST /api/webhooks/royalbanking/pix`** chama o mesmo handler. Quando o payload é interpretado como **pago** (`src/lib/mangofy-webhook-parse.ts` → `parseMangofyPixWebhook`), grava-se `status = paid` na tabela `pix_gateway_payments` (Supabase, **service role**).
 
 1. Na Vercel: `SUPABASE_SERVICE_ROLE_KEY` + SQL em `docs/supabase-pix-payments.sql`.
-2. Se o webhook da Royal Banking tiver outro formato, ajuste `parseRoyalBankingPixWebhook` para detetar `idTransaction` e estado pago.
+2. Segredo opcional: `MANGOFY_WEBHOOK_SECRET` (ou legado `ROYALBANKING_WEBHOOK_SECRET`); headers aceites alinhados com `src/app/api/webhooks/mangofy/pix/route.ts`.
+3. Se o webhook tiver outro formato, ajusta o parser em `mangofy-webhook-parse.ts` para detetar `idTransaction` e estado pago.
 
-Documentar assinatura/HMAC e retries conforme manual Royal Banking — este ficheiro cobre o **Cash In** síncrono e o fluxo acima.
+Este ficheiro continua a descrever o **Cash In** HTTP da API documentada abaixo (ex.: Royal Banking); o fluxo Mangofy no storefront pode diferir — valida com o painel Mangofy.
 
 ## Onde colocar a API Key (este projeto Next.js)
 
 1. **Não** coloques a chave no código nem em `NEXT_PUBLIC_*` (isso ia para o browser).
-2. Cria **`camisa-brasil-landing/.env.local`** (já está no `.gitignore`) a partir de **`.env.example`**:
-   - `ROYALBANKING_API_KEY` — chave que a Royal Banking te deu.
-   - `ROYALBANKING_PIX_CALLBACK_URL` — URL **pública HTTPS** do teu webhook, por exemplo:
-     `https://seudominio.com/api/webhooks/royalbanking/pix`  
+2. Cria **`.env.local`** a partir de **`.env.example`**:
+   - **`MANGOFY_API_KEY`** / **`MANGOFY_PIX_CALLBACK_URL`** (preferido), ou legado `ROYALBANKING_*` se ainda usares o mesmo valor.
+   - Webhook público HTTPS, por exemplo: `https://seudominio.com/api/webhooks/mangofy/pix`  
      Em desenvolvimento local o gateway não consegue chamar `localhost`; usa **túnel** (ngrok, Cloudflare Tunnel, etc.) ou testa webhook só em staging/produção.
-3. O checkout (ou qualquer componente cliente) chama **`POST /api/pix/create`** com `amount` e `client` — a **Route Handler** em `src/app/api/pix/create/route.ts` lê a chave do ambiente, monta o `callbackUrl` e fala com `https://api.royalbanking.com.br/v1/gateway/`.
+3. Se usares **`POST /api/pix/create`** (Route Handler em `src/app/api/pix/create/route.ts`), a chave e o `callbackUrl` vêm do ambiente e o upstream fala com `https://api.royalbanking.com.br/v1/gateway/` **só nesse caminho legado** — o checkout Mangofy atual não passa por aí.
 4. A resposta devolve ao browser o JSON do gateway (`paymentCode`, `paymentCodeBase64`, `idTransaction`, …) **sem** expor a `api-key`.
 
 ## Notas de implementação (checkout)

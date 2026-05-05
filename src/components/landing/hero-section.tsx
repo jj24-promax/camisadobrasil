@@ -11,7 +11,7 @@ import type { Size } from "@/lib/types";
 import { useMobileParallaxOff } from "@/hooks/use-is-mobile-parallax";
 import { useInlineMutedVideoAutoplay } from "@/hooks/use-inline-muted-video-autoplay";
 import { cn } from "@/lib/utils";
-import { CRO, SIZE_SCARCITY } from "@/lib/cro-copy";
+import { CRO, highDemandHintFor } from "@/lib/cro-copy";
 import { ArrowRight, ChevronLeft, ChevronRight, Star, Clock, Images } from "lucide-react";
 
 /** CTA “Fotos reais” — alto contraste (desktop + mobile no card). */
@@ -405,29 +405,37 @@ export function HeroSection({
                           Selecione seu tamanho
                         </p>
                         <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
-                          {SIZES.map((s) => (
-                            <button
-                              key={s}
-                              type="button"
-                              onClick={() => onSizeChange(s)}
-                              className={cn(
-                                "group relative flex min-h-[3.25rem] min-w-[2.85rem] flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1.5 transition-all duration-300 sm:min-h-[3.5rem] sm:min-w-[3rem]",
-                                selectedSize === s
-                                  ? "bg-gold text-navy-deep shadow-[0_0_14px_rgba(212,175,55,0.45)]"
-                                  : "border border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/45"
-                              )}
-                            >
-                              <span className="relative z-10 text-xs font-black leading-none sm:text-sm">{s}</span>
-                              <span
+                          {SIZES.map((s) => {
+                            const hint = highDemandHintFor(s);
+                            return (
+                              <button
+                                key={s}
+                                type="button"
+                                onClick={() => onSizeChange(s)}
                                 className={cn(
-                                  "max-w-[5rem] text-center text-[7px] font-bold uppercase leading-tight tracking-tight sm:max-w-none sm:text-[8px]",
-                                  selectedSize === s ? "text-navy-deep/85" : "text-gold/50 group-hover:text-gold/78"
+                                  "group relative flex items-center justify-center rounded-xl transition-all duration-300",
+                                  hint
+                                    ? "min-h-[3.25rem] min-w-[2.85rem] flex-col gap-0.5 px-2 py-1.5 sm:min-h-[3.5rem] sm:min-w-[3rem]"
+                                    : "flex h-11 min-w-[2.75rem] items-center justify-center px-2 sm:h-12 sm:min-w-12",
+                                  selectedSize === s
+                                    ? "bg-gold text-navy-deep shadow-[0_0_14px_rgba(212,175,55,0.45)]"
+                                    : "border border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/45"
                                 )}
                               >
-                                {SIZE_SCARCITY[s]}
-                              </span>
-                            </button>
-                          ))}
+                                <span className="relative z-10 text-xs font-black leading-none sm:text-sm">{s}</span>
+                                {hint ? (
+                                  <span
+                                    className={cn(
+                                      "max-w-[5rem] text-center text-[7px] font-bold uppercase leading-tight tracking-tight sm:max-w-none sm:text-[8px]",
+                                      selectedSize === s ? "text-navy-deep/85" : "text-gold/55 group-hover:text-gold/80"
+                                    )}
+                                  >
+                                    {hint}
+                                  </span>
+                                ) : null}
+                              </button>
+                            );
+                          })}
                         </div>
                         <AnimatePresence mode="wait">
                           <motion.p

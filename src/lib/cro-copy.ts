@@ -7,19 +7,25 @@ export const CRO = {
   stripSalesToday: "+200 vendidos hoje",
   stripStock: "Estoque acabando rápido",
   stripPromoEnds: "Promoção termina hoje",
-  sizeBlockEyebrow: "Escolha rápido — tamanhos esgotando",
+  /** Reforço só onde há dado típico de mercado — evita mensagem repetida nos 6 tamanhos. */
+  sizeBlockEyebrow: "M · G · GG são os mais pedidos nesta coleção",
   heroPrimaryCta: "Garantir minha edição agora 🔥",
   stickyCta: "Garantir minha camisa",
   finalCta: "Quero garantir a minha agora",
   cartCheckoutCta: "Garantir minha camisa",
 } as const;
 
-/** Uma linha por tamanho — sensação de escassez (mensagem de marketing). */
-export const SIZE_SCARCITY: Record<Size, string> = {
-  P: "Últimas unidades",
-  M: "Mais pedido — esgotando",
-  G: "Quase esgotado",
-  GG: "Poucas peças",
-  G1: "Estoque limitado",
-  G2: "Últimas da leva",
+/**
+ * Microcopy apenas nos tamanhos com maior histórico típico de venda para camisa masc. BR.
+ * Hoje não persistimos array de tamanhos no Supabase (só texto do produto) — não há agregação real.
+ * Se passarem a gravar `sizes`/`tamanhos` por venda no `pix-record`/webhook, substituir esta lista pelos dados.
+ */
+export const HIGH_DEMAND_SIZE_HINT: Partial<Record<Size, string>> = {
+  M: "Alta demanda",
+  G: "Mais pedidos",
+  GG: "Últimas unidades",
 };
+
+export function highDemandHintFor(size: Size): string | undefined {
+  return HIGH_DEMAND_SIZE_HINT[size];
+}

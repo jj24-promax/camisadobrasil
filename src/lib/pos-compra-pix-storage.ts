@@ -17,7 +17,7 @@ export type MangofyCustomerSnapshot = {
 };
 
 export type PosCompraPixClient = {
-  /** Legado Royal Banking / pix-create — opcional */
+  /** Legado (Edge pix-create) — opcional */
   leadId?: string;
   /** Snapshot gravado no checkout ao gerar Pix pela Mangofy */
   mangofyCustomer?: MangofyCustomerSnapshot;

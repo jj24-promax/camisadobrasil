@@ -28,7 +28,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# env — NUNCA commitar: aqui ficam ROYALBANKING_API_KEY e outros segredos
+# env — NUNCA commitar: chaves Mangofy, Supabase, admin, etc.
 .env
 .env.*
 !.env.example

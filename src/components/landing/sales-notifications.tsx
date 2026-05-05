@@ -79,12 +79,13 @@ export function SalesNotifications({ isVisible }: SalesNotificationsProps) {
       }, isMobile ? 2800 : 4000);
     };
 
-    // Agenda a primeira notificação após 1.5s de a barra aparecer
-    const initialTimer = setTimeout(showNotification, isMobile ? 2200 : 1500);
+    // Primeira notificação um pouco após a barra aparecer (evita bombardeio no scroll)
+    const initialTimer = setTimeout(showNotification, isMobile ? 3200 : 2400);
 
+    // Intervalos entre toasts — mais espaçados no mobile (menos CPU / menos distração)
     const interval = setInterval(() => {
       showNotification();
-    }, (isMobile ? 13000 : 8000) + Math.random() * (isMobile ? 9000 : 7000));
+    }, (isMobile ? 19000 : 12000) + Math.random() * (isMobile ? 14000 : 11000));
 
     return () => {
       clearTimeout(initialTimer);

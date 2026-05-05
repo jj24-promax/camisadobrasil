@@ -22,12 +22,12 @@ This is a single-product checkout funnel ("Camisa do Brasil") with a Pix gateway
 ### 1. Public funnel (`src/app/{page,carrinho,checkout,pos-compra,rastreio}`)
 The home page (`src/app/page.tsx` + `home-page-client.tsx`) renders the landing; navigation moves the user through `/carrinho` → `/checkout` (with `/checkout/retencao` as a downsell) → `/pos-compra` (upsells + Pix status) → `/rastreio`. Pricing/offer logic is centralized in `src/lib/offer-pricing.ts`, `pos-compra-upsell-pricing.ts`, and size selection in `cart-sizes.ts`. State that must survive page transitions uses `sessionStorage` helpers in `checkout-retention-storage.ts` and `pos-compra-pix-storage.ts`. Tracking pixels (Meta, Clarity, UTMify) are wired through `tracking-utils.ts`, `meta-purchase-gate.ts`, and `src/app/providers.tsx`.
 
-### 2. Pix payment flow (Royal Banking gateway)
-Pix is created and tracked via two layers:
-- **Supabase Edge Functions** in `supabase/functions/{pix-create,pix-status,pix-webhook}` are the source of truth that talk to Royal Banking; the Next app invokes them with `src/lib/supabase/edge-invoke-headers.ts`.
-- **Next API routes** (`src/app/api/checkout/card-pending`, `src/app/api/webhooks/royalbanking/pix`) handle "card pending" lead capture and a Next-side webhook receiver (parsing in `src/lib/royalbanking-webhook-parse.ts`, optional `ROYALBANKING_WEBHOOK_SECRET` header check).
+### 2. Pix payment flow (Mangofy checkout + webhook)
+Checkout creates Pix in the browser via **Mangofy** (`fast_api.min.js` / `generatePix`). Notifications hit **Next** at `POST /api/webhooks/mangofy/pix` (`src/lib/mangofy-webhook-parse.ts`, optional `MANGOFY_WEBHOOK_SECRET` or legacy `ROYALBANKING_WEBHOOK_SECRET`). The path `/api/webhooks/royalbanking/pix` re-exports the same handler for old URLs.
+- **Supabase Edge Functions** in `supabase/functions/{pix-create,pix-status,pix-webhook}` are an alternate path (legacy upstream API); optional if you only use Mangofy on the storefront.
+- **Next API routes** (`src/app/api/checkout/card-pending`, `src/app/api/webhooks/mangofy/pix`) handle "card pending" lead capture and the Mangofy-side webhook receiver.
 - Persistence helpers live in `src/lib/supabase/{pix-payment-store,pending-venda-pix,pending-venda-card,insert-lead-from-checkout,lead-mutations}.ts`. The `SUPABASE_SERVICE_ROLE_KEY` is required server-side for these writes (RLS is closed); never expose it via `NEXT_PUBLIC_*`.
-- API contracts are documented in `docs/api-royalbanking-*.md` and SQL schemas in `docs/supabase-*.sql` / `docs/update-db.sql`.
+- Historical gateway API notes live in `docs/api-royalbanking-*.md`; SQL schemas in `docs/supabase-*.sql` / `docs/update-db.sql`.
 
 ### 3. Admin dashboard (`src/app/admin`)
 Password-gated dashboard for sales/leads/clients. Auth is custom (not Supabase Auth):
@@ -43,5 +43,5 @@ Two flavors, do not mix:
 
 ### Other notes
 - `next.config.ts` sets security headers globally, disables `experimental.devtoolSegmentExplorer` (was breaking Fast Refresh in Next 15.5), pins `outputFileTracingRoot` to this dir to avoid picking up a sibling lockfile, and only allows `randomuser.me` as a remote image host.
-- `SITE_URL` / `APP_URL` / `NEXT_PUBLIC_APP_URL` are used to build the public webhook URL passed to Royal Banking — localhost cannot receive webhook POSTs, use a tunnel (ngrok) in dev.
+- `SITE_URL` / `APP_URL` / `NEXT_PUBLIC_APP_URL` are used to build public URLs (e.g. webhook base for Mangofy). Localhost cannot receive gateway POSTs; use a tunnel (ngrok) in dev.
 - Static assets/art live in `artes/` and `public/`; product copy/data in `src/data/`.

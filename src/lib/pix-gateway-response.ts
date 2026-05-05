@@ -1,4 +1,4 @@
-/** Mínimo em reais para Pix Cash In na Royal Banking (evita `validation.min.numeric` no upstream). */
+/** Mínimo em reais para Pix Cash In no gateway (evita `validation.min.numeric` no upstream). */
 export const ROYAL_BANKING_MIN_PIX_AMOUNT_BRL = 1;
 
 export function formatRoyalBankingMinPixAmountPt(): string {
@@ -69,7 +69,7 @@ export function coercePixGatewayResponseRecord(response: unknown): Record<string
 }
 
 /**
- * Normaliza respostas do gateway Royal Banking (campos podem variar).
+ * Normaliza respostas do Mangofy / gateway Pix (campos podem variar).
  */
 export function extractPixGatewayPayload(data: Record<string, unknown>): {
   paymentCode: string;

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
-import { generateTimeline } from "@/lib/tracking-utils";
-import { mapLeadRow } from "@/lib/supabase/mappers";
+import { generateTimeline } from "@/utils/tracking";
 
 // Padrão de rastreio esperado (Ex: BR1234A567BR)
 const TRACKING_REGEX = /^BR\d{4}[A-Z]\d{3}BR$/i;
@@ -37,7 +36,7 @@ export async function GET(req: Request) {
     // Procura no Supabase para saber para onde a encomenda vai
     const { data: leadData, error } = await admin
       .from("leads")
-      .select("cidade, estado, created_at") // Over-fetching resolvido: trazemos apenas o necessário
+      .select("cidade, estado, bairro, created_at")
       .eq("codigo_rastreio", code)
       .maybeSingle();
 
@@ -47,16 +46,28 @@ export async function GET(req: Request) {
 
     let destCity = "Rio de Janeiro";
     let destState = "RJ";
+    let destBairro = "";
     let startDate = new Date();
     startDate.setDate(startDate.getDate() - 3);
 
-    if (leadData) {
-      if (leadData.cidade) destCity = leadData.cidade;
-      if (leadData.estado) destState = leadData.estado;
-      if (leadData.created_at) startDate = new Date(leadData.created_at);
+    if (leadData.cidade) destCity = leadData.cidade;
+    if (leadData.estado) destState = leadData.estado;
+    if (typeof leadData.bairro === "string" && leadData.bairro.trim()) {
+      destBairro = leadData.bairro.trim();
     }
+    if (leadData.created_at) startDate = new Date(leadData.created_at);
 
-    const timeline = generateTimeline(code, destCity, destState, startDate.toISOString());
+    /** Alinhar com o site principal: mesma assinatura + taxaPaga quando existir coluna no futuro */
+    const taxaPaga = false;
+
+    const timeline = generateTimeline(
+      code,
+      destCity,
+      destState,
+      destBairro,
+      startDate.toISOString(),
+      taxaPaga
+    );
 
     return NextResponse.json({
       code,

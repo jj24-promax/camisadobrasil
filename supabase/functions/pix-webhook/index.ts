@@ -40,8 +40,15 @@ serve(async (req) => {
   }
 
   try {
-    const secret = Deno.env.get("ROYALBANKING_WEBHOOK_SECRET");
-    const authHeader = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() || req.headers.get("x-webhook-secret")?.trim() || req.headers.get("x-royal-webhook-secret")?.trim();
+    const secret =
+      Deno.env.get("MANGOFY_WEBHOOK_SECRET")?.trim() ||
+      Deno.env.get("ROYALBANKING_WEBHOOK_SECRET")?.trim() ||
+      "";
+    const authHeader =
+      req.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() ||
+      req.headers.get("x-mangofy-webhook-secret")?.trim() ||
+      req.headers.get("x-webhook-secret")?.trim() ||
+      req.headers.get("x-royal-webhook-secret")?.trim();
     
     if (secret && authHeader !== secret) {
       console.warn("[AppSec] Bloqueado: Tentativa de spoofing no webhook (Assinatura inválida).");
@@ -92,6 +99,12 @@ serve(async (req) => {
            
            if (leadErr) console.error("[pix-webhook] Erro Leads:", leadErr);
         }
+
+        const { error: customsErr } = await supabase
+          .from("customs_fee_pix")
+          .update({ paid_at: new Date().toISOString() })
+          .eq("pedido_codigo", idTransaction);
+        if (customsErr) console.error("[pix-webhook] Erro customs_fee_pix:", customsErr.message);
         
       } else if (failed) {
         console.log(`[pix-webhook] Marcando tx ${idTransaction} como FALHADO`);

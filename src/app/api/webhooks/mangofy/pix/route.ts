@@ -14,6 +14,7 @@ import {
   markPixGatewayPaymentFailed,
   markPixGatewayPaymentPaid,
 } from "@/lib/supabase/pix-payment-store";
+import { markCustomsFeePixPaidByGatewayId } from "@/lib/supabase/customs-fee-pix";
 
 function isMangofyPixWebhookAuthorized(req: Request): boolean {
   const expected = getMangofyWebhookSecret();
@@ -90,6 +91,15 @@ export async function POST(req: Request) {
 
   const gwPaid = await markPixGatewayPaymentPaid(primaryTx, payload);
 
+  let customsFeeUpdated = 0;
+  const customsFeeErrors: string[] = [];
+  for (const tx of candidateIds) {
+    const customs = await markCustomsFeePixPaidByGatewayId(tx);
+    customsFeeUpdated += customs.updated;
+    if (customs.error) customsFeeErrors.push(customs.error);
+    if (customs.updated > 0) break;
+  }
+
   let vendaUpdated = 0;
   const convertedLeads = new Set<string>();
   const vendaErrors: string[] = [];
@@ -115,8 +125,9 @@ export async function POST(req: Request) {
     candidateIds,
     paid: true,
     gatewayStored: gwPaid.ok,
+    customsFeeUpdated,
     vendaUpdated,
     leadsConverted: convertedLeads.size,
-    errors: [gwPaid.error, ...vendaErrors, ...convertedLeadErrors].filter(Boolean),
+    errors: [gwPaid.error, ...customsFeeErrors, ...vendaErrors, ...convertedLeadErrors].filter(Boolean),
   });
 }

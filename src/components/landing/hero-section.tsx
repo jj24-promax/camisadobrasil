@@ -245,12 +245,13 @@ export function HeroSection({
               </span>
             </motion.div>
 
+            {/* Desktop: abaixo do selo; mobile: link duplicado no card de compra (evita ficar fora da dobra) */}
             <motion.a
               href="#galeria"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
-              className="mt-3 flex w-full cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/35 px-5 py-2.5 backdrop-blur-md transition-[border-color,background-color] hover:border-white/18 hover:bg-black/48 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(222_48%_4%)]"
+              className="mt-3 hidden w-full cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/35 px-5 py-2.5 backdrop-blur-md transition-[border-color,background-color] hover:border-white/18 hover:bg-black/48 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(222_48%_4%)] lg:flex"
               aria-label="Ir para a galeria premium com fotos reais do produto"
             >
               <span className="flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-gold/85">
@@ -344,6 +345,20 @@ export function HeroSection({
                       </motion.div>
                     ) : null}
                   </div>
+
+                  <motion.a
+                    href="#galeria"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.32 }}
+                    className="flex w-full cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/35 px-4 py-2.5 backdrop-blur-md transition-[border-color,background-color] hover:border-white/18 hover:bg-black/48 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(222_48%_4%)] lg:hidden"
+                    aria-label="Ir para a galeria premium com fotos reais do produto"
+                  >
+                    <span className="flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-gold/85">
+                      <Images className="h-3.5 w-3.5 shrink-0 text-gold/75" aria-hidden />
+                      Fotos reais do produto
+                    </span>
+                  </motion.a>
 
                   <div className="h-px w-full bg-white/[0.06]" />
 

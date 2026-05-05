@@ -19,7 +19,7 @@ import { FaqSection } from "@/components/landing/faq-section";
 import { FeedbackSection } from "@/components/landing/feedback-section";
 import { FinalCta } from "@/components/landing/final-cta";
 import { BackRedirect } from "@/components/landing/back-redirect";
-import { GiveawaySection } from "@/components/landing/giveaway-section";
+import { WelcomeGiveawayDialog } from "@/components/landing/welcome-giveaway-dialog";
 
 const StickyBuyBar = dynamic(() => import("@/components/landing/sticky-buy-bar").then(m => m.StickyBuyBar), { ssr: false });
 const SalesNotifications = dynamic(() => import("@/components/landing/sales-notifications").then(m => m.SalesNotifications), { ssr: false });
@@ -93,6 +93,7 @@ export function HomePageClient() {
 
   return (
     <>
+      <WelcomeGiveawayDialog />
       <BackRedirect link="/checkout/retencao" />
       <header className="fixed left-0 right-0 top-0 z-40 border-b border-white/[0.05] bg-[hsl(222,48%,3%)]/82 backdrop-blur-2xl">
         <AnnouncementBar />
@@ -136,7 +137,6 @@ export function HomePageClient() {
           onEditionChange={setSelectedProduct} 
         />
         <PromoBundle onBuyBundle={() => openCart(3)} />
-        <GiveawaySection onParticipate={() => openCart(1)} />
         <SocialProof />
         <GuaranteeSection />
         <SizeChart />

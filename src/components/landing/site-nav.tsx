@@ -16,7 +16,6 @@ export const SITE_NAV_LINKS = [
   { href: "#detalhes", label: "Detalhes" },
   { href: "#galeria", label: "Galeria" },
   { href: "#duvidas", label: "Dúvidas" },
-  { href: "/rastreio", label: "Rastreio" },
   { href: "#feedback", label: "Envie feedback" },
 ] as const;
 

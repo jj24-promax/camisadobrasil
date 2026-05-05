@@ -12,7 +12,8 @@ import { takeMetaPurchasePixelAllowed } from "@/lib/meta-purchase-gate";
 import { metaPixelTrackPurchase } from "@/lib/meta-pixel";
 import { PRODUCT } from "@/lib/product";
 import { generateMockTrackingCode } from "@/lib/tracking-utils";
-import { supabase } from "@/integrations/supabase/client";
+
+const TRACKING_SITE_BASE_URL = "https://userastrear.site";
 
 function ObrigadoContent() {
   const searchParams = useSearchParams();
@@ -22,7 +23,6 @@ function ObrigadoContent() {
   const trackingCodeFromUrl = searchParams.get("code") || "";
   
   const [trackingCode, setTrackingCode] = useState("");
-  const [trackingLinkUrl, setTrackingLinkUrl] = useState("https://rastrearlog.online");
 
   useEffect(() => {
     const fromSession = sessionStorage.getItem("alpha_tracking_code");
@@ -33,16 +33,6 @@ function ObrigadoContent() {
     sessionStorage.setItem("alpha_tracking_code", resolvedCode);
     localStorage.setItem("alpha_tracking_code", resolvedCode);
   }, [trackingCodeFromUrl]);
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      const { data } = await supabase.from("store_settings").select("tracking_link").eq("id", 1).maybeSingle();
-      if (data?.tracking_link) {
-        setTrackingLinkUrl(data.tracking_link);
-      }
-    };
-    fetchSettings();
-  }, []);
 
   useEffect(() => {
     if (!takeMetaPurchasePixelAllowed()) return;
@@ -165,7 +155,7 @@ function ObrigadoContent() {
 
               {trackingCode && (
                 <a 
-                  href={trackingLinkUrl}
+                  href={`${TRACKING_SITE_BASE_URL}/?code=${encodeURIComponent(trackingCode)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold uppercase tracking-widest text-white hover:bg-white/10 transition-all"

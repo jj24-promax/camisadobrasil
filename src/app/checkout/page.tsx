@@ -23,6 +23,7 @@ import {
   User as UserIcon,
   Loader2,
   Copy,
+  Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProductModelById } from "@/lib/product";
@@ -597,6 +598,24 @@ function CheckoutContent() {
       <main className="mx-auto mt-8 max-w-7xl px-4 sm:px-5 lg:mt-12">
         <div className="grid min-w-0 gap-8 lg:grid-cols-[1fr_400px]">
           <div className="min-w-0 space-y-8">
+            <div className="glass-dark flex flex-col gap-4 rounded-2xl px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold/20 text-gold-bright shadow-[0_0_18px_rgba(212,175,55,0.45)]">
+                  <Trophy size={18} />
+                </div>
+                <div className="text-left">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold/80">Sorteio Exclusivo</p>
+                  <p className="mt-1 text-[13px] font-semibold leading-snug text-white">
+                    Rumo ao hexa na Copa do Mundo 2026
+                  </p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-gold/80">
+                    Ao garantir sua camisa hoje, você concorre a{" "}
+                    <span className="font-semibold text-white">2 ingressos com viagem e hospedagem pagas</span> para assistir à Seleção.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="glass-dark flex min-w-0 flex-col gap-2 rounded-2xl px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <div className="flex min-w-0 items-center gap-3">
                 <Truck className="shrink-0 text-gold" size={20} />

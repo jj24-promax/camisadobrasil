@@ -20,6 +20,7 @@ import { FeedbackSection } from "@/components/landing/feedback-section";
 import { FinalCta } from "@/components/landing/final-cta";
 import { BackRedirect } from "@/components/landing/back-redirect";
 import { WelcomeGiveawayDialog } from "@/components/landing/welcome-giveaway-dialog";
+import { CroUrgencyStrip } from "@/components/landing/cro-urgency-strip";
 
 const StickyBuyBar = dynamic(() => import("@/components/landing/sticky-buy-bar").then(m => m.StickyBuyBar), { ssr: false });
 const SalesNotifications = dynamic(() => import("@/components/landing/sales-notifications").then(m => m.SalesNotifications), { ssr: false });
@@ -130,13 +131,20 @@ export function HomePageClient() {
           onBuyNow={() => openCart(1)}
         />
 
+        <CroUrgencyStrip variant="sales" />
+
         <PremiumGallery selectedEdition={selectedProduct} onEditionChange={setSelectedProduct} />
+
+        <CroUrgencyStrip variant="stock" />
 
         <ProductDetails 
           selectedEdition={selectedProduct} 
           onEditionChange={setSelectedProduct} 
         />
         <PromoBundle onBuyBundle={() => openCart(3)} />
+
+        <CroUrgencyStrip variant="promo" />
+
         <SocialProof />
         <GuaranteeSection />
         <SizeChart />

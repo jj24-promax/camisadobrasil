@@ -44,8 +44,11 @@ export function PurchaseTrustBlock({ variant = "hero", className }: PurchaseTrus
           className
         )}
       >
+        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gold/85">
+          Pagamento 100% seguro e protegido
+        </p>
         <p className="text-[11px] font-semibold leading-snug text-gold-bright/95">
-          Risco Zero: 7 dias · Compra segura · PIX e cartão
+          7 dias de garantia · PIX e cartão · Compra segura
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
           <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -79,16 +82,19 @@ export function PurchaseTrustBlock({ variant = "hero", className }: PurchaseTrus
           </div>
           <div className="min-w-0 flex-1 text-center sm:text-left">
             <p className="font-display text-sm font-extrabold uppercase tracking-[0.12em] text-gold-bright">
-              Risco Zero: 7 Dias de Garantia
+              7 dias — satisfação ou reembolso total
             </p>
             <p className="mt-2 text-sm font-medium leading-relaxed text-white/90">
-              Experimente em casa. Se não amar, devolvemos seu dinheiro. Risco zero.
+              Teste por 7 dias em casa. Se não gostar, devolvemos 100% do seu dinheiro — sem enrolação.
             </p>
           </div>
         </div>
       </div>
 
       <div className="flex flex-col gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-4 sm:px-5">
+        <p className="text-center text-[10px] font-extrabold uppercase tracking-[0.2em] text-gold-bright/95 sm:text-left">
+          Pagamento 100% seguro e protegido
+        </p>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:justify-start">
             <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-white/85">
@@ -103,7 +109,7 @@ export function PurchaseTrustBlock({ variant = "hero", className }: PurchaseTrus
           <CardBrandStrip className="sm:justify-end" />
         </div>
         <p className="text-center text-[10px] leading-relaxed text-muted-foreground sm:text-left">
-          Pagamento criptografado. Seus dados protegidos em toda a jornada.
+          Seus dados são criptografados e protegidos em toda a jornada.
         </p>
       </div>
     </div>

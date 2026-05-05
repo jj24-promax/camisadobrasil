@@ -6,6 +6,7 @@ import { ParallaxBg } from "@/components/landing/parallax-bg";
 import { SectionReveal, SectionShell } from "@/components/landing/section-shell";
 import { ArrowRight } from "lucide-react";
 import { PurchaseTrustBlock } from "@/components/landing/purchase-trust-block";
+import { CRO } from "@/lib/cro-copy";
 
 type FinalCtaProps = {
   onBuyNow: () => void;
@@ -33,22 +34,20 @@ export function FinalCta({ onBuyNow }: FinalCtaProps) {
         <div className="pointer-events-none absolute -right-16 bottom-0 h-48 w-48 rounded-full bg-[hsl(215_40%_25%/0.2)] blur-3xl" />
 
         <div className="relative text-center">
-          <p className="font-display text-[10px] font-semibold uppercase tracking-[0.42em] text-gold/85">
-            Últimas unidades da leva
+          <p className="font-display text-[10px] font-semibold uppercase tracking-[0.42em] text-amber-200/95">
+            🔥 Estoque girando rápido
           </p>
           <h2
             id="final-cta-heading"
-            className="mx-auto mt-6 max-w-4xl font-display text-[clamp(2.5rem,4.5vw,3.5rem)] font-bold leading-[1.05] tracking-tight text-balance"
+            className="mx-auto mt-6 max-w-4xl font-display text-[clamp(2rem,4.2vw,3.25rem)] font-bold leading-[1.08] tracking-tight text-balance"
           >
-            Vista a energia do Brasil com o requinte de uma{" "}
+            Últimas unidades disponíveis —{" "}
             <span className="bg-gradient-to-r from-gold-bright via-gold to-gold-muted bg-clip-text text-transparent">
-              edição especial
+              garanta a sua agora
             </span>
-            .
           </h2>
-          <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
-            Não espere o próximo jogo para se sentir parte do time. Garanta a sua enquanto o estoque
-            acompanha a demanda.
+          <p className="mx-auto mt-5 max-w-2xl text-base font-medium leading-relaxed text-white/85 md:text-lg">
+            ⏳ Essa edição não será reposta. Quem garante hoje leva o manto antes que a leva feche.
           </p>
 
           <div className="mt-12 flex flex-col items-center justify-center gap-10 md:flex-row md:gap-14">
@@ -60,9 +59,13 @@ export function FinalCta({ onBuyNow }: FinalCtaProps) {
                 {PRODUCT.priceFormatted}
               </p>
             </div>
-            <Button size="xl" onClick={onBuyNow} className="transition-transform duration-300 hover:scale-[1.02] active:scale-[0.99] font-bold uppercase tracking-tight">
-              <ArrowRight className="mr-2.5 h-5 w-5" />
-              Comprar agora
+            <Button
+              size="xl"
+              onClick={onBuyNow}
+              className="max-w-md px-6 text-xs font-extrabold uppercase leading-snug tracking-tight transition-transform duration-300 hover:scale-[1.02] active:scale-[0.99] sm:text-sm sm:tracking-normal"
+            >
+              <ArrowRight className="mr-2.5 h-5 w-5 shrink-0" />
+              {CRO.finalCta}
             </Button>
           </div>
 

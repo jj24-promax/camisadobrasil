@@ -11,6 +11,7 @@ import type { Size } from "@/lib/types";
 import { useMobileParallaxOff } from "@/hooks/use-is-mobile-parallax";
 import { useInlineMutedVideoAutoplay } from "@/hooks/use-inline-muted-video-autoplay";
 import { cn } from "@/lib/utils";
+import { CRO, SIZE_SCARCITY } from "@/lib/cro-copy";
 import { ArrowRight, ChevronLeft, ChevronRight, Star, Clock, Images } from "lucide-react";
 
 /** CTA “Fotos reais” — alto contraste (desktop + mobile no card). */
@@ -397,7 +398,12 @@ export function HeroSection({
                     
                     {!selectedEditionData.inProduction && (
                       <div className="flex-1">
-                        <p className="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground sm:mb-3 sm:text-left">Selecione seu Tamanho</p>
+                        <p className="mb-1 text-center text-[10px] font-extrabold uppercase tracking-[0.14em] text-amber-200/90 sm:text-left">
+                          {CRO.sizeBlockEyebrow}
+                        </p>
+                        <p className="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground sm:mb-3 sm:text-left">
+                          Selecione seu tamanho
+                        </p>
                         <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
                           {SIZES.map((s) => (
                             <button
@@ -405,16 +411,37 @@ export function HeroSection({
                               type="button"
                               onClick={() => onSizeChange(s)}
                               className={cn(
-                                "group relative flex h-10 sm:h-12 min-w-10 sm:min-w-12 items-center justify-center rounded-xl px-2 text-xs font-bold transition-all duration-300",
+                                "group relative flex min-h-[3.25rem] min-w-[2.85rem] flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1.5 transition-all duration-300 sm:min-h-[3.5rem] sm:min-w-[3rem]",
                                 selectedSize === s
-                                  ? "bg-gold text-navy-deep"
-                                  : "border border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40"
+                                  ? "bg-gold text-navy-deep shadow-[0_0_14px_rgba(212,175,55,0.45)]"
+                                  : "border border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/45"
                               )}
                             >
-                              <span className="relative z-10">{s}</span>
+                              <span className="relative z-10 text-xs font-black leading-none sm:text-sm">{s}</span>
+                              <span
+                                className={cn(
+                                  "max-w-[5rem] text-center text-[7px] font-bold uppercase leading-tight tracking-tight sm:max-w-none sm:text-[8px]",
+                                  selectedSize === s ? "text-navy-deep/85" : "text-gold/50 group-hover:text-gold/78"
+                                )}
+                              >
+                                {SIZE_SCARCITY[s]}
+                              </span>
                             </button>
                           ))}
                         </div>
+                        <AnimatePresence mode="wait">
+                          <motion.p
+                            key={selectedSize}
+                            role="status"
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 4 }}
+                            transition={{ duration: 0.18 }}
+                            className="mt-2.5 text-center text-[11px] font-semibold tabular-nums text-emerald-400/95 sm:text-left"
+                          >
+                            ✔ Tamanho {selectedSize} selecionado
+                          </motion.p>
+                        </AnimatePresence>
                       </div>
                     )}
                   </div>
@@ -424,16 +451,21 @@ export function HeroSection({
                       size="xl" 
                       disabled={selectedEditionData.inProduction}
                       className={cn(
-                        "w-full text-sm sm:text-base font-bold uppercase tracking-tight sm:tracking-normal transition-all duration-300",
+                        "w-full text-xs sm:text-sm font-extrabold uppercase leading-snug tracking-tight transition-all duration-300 sm:tracking-normal",
                         selectedEditionData.inProduction 
                           ? "bg-white/5 text-muted-foreground border-white/10" 
                           : "shimmer-btn shadow-[0_0_30px_-5px_hsl(var(--gold)/0.4)]"
                       )} 
                       onClick={onBuyNow}
                     >
-                      {!selectedEditionData.inProduction && <ArrowRight className="mr-3 h-5 w-5 shrink-0" />}
-                      {selectedEditionData.ctaLabel}
+                      {!selectedEditionData.inProduction && <ArrowRight className="mr-2.5 h-5 w-5 shrink-0" />}
+                      {selectedEditionData.inProduction ? selectedEditionData.ctaLabel : CRO.heroPrimaryCta}
                     </Button>
+                    {!selectedEditionData.inProduction && (
+                      <p className="mt-2 text-center text-[10px] font-medium text-muted-foreground sm:text-left">
+                        Compra segura · Entrega rápida
+                      </p>
+                    )}
                   </div>
 
                   <PurchaseTrustBlock variant="hero" />

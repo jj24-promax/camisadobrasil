@@ -18,6 +18,8 @@ import { leve3Pague2DiscountCents } from "@/lib/offer-pricing";
 import { useCheckoutTransition } from "@/components/navigation/checkout-transition-provider";
 import { cn } from "@/lib/utils";
 import { PurchaseTrustBlock } from "@/components/landing/purchase-trust-block";
+import toast from "react-hot-toast";
+import { CRO } from "@/lib/cro-copy";
 
 type LandingCartDialogProps = {
   open: boolean;
@@ -282,11 +284,12 @@ export function LandingCartDialog({
               size="xl"
               className="w-full rounded-2xl py-7 font-bold uppercase tracking-widest"
               onClick={() => {
+                toast.success("Redirecionando para o checkout…", { duration: 2200 });
                 onOpenChange(false);
                 requestCheckoutNavigation(checkoutParams.toString());
               }}
             >
-              Ir para o checkout
+              {CRO.cartCheckoutCta}
             </Button>
             <PurchaseTrustBlock variant="compact" className="mt-4 px-0" />
           </div>

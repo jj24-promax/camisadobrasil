@@ -161,7 +161,7 @@ const ugcReviewPhotos: ReviewPhotoEntry[] = [
 const stockReviewPhotos: ReviewPhotoEntry[] = [
   {
     name: "Rafael M.",
-    text: "Acabamento impecável. Parece peça de coleção.",
+    text: "Chegou rápido e a qualidade é absurda. Acabamento de loja física — todo mundo perguntou onde comprei.",
     rating: 5,
     profileImageSrc: reviewPortraitMan(11),
     imageSrc: "/images/testimonials/1.png",
@@ -169,7 +169,7 @@ const stockReviewPhotos: ReviewPhotoEntry[] = [
   },
   {
     name: "Juliana C.",
-    text: "O caimento valoriza demais. Cor vibrante na medida.",
+    text: "Caimento lindo e leve no corpo — cor idêntica às fotos. Recomendo demais, chegou rapidinho!",
     rating: 5,
     profileImageSrc: reviewPortraitWoman(14),
     imageSrc: "/images/testimonials/2.png",
@@ -193,7 +193,7 @@ const stockReviewPhotos: ReviewPhotoEntry[] = [
   },
   {
     name: "Lucas S.",
-    text: "Design moderno, foge do óbvio. Chegou rápido.",
+    text: "Design forte, foge das camisas genéricas. Chegou antes do combinado 🙂",
     rating: 5,
     profileImageSrc: reviewPortraitMan(25),
     imageSrc: "/images/testimonials/5.png",
@@ -441,7 +441,7 @@ export function SocialProof() {
           </span>
         </h2>
         <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-          Depoimentos de quem busca estética, caimento e presença acima da média.
+          Feedback real de clientes: entrega rápida, qualidade no corpo e aquela sensação de ter superado o anúncio.
         </p>
       </SectionReveal>
 

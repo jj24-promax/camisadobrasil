@@ -44,13 +44,14 @@ export function GuaranteeSection() {
                 Compra 100% Segura
               </div>
               <h2 className="font-display text-[clamp(1.75rem,4vw,2.5rem)] font-bold leading-tight tracking-tight text-white">
-                Experimente em casa. <br/>
-                <span className="bg-gradient-to-r from-gold-bright to-gold-muted bg-clip-text text-transparent">Risco zero</span> para você.
+                Teste por 7 dias — <br />
+                <span className="bg-gradient-to-r from-gold-bright to-gold-muted bg-clip-text text-transparent">
+                  se não gostar, devolvemos 100% do seu dinheiro
+                </span>
               </h2>
               <p className="mt-6 text-base leading-relaxed text-muted-foreground md:text-lg">
-                Não é letra miúda: é o benefício que tira o medo de comprar online. Vista a{" "}
-                <span className="text-white font-medium">Edição Sagrada</span> no conforto da sua casa. Se não amar em até{" "}
-                <span className="text-white font-medium">7 dias</span>, devolvemos 100% do seu dinheiro — sem enrolação.
+                Sem letra miúda: vista a sua Alpha no conforto de casa. Não ficou do jeito que você imaginou? Em até{" "}
+                <span className="font-medium text-white">7 dias</span> devolvemos tudo que você pagou — simples assim.
               </p>
               
               <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-4 md:gap-8">

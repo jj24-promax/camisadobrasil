@@ -34,6 +34,7 @@ export type Lead = {
   number?: string;
   complement?: string;
   neighborhood?: string;
+  paymentStatus?: OrderStatus;
 };
 
 export type Sale = {

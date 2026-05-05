@@ -40,6 +40,16 @@ type AdminLeadsViewProps = {
   leads: Lead[];
 };
 
+function getLeadPaymentHighlightClass(status?: Lead["paymentStatus"]) {
+  if (status === "pago") {
+    return "border-l-4 border-l-emerald-400/80 bg-emerald-500/[0.06]";
+  }
+  if (status === "pendente") {
+    return "border-l-4 border-l-amber-400/80 bg-amber-500/[0.06]";
+  }
+  return undefined;
+}
+
 export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
   const [localLeads, setLocalLeads] = useState<Lead[]>(leads);
   const [pixDlg, setPixDlg] = useState<{ open: boolean; leadId: string | null; leadName: string }>({
@@ -194,6 +204,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
             getRowKey={(r) => r.id}
             tableClassName="min-w-[1420px] lg:min-w-[1480px]"
             rows={items}
+            getRowClassName={(r) => getLeadPaymentHighlightClass(r.paymentStatus)}
             emptyMessage={emptyMessage}
             footer={
               total > 0 ? (
@@ -210,7 +221,20 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
               {
                 key: "name",
                 header: "Nome",
-                cell: (r) => <span className="font-medium text-foreground">{r.name}</span>,
+                cell: (r) => (
+                  <span className="inline-flex items-center gap-2 font-medium text-foreground">
+                    {(r.paymentStatus === "pago" || r.paymentStatus === "pendente") && (
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "inline-block h-2.5 w-2.5 rounded-full",
+                          r.paymentStatus === "pago" ? "bg-emerald-400" : "bg-amber-400"
+                        )}
+                      />
+                    )}
+                    {r.name}
+                  </span>
+                ),
               },
               {
                 key: "cpf",

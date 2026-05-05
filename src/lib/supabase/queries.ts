@@ -28,6 +28,14 @@ function friendlyMessage(message: string, code?: string): string {
   return message || "Erro ao comunicar com o Supabase.";
 }
 
+function normalizeOrderStatus(value: unknown): Lead["paymentStatus"] {
+  const status = String(value ?? "").trim().toLowerCase();
+  if (status === "pago") return "pago";
+  if (status === "cancelado") return "cancelado";
+  if (status === "pendente") return "pendente";
+  return undefined;
+}
+
 export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
   noStore();
 
@@ -52,6 +60,36 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
   }
 
   const rows = toRecordRows(data).map(mapLeadRow);
+
+  const { data: vendasData, error: vendasError } = await admin
+    .from("vendas")
+    .select("lead_id, status_pagamento, created_at")
+    .not("lead_id", "is", null)
+    .limit(ROW_LIMIT);
+
+  if (!vendasError) {
+    const latestPaymentStatusByLead = new Map<string, { createdAt: number; status: Lead["paymentStatus"] }>();
+    for (const raw of toRecordRows(vendasData)) {
+      const leadId = String(raw.lead_id ?? "").trim();
+      if (!leadId) continue;
+      const createdAt = new Date(String(raw.created_at ?? "")).getTime();
+      const status = normalizeOrderStatus(raw.status_pagamento);
+      if (!status || Number.isNaN(createdAt)) continue;
+
+      const current = latestPaymentStatusByLead.get(leadId);
+      if (!current || createdAt >= current.createdAt) {
+        latestPaymentStatusByLead.set(leadId, { createdAt, status });
+      }
+    }
+
+    for (const lead of rows) {
+      const latest = latestPaymentStatusByLead.get(lead.id);
+      if (latest?.status) {
+        lead.paymentStatus = latest.status;
+      }
+    }
+  }
+
   rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   return { ok: true, data: rows };
 }

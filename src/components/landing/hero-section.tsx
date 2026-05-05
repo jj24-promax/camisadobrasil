@@ -13,6 +13,23 @@ import { useInlineMutedVideoAutoplay } from "@/hooks/use-inline-muted-video-auto
 import { cn } from "@/lib/utils";
 import { ArrowRight, ChevronLeft, ChevronRight, Star, Clock, Images } from "lucide-react";
 
+/** CTA “Fotos reais” — alto contraste (desktop + mobile no card). */
+const galleryCtaShellClass = cn(
+  "group relative w-full cursor-pointer items-center justify-center overflow-hidden rounded-full",
+  "border-2 border-gold/55 bg-gradient-to-r from-gold/12 via-gold/[0.07] to-gold/12",
+  "shadow-[0_0_22px_-6px_rgba(212,175,55,0.5),inset_0_1px_0_rgba(255,255,255,0.14)]",
+  "px-5 py-3 backdrop-blur-md",
+  "transition-[transform,box-shadow,border-color,background-color] duration-200",
+  "hover:border-gold-bright/90 hover:from-gold/20 hover:via-gold/14 hover:to-gold/20 hover:shadow-[0_0_34px_-4px_rgba(212,175,55,0.6)]",
+  "active:scale-[0.99]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-bright/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(222_48%_4%)]"
+);
+
+const galleryCtaLabelClass =
+  "relative z-[1] flex items-center justify-center gap-2.5 text-[11px] font-extrabold uppercase tracking-[0.16em] text-gold-bright [text-shadow:0_0_24px_rgba(212,175,55,0.35)] sm:text-xs sm:tracking-[0.18em]";
+
+const galleryCtaIconClass = "relative z-[1] h-4 w-4 shrink-0 text-gold-bright drop-shadow-[0_0_8px_rgba(212,175,55,0.5)]";
+
 type HeroSectionProps = {
   selectedSize: Size;
   onSizeChange: (s: Size) => void;
@@ -251,11 +268,12 @@ export function HeroSection({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
-              className="mt-3 hidden w-full cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/35 px-5 py-2.5 backdrop-blur-md transition-[border-color,background-color] hover:border-white/18 hover:bg-black/48 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(222_48%_4%)] lg:flex"
+              className={cn(galleryCtaShellClass, "mt-3 hidden lg:flex")}
               aria-label="Ir para a galeria premium com fotos reais do produto"
             >
-              <span className="flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-gold/85">
-                <Images className="h-3.5 w-3.5 shrink-0 text-gold/75" aria-hidden />
+              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_0%,rgba(212,175,55,0.22),transparent_55%)] opacity-80 transition-opacity group-hover:opacity-100" aria-hidden />
+              <span className={galleryCtaLabelClass}>
+                <Images className={galleryCtaIconClass} aria-hidden />
                 Fotos reais do produto
               </span>
             </motion.a>
@@ -351,11 +369,12 @@ export function HeroSection({
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.32 }}
-                    className="flex w-full cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/35 px-4 py-2.5 backdrop-blur-md transition-[border-color,background-color] hover:border-white/18 hover:bg-black/48 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(222_48%_4%)] lg:hidden"
+                    className={cn(galleryCtaShellClass, "flex lg:hidden")}
                     aria-label="Ir para a galeria premium com fotos reais do produto"
                   >
-                    <span className="flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-gold/85">
-                      <Images className="h-3.5 w-3.5 shrink-0 text-gold/75" aria-hidden />
+                    <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_0%,rgba(212,175,55,0.22),transparent_55%)] opacity-80 transition-opacity group-hover:opacity-100" aria-hidden />
+                    <span className={galleryCtaLabelClass}>
+                      <Images className={galleryCtaIconClass} aria-hidden />
                       Fotos reais do produto
                     </span>
                   </motion.a>

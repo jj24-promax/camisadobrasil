@@ -72,28 +72,6 @@ export function GiveawaySection({ onParticipate }: GiveawaySectionProps) {
             </div>
 
             <div className="flex flex-col items-center gap-8 lg:gap-10">
-              
-              {/* Animação Flutuante do Golden Ticket com mais Glow */}
-              <motion.div
-                animate={{ 
-                  y: [-12, 12, -12], 
-                  rotate: [-3, 3, -3] 
-                }}
-                transition={{ 
-                  duration: 6, 
-                  repeat: Infinity, 
-                  ease: "easeInOut" 
-                }}
-                className="relative h-40 w-full max-w-[320px] drop-shadow-[0_0_40px_rgba(212,175,55,0.7)]"
-              >
-                <Image
-                  src="/images/golden-ticket.png"
-                  alt="Golden Ticket Copa do Mundo"
-                  fill
-                  className="object-contain"
-                />
-              </motion.div>
-
               <div className="grid gap-4 sm:gap-5 w-full">
                 {features.map((item, idx) => (
                   <motion.div 

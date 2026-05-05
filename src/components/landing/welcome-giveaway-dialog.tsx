@@ -36,20 +36,11 @@ export function WelcomeGiveawayDialog() {
         <DialogTitle className="sr-only">Sorteio Exclusivo</DialogTitle>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.12),transparent_70%)] pointer-events-none" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-bright to-transparent opacity-80" />
-        
+
         <div className="relative z-10 p-8 pb-10 text-center flex flex-col items-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/20 px-4 py-1.5 text-gold-bright mb-6 shadow-[0_0_15px_rgba(212,175,55,0.3)]">
             <Trophy size={16} />
             <span className="text-xs font-bold uppercase tracking-widest">Sorteio Exclusivo</span>
-          </div>
-
-          <div className="relative h-36 w-full max-w-[260px] drop-shadow-[0_0_40px_rgba(212,175,55,0.6)] mb-6 animate-pulse-soft">
-            <Image
-              src="/images/golden-ticket.png"
-              alt="Golden Ticket Copa do Mundo"
-              fill
-              className="object-contain"
-            />
           </div>
 
           <h2 className="font-display text-[1.4rem] sm:text-2xl font-extrabold leading-tight tracking-tight text-white mb-3">

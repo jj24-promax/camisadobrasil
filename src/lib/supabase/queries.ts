@@ -36,6 +36,15 @@ function normalizeOrderStatus(value: unknown): Lead["paymentStatus"] {
   return undefined;
 }
 
+function normalizeAmountCents(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return Math.max(0, Math.round(value));
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value.replace(",", "."));
+    if (Number.isFinite(n)) return Math.max(0, Math.round(n));
+  }
+  return undefined;
+}
+
 export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
   noStore();
 
@@ -63,22 +72,26 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
 
   const { data: vendasData, error: vendasError } = await admin
     .from("vendas")
-    .select("lead_id, status_pagamento, created_at")
+    .select("lead_id, status_pagamento, valor, amount_cents, created_at")
     .not("lead_id", "is", null)
     .limit(ROW_LIMIT);
 
   if (!vendasError) {
-    const latestPaymentStatusByLead = new Map<string, { createdAt: number; status: Lead["paymentStatus"] }>();
+    const latestPaymentStatusByLead = new Map<
+      string,
+      { createdAt: number; status: Lead["paymentStatus"]; amountCents?: number }
+    >();
     for (const raw of toRecordRows(vendasData)) {
       const leadId = String(raw.lead_id ?? "").trim();
       if (!leadId) continue;
       const createdAt = new Date(String(raw.created_at ?? "")).getTime();
       const status = normalizeOrderStatus(raw.status_pagamento);
+      const amountCents = normalizeAmountCents(raw.valor ?? raw.amount_cents);
       if (!status || Number.isNaN(createdAt)) continue;
 
       const current = latestPaymentStatusByLead.get(leadId);
       if (!current || createdAt >= current.createdAt) {
-        latestPaymentStatusByLead.set(leadId, { createdAt, status });
+        latestPaymentStatusByLead.set(leadId, { createdAt, status, amountCents });
       }
     }
 
@@ -86,6 +99,7 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
       const latest = latestPaymentStatusByLead.get(lead.id);
       if (latest?.status) {
         lead.paymentStatus = latest.status;
+        lead.paymentAmountCents = latest.amountCents;
       }
     }
   }

@@ -2,7 +2,7 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import toast from "react-hot-toast";
-import { Trash2, Loader2, QrCode } from "lucide-react";
+import { Trash2, Loader2, QrCode, MessageCircle } from "lucide-react";
 import { updateLeadStatusAction, deleteLeadAction } from "@/app/admin/(dashboard)/leads/actions";
 import { AdminRegeneratePixDialog } from "@/components/admin/admin-regenerate-pix-dialog";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
@@ -39,6 +39,36 @@ const SORT_OPTIONS: AdminSelectOption<LeadSortByDate>[] = [
 type AdminLeadsViewProps = {
   leads: Lead[];
 };
+
+function leadFirstName(name: string): string {
+  const first = name.trim().split(/\s+/)[0];
+  return first || "Cliente";
+}
+
+function leadWhatsAppPendingHref(lead: Lead): string | null {
+  if (lead.paymentStatus !== "pendente") return null;
+  const digits = lead.phone.replace(/\D/g, "");
+  if (digits.length < 10) return null;
+
+  const withCountry = digits.length <= 11 ? `55${digits}` : digits;
+  const amount = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+    (lead.paymentAmountCents ?? 6790) / 100
+  );
+  const firstName = leadFirstName(lead.name);
+  const message = `Olá, ${firstName}! Tudo bem? 😊
+
+Aqui é da Alpha Brasil 🇧🇷
+
+Vi que você iniciou a compra da sua Camisa do Brasil Estilizada, mas o pedido ficou pendente e não foi confirmado.
+
+Queria saber se aconteceu algum problema no pagamento via Pix ou se ficou alguma dúvida sobre o produto, entrega ou finalização da compra. Posso te ajudar por aqui mesmo. 🙌
+
+Seu pedido ainda está reservado por enquanto, no valor de ${amount}.
+
+Fico à disposição para te auxiliar e garantir sua camisa! 💛💚`;
+
+  return `https://wa.me/${withCountry}?text=${encodeURIComponent(message)}`;
+}
 
 function getLeadPaymentHighlightClass(status?: Lead["paymentStatus"]) {
   if (status === "pago") {
@@ -294,9 +324,21 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
               {
                 key: "actions",
                 header: "",
-                className: "w-[4.5rem] text-right",
+                className: "w-[7rem] text-right",
                 cell: (r) => (
                   <div className="flex justify-end gap-0.5">
+                    {leadWhatsAppPendingHref(r) ? (
+                      <a
+                        href={leadWhatsAppPendingHref(r)!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-emerald-500/15 hover:text-emerald-300"
+                        title="Cobrar lead pendente no WhatsApp"
+                        aria-label="Cobrar lead pendente no WhatsApp"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </a>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => setPixDlg({ open: true, leadId: r.id, leadName: r.name || r.email || "Lead" })}

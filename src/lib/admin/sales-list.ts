@@ -1,4 +1,5 @@
 import type { OrderStatus, Sale } from "@/types/admin";
+import { orderSnapshotSearchText } from "@/types/order-snapshot";
 
 /** Filtros de listagem — espelho de query string ou RPC no Supabase (`status`, `q`). */
 export type SalesListFilters = {
@@ -35,7 +36,8 @@ export function saleMatchesSearch(sale: Sale, rawQuery: string): boolean {
 export function saleMatchesCustomerProductSearch(sale: Sale, rawQuery: string): boolean {
   const q = normalize(rawQuery);
   if (!q) return true;
-  const haystack = [sale.customer, sale.productName].join(" ").toLowerCase();
+  const detail = sale.orderDetails ? orderSnapshotSearchText(sale.orderDetails) : "";
+  const haystack = [sale.customer, sale.productName, detail].join(" ").toLowerCase();
   return haystack.includes(q);
 }
 

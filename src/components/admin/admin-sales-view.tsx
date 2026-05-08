@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
 import { Eye } from "lucide-react";
+import { AdminOrderDetailsView } from "@/components/admin/admin-order-details-view";
 import { AdminBadge } from "@/components/admin/admin-badge";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
 import { AdminSearchField } from "@/components/admin/admin-search-field";
@@ -245,6 +246,14 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
                 <DetailItem label="Data do pedido" value={formatDateTime(selectedSale.date)} />
                 <DetailItem label="Quando aconteceu" value={formatRelativeTimePt(selectedSale.date)} />
               </div>
+              {selectedSale.orderDetails ? (
+                <div className="border-t border-white/[0.08] pt-5">
+                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/90">
+                    Itens e extras (snapshot)
+                  </p>
+                  <AdminOrderDetailsView snapshot={selectedSale.orderDetails} />
+                </div>
+              ) : null}
             </div>
           ) : null}
         </DialogContent>

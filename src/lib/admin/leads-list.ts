@@ -1,5 +1,6 @@
 import { formatLeadSource } from "@/lib/admin-format";
 import type { Lead, LeadStatus } from "@/types/admin";
+import { orderSnapshotSearchText } from "@/types/order-snapshot";
 
 /** Filtros de listagem — espelho do que virá em query string ou RPC no Supabase. */
 export type LeadsListFilters = {
@@ -42,6 +43,7 @@ export function leadMatchesContactSearch(lead: Lead, rawQuery: string): boolean 
     lead.source,
     formatLeadSource(lead.source),
     lead.productInterest,
+    lead.orderDetails ? orderSnapshotSearchText(lead.orderDetails) : "",
   ]
     .join(" ")
     .toLowerCase();

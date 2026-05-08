@@ -19,6 +19,8 @@ export type MangofyCustomerSnapshot = {
 export type PosCompraPixClient = {
   /** Legado (Edge pix-create) — opcional */
   leadId?: string;
+  /** Venda principal (checkout) — para anexar upsells ao mesmo pedido no painel */
+  mainVendaId?: string;
   /** Snapshot gravado no checkout ao gerar Pix pela Mangofy */
   mangofyCustomer?: MangofyCustomerSnapshot;
 };
@@ -54,6 +56,11 @@ export function readPosCompraPixClient(): PosCompraPixClient | null {
       leadId = o.leadId.trim();
     }
 
+    let mainVendaId: string | undefined;
+    if (typeof o.mainVendaId === "string" && o.mainVendaId.trim()) {
+      mainVendaId = o.mainVendaId.trim();
+    }
+
     let mangofyCustomer: MangofyCustomerSnapshot | undefined;
     if (validMangofySnapshot(o.mangofyCustomer)) {
       const m = o.mangofyCustomer;
@@ -70,7 +77,7 @@ export function readPosCompraPixClient(): PosCompraPixClient | null {
     }
 
     if (!leadId && !mangofyCustomer) return null;
-    return { leadId, mangofyCustomer };
+    return { leadId, mainVendaId, mangofyCustomer };
   } catch {
     return null;
   }

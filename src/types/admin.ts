@@ -1,3 +1,5 @@
+import type { OrderCheckoutSnapshotV1 } from "@/types/order-snapshot";
+
 /**
  * Modelos do painel administrativo.
  */
@@ -28,6 +30,8 @@ export type Lead = {
   status: LeadStatus;
   createdAt: string;
   trackingCode?: string;
+  /** Primeira visita à página /pos-compra/obrigado (confirma funil pós-checkout). */
+  obrigadoEm?: string;
   cpf?: string;
   cep?: string;
   address?: string;
@@ -36,6 +40,7 @@ export type Lead = {
   neighborhood?: string;
   paymentStatus?: OrderStatus;
   paymentAmountCents?: number;
+  orderDetails?: OrderCheckoutSnapshotV1;
 };
 
 export type Sale = {
@@ -49,6 +54,7 @@ export type Sale = {
   productName: string;
   paymentMethod: PaymentMethod;
   trackingCode?: string;
+  orderDetails?: OrderCheckoutSnapshotV1;
 };
 
 export type Client = {

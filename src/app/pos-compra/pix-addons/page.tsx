@@ -7,10 +7,9 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { Copy, Loader2, Lock, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { qrDataUrlForImg } from "@/lib/pix-gateway-response";
+import { coercePixGatewayResponseRecord, extractPixGatewayPayload, qrDataUrlForImg } from "@/lib/pix-gateway-response";
 import { readPosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 import { computeUpsellAddonCents, UPSELL_CAP_CENTS, UPSELL_BAG_CENTS, UPSELL_CUP_CENTS } from "@/lib/pos-compra-upsell-pricing";
-import { grantMetaPurchasePixelAfterConfirmedPix } from "@/lib/meta-purchase-gate";
 import { posCompraObrigadoQuery } from "@/lib/pos-compra-routes";
 
 type PixState = {
@@ -52,7 +51,6 @@ function PixAddonsContent() {
     if (!pixResult?.paymentCode?.trim()) return;
 
     (window as unknown as { paymentApproved?: () => void }).paymentApproved = () => {
-      grantMetaPurchasePixelAfterConfirmedPix();
       toast.success("Pagamento confirmado!");
       router.push(posCompraObrigadoQuery(cap, bag, cup));
     };
@@ -132,6 +130,25 @@ function PixAddonsContent() {
       };
 
       if (response && response.success && response.pixCode && response.qrCodeImage) {
+        const gw = extractPixGatewayPayload(coercePixGatewayResponseRecord(response));
+        const tx = gw.idTransaction?.trim() ?? "";
+        const clientRef = readPosCompraPixClient();
+        if (tx && clientRef?.leadId && clientRef?.mainVendaId) {
+          void fetch("/api/checkout/pos-compra-pix-record", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              leadId: clientRef.leadId,
+              mainVendaId: clientRef.mainVendaId,
+              cap,
+              bag,
+              cup,
+              amountCents: addonCents,
+              gatewayTransactionId: tx,
+            }),
+          }).catch(() => {});
+        }
+
         const next: PixState = {
           paymentCode: response.pixCode,
           paymentCodeBase64: response.qrCodeImage,

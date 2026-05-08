@@ -2,7 +2,7 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import toast from "react-hot-toast";
-import { Trash2, Loader2, QrCode, MessageCircle } from "lucide-react";
+import { Trash2, Loader2, QrCode, MessageCircle, Eye } from "lucide-react";
 import { updateLeadStatusAction, deleteLeadAction } from "@/app/admin/(dashboard)/leads/actions";
 import { AdminRegeneratePixDialog } from "@/components/admin/admin-regenerate-pix-dialog";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
@@ -11,6 +11,18 @@ import { AdminSearchField } from "@/components/admin/admin-search-field";
 import { AdminFilterSelect, type AdminSelectOption } from "@/components/admin/admin-filter-select";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 import { AdminTableLoadingOverlay } from "@/components/admin/admin-table-loading-overlay";
+import { AdminOrderDetailsView } from "@/components/admin/admin-order-details-view";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  getLeadRowHighlightClass,
+  leadFunnelHighlight,
+} from "@/lib/admin/lead-funnel-highlight";
 import {
   DEFAULT_LEADS_PAGE_SIZE,
   filterLeads,
@@ -70,16 +82,6 @@ Fico à disposição para te auxiliar e garantir sua camisa! 💛💚`;
   return `https://wa.me/${withCountry}?text=${encodeURIComponent(message)}`;
 }
 
-function getLeadPaymentHighlightClass(status?: Lead["paymentStatus"]) {
-  if (status === "pago") {
-    return "border-l-4 border-l-emerald-400/80 bg-emerald-500/[0.06]";
-  }
-  if (status === "pendente") {
-    return "border-l-4 border-l-amber-400/80 bg-amber-500/[0.06]";
-  }
-  return undefined;
-}
-
 export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
   const [localLeads, setLocalLeads] = useState<Lead[]>(leads);
   const [pixDlg, setPixDlg] = useState<{ open: boolean; leadId: string | null; leadName: string }>({
@@ -87,6 +89,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
     leadId: null,
     leadName: "",
   });
+  const [orderDlgLead, setOrderDlgLead] = useState<Lead | null>(null);
   const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
   const [deletingLeadId, setDeletingLeadId] = useState<string | null>(null);
 
@@ -183,6 +186,21 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
         open={pixDlg.open}
         onOpenChange={(open) => setPixDlg((d) => ({ ...d, open, leadId: open ? d.leadId : null }))}
       />
+      <Dialog open={orderDlgLead !== null} onOpenChange={(open) => { if (!open) setOrderDlgLead(null); }}>
+        <DialogContent className="max-w-[min(92vw,560px)] border-white/[0.12] bg-[#070c14]/98 p-0">
+          {orderDlgLead?.orderDetails ? (
+            <div className="space-y-4 p-5 sm:p-6">
+              <DialogHeader className="space-y-2 text-left">
+                <DialogTitle>Pedido — {orderDlgLead.name || orderDlgLead.email || "Lead"}</DialogTitle>
+                <DialogDescription>
+                  Dados gravados na finalização do checkout (e upsells de pós-compra, se houver).
+                </DialogDescription>
+              </DialogHeader>
+              <AdminOrderDetailsView snapshot={orderDlgLead.orderDetails} />
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
       <section className="admin-filter-surface" aria-label="Filtros da lista de leads">
         <div className="flex flex-col gap-5 lg:flex-row lg:flex-wrap lg:items-end lg:gap-x-8 lg:gap-y-5">
           <AdminSearchField
@@ -232,9 +250,9 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
           <AdminTableLoadingOverlay show={listLoading} />
           <AdminDataTable
             getRowKey={(r) => r.id}
-            tableClassName="min-w-[1420px] lg:min-w-[1480px]"
+            tableClassName="min-w-[1500px] lg:min-w-[1560px]"
             rows={items}
-            getRowClassName={(r) => getLeadPaymentHighlightClass(r.paymentStatus)}
+            getRowClassName={(r) => getLeadRowHighlightClass(r)}
             emptyMessage={emptyMessage}
             footer={
               total > 0 ? (
@@ -251,20 +269,30 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
               {
                 key: "name",
                 header: "Nome",
-                cell: (r) => (
-                  <span className="inline-flex items-center gap-2 font-medium text-foreground">
-                    {(r.paymentStatus === "pago" || r.paymentStatus === "pendente") && (
-                      <span
-                        aria-hidden
-                        className={cn(
-                          "inline-block h-2.5 w-2.5 rounded-full",
-                          r.paymentStatus === "pago" ? "bg-emerald-400" : "bg-amber-400"
-                        )}
-                      />
-                    )}
-                    {r.name}
-                  </span>
-                ),
+                cell: (r) => {
+                  const tier = leadFunnelHighlight(r);
+                  return (
+                    <span className="inline-flex items-center gap-2 font-medium text-foreground">
+                      {tier ? (
+                        <span
+                          aria-hidden
+                          title={
+                            tier === "green"
+                              ? "Pós-compra concluída (obrigado) ou pagamento confirmado"
+                              : "Pagamento Pix pendente — ainda não concluiu o funil"
+                          }
+                          className={cn(
+                            "inline-block h-3 w-3 shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-[#0a0f18]",
+                            tier === "green"
+                              ? "bg-emerald-400 ring-emerald-400/60"
+                              : "bg-amber-400 ring-amber-400/60"
+                          )}
+                        />
+                      ) : null}
+                      {r.name}
+                    </span>
+                  );
+                },
               },
               {
                 key: "cpf",
@@ -314,6 +342,24 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
                     onChange={(next) => handleLeadStatusChange(r.id, next)}
                   />
                 ),
+              },
+              {
+                key: "order",
+                header: "Pedido",
+                className: "w-[5rem]",
+                cell: (r) =>
+                  r.orderDetails ? (
+                    <button
+                      type="button"
+                      onClick={() => setOrderDlgLead(r)}
+                      className="inline-flex items-center gap-1 rounded-md border border-white/[0.12] px-2 py-1 text-[11px] font-medium text-foreground/90 transition-colors hover:border-gold/35 hover:text-gold-bright"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      Ver
+                    </button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  ),
               },
               {
                 key: "createdAt",

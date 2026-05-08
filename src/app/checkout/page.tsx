@@ -26,7 +26,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getProductModelById } from "@/lib/product";
+import { getProductModelById, PRODUCT } from "@/lib/product";
 import { parseOrderModels, parseOrderSizes } from "@/lib/cart-sizes";
 import { leve3Pague2DiscountCents } from "@/lib/offer-pricing";
 import { cn } from "@/lib/utils";
@@ -41,8 +41,13 @@ import {
   useRetentionDiscountOnTotal,
   useRetentionBannerCountdown,
 } from "@/hooks/use-checkout-retention";
-import { coercePixGatewayResponseRecord, extractPixGatewayPayload, qrDataUrlForImg } from "@/lib/pix-gateway-response";
-import { grantMetaPurchasePixelAfterConfirmedPix } from "@/lib/meta-purchase-gate";
+import {
+  coercePixGatewayResponseRecord,
+  extractMangofyPixTransactionId,
+  extractPixGatewayPayload,
+  qrDataUrlForImg,
+} from "@/lib/pix-gateway-response";
+import { buildCheckoutOrderSnapshotV1 } from "@/lib/build-checkout-order-snapshot";
 import { savePosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 
 const SalesNotifications = dynamic(() => import("@/components/landing/sales-notifications").then(m => m.SalesNotifications), { ssr: false });
@@ -223,7 +228,6 @@ function CheckoutContent() {
   // Mangofy SDK Callback - Registrado na montagem do componente
   useEffect(() => {
     (window as any).paymentApproved = () => {
-      grantMetaPurchasePixelAfterConfirmedPix();
       toast.success("Pagamento confirmado!");
       window.location.href = 'https://www.alphabrasil.store/pos-compra/upsell-1';
     };
@@ -426,6 +430,44 @@ function CheckoutContent() {
     const amount = Number((finalTotalCents / 100).toFixed(2));
     const orderRef = crypto.randomUUID();
 
+    const orderSnapshot = buildCheckoutOrderSnapshotV1({
+      product: { id: PRODUCT.id, name: PRODUCT.name },
+      quantity,
+      orderModels,
+      orderSizes,
+      selectedBumpIds: selectedBumps,
+      bumpCatalog: ORDER_BUMPS.map((b) => ({ id: b.id, title: b.title, priceCents: b.priceCents })),
+      personalizationMaster,
+      shirtPaidPersonalization,
+      giftFreePersonalization,
+      customNames,
+      customNumbers,
+      retention: {
+        active: retention.active,
+        discountCents: retention.discountCents,
+        percent: RETENTION_PERCENT,
+      },
+      pricing: {
+        subtotalCents: pricing.subtotal,
+        itemDiscountCents: pricing.discountValue,
+        bumpsTotalCents: pricing.bumpsTotal,
+        personalizationCents: pricing.personalizationCents,
+        baseTotalCents: pricing.baseTotalCents,
+        retentionDiscountCents: retention.discountCents,
+        finalTotalCents: finalTotalCents,
+      },
+      shipping: {
+        cep: formData.cep.replace(/\D/g, ""),
+        city: formData.cidade.trim(),
+        state: formData.estado.replace(/\s/g, "").toUpperCase().slice(0, 2),
+        street: formData.endereco.trim(),
+        number: formData.numero.trim(),
+        complement: formData.complemento.trim(),
+        neighborhood: formData.bairro.trim(),
+      },
+      utmEntries: Object.fromEntries(searchParams.entries()),
+    });
+
     setPixLoading(true);
     try {
       const meta = Object.fromEntries(searchParams.entries()) as Record<string, string>;
@@ -457,6 +499,7 @@ function CheckoutContent() {
 
       if (response && response.success) {
         const gw = extractPixGatewayPayload(coercePixGatewayResponseRecord(response));
+        const mangofyTx = extractMangofyPixTransactionId(response) ?? gw.idTransaction;
         setPixResult({
           paymentCode: response.pixCode,
           paymentCodeBase64: response.qrCodeImage,
@@ -480,9 +523,10 @@ function CheckoutContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             orderRef,
-            gatewayTransactionId: gw.idTransaction,
+            gatewayTransactionId: mangofyTx,
             amountCents: finalTotalCents,
             quantity,
+            orderSnapshot,
             name,
             email,
             confirmEmail: formData.confirmEmail.trim(),
@@ -497,9 +541,26 @@ function CheckoutContent() {
             estado: formData.estado.replace(/\s/g, "").toUpperCase().slice(0, 2),
           }),
         }).then(async (rec) => {
+          const j = (await rec.json().catch(() => ({}))) as { error?: string; leadId?: string; vendaId?: string };
           if (!rec.ok) {
-            const j = (await rec.json().catch(() => ({}))) as { error?: string };
             console.warn("[checkout] registo Supabase do Pix falhou:", j.error ?? rec.status);
+            return;
+          }
+          if (j.leadId && j.vendaId) {
+            savePosCompraPixClient({
+              leadId: j.leadId,
+              mainVendaId: j.vendaId,
+              mangofyCustomer: {
+                name,
+                email,
+                phoneDigits,
+                docDigits,
+                cep: formData.cep.replace(/\D/g, ""),
+                street: formData.endereco.trim(),
+                city: formData.cidade.trim(),
+                state: formData.estado.replace(/\s/g, "").toUpperCase().slice(0, 2),
+              },
+            });
           }
         }).catch((err) => {
           console.warn("[checkout] registo Supabase do Pix falhou:", err);

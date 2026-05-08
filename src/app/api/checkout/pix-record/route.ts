@@ -4,11 +4,12 @@ import { PRODUCT } from "@/lib/product";
 import { insertCheckoutLead } from "@/lib/supabase/insert-lead-from-checkout";
 import { insertPendingPixVenda } from "@/lib/supabase/pending-venda-pix";
 import { generateMockTrackingCode } from "@/lib/tracking-utils";
+import { parseOrderCheckoutSnapshotFromApi } from "@/types/order-snapshot";
 
 /** Referência gerada no browser (`crypto.randomUUID`) ou fallback alfanumérico curto. */
 const ORDER_REF_RE = /^[a-zA-Z0-9_-]{8,80}$/;
 /** ID devolvido pelo Mangofy/Royal no `generatePix` (ex. VPAY…); deve coincidir com o webhook. */
-const GATEWAY_TX_RE = /^[a-zA-Z0-9_.:-]{6,128}$/;
+const GATEWAY_TX_RE = /^[a-zA-Z0-9_.:-]{4,128}$/;
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Referência do pedido inválida." }, { status: 400 });
   }
 
-  const gatewayRaw = isNonEmptyString(body.gatewayTransactionId) ? body.gatewayTransactionId.trim() : "";
+  const gatewayRaw = isNonEmptyString(body.gatewayTransactionId) ? body.gatewayTransactionId.trim().slice(0, 160) : "";
   const gatewayTransactionId = GATEWAY_TX_RE.test(gatewayRaw) ? gatewayRaw : "";
   /** Webhook casa com o ID do gateway; `orderRef` fica só em metadata do checkout. */
   const pedidoCodigoParaWebhook = gatewayTransactionId || orderRef;
@@ -42,6 +43,29 @@ export async function POST(req: Request) {
 
   if (!Number.isFinite(amountCents) || amountCents < 4750 || amountCents > 50_000_000) {
     return NextResponse.json({ error: "Valor do pedido adulterado ou inválido. Transação bloqueada." }, { status: 400 });
+  }
+
+  let snapshotRawLen = 0;
+  if (body.orderSnapshot != null) {
+    try {
+      snapshotRawLen = JSON.stringify(body.orderSnapshot).length;
+    } catch {
+      snapshotRawLen = 999_999;
+    }
+  }
+  if (snapshotRawLen > 48_000) {
+    return NextResponse.json({ error: "Snapshot do pedido excede o tamanho máximo." }, { status: 400 });
+  }
+
+  const orderSnapshot = parseOrderCheckoutSnapshotFromApi(body.orderSnapshot);
+  if (!orderSnapshot) {
+    return NextResponse.json({ error: "Snapshot do pedido inválido ou ausente." }, { status: 400 });
+  }
+  if (Math.abs(orderSnapshot.pricing.finalTotalCents - amountCents) > 2) {
+    return NextResponse.json({ error: "Total do snapshot não confere com o valor cobrado." }, { status: 400 });
+  }
+  if (orderSnapshot.quantity !== quantity) {
+    return NextResponse.json({ error: "Quantidade do snapshot não confere." }, { status: 400 });
   }
 
   const name = isNonEmptyString(body.name) ? body.name.trim() : "";
@@ -118,7 +142,9 @@ export async function POST(req: Request) {
     amountCents,
     productSummary,
     idTransaction: pedidoCodigoParaWebhook,
+    gatewayPixTransactionId: gatewayRaw || undefined,
     shippingSummary,
+    detalhesPedido: orderSnapshot,
   });
 
   if (!venda.ok) {

@@ -18,6 +18,7 @@ import { mockSalesPerformanceByDay, mockSalesPerformanceByWeek } from "@/data/mo
 import { formatBRL, formatDate, formatDateTime, formatLeadSource, formatRelativeTimePt } from "@/lib/admin-format";
 import { cn } from "@/lib/utils";
 import { aggregateLeadGeography } from "@/lib/admin/leads-geography";
+import { getLeadRowHighlightClass, leadFunnelHighlight } from "@/lib/admin/lead-funnel-highlight";
 import { computeDashboardKpisFromData } from "@/lib/supabase/dashboard-kpis";
 import { fetchAdminLeads, fetchAdminVendas } from "@/lib/supabase/queries";
 
@@ -100,6 +101,7 @@ export async function AdminDashboardBody() {
         <AdminSectionTitle title="Leads recentes" subtitle="Últimos contatos registrados no funil." />
         <AdminDataTable
           getRowKey={(r) => r.id}
+          getRowClassName={(r) => getLeadRowHighlightClass(r)}
           rows={leadsRecentes}
           emptyMessage={
             leadsRes.ok
@@ -107,7 +109,29 @@ export async function AdminDashboardBody() {
               : "Não foi possível listar leads. Verifique o aviso acima."
           }
           columns={[
-            { key: "name", header: "Nome", cell: (r) => <span className="font-medium">{r.name}</span> },
+            {
+              key: "name",
+              header: "Nome",
+              cell: (r) => {
+                const tier = leadFunnelHighlight(r);
+                return (
+                  <span className="inline-flex items-center gap-2 font-medium">
+                    {tier ? (
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "inline-block h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-[#0a0f18]",
+                          tier === "green"
+                            ? "bg-emerald-400 ring-emerald-400/60"
+                            : "bg-amber-400 ring-amber-400/60"
+                        )}
+                      />
+                    ) : null}
+                    {r.name}
+                  </span>
+                );
+              },
+            },
             { key: "tracking", header: "Rastreio", cell: (r) => <span className="font-mono text-[11px] font-bold text-gold-bright">{r.trackingCode || "—"}</span> },
             { key: "phone", header: "Telefone", cell: (r) => r.phone },
             {

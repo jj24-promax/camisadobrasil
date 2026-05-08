@@ -5,7 +5,9 @@ import { isSupabasePublicEnvConfigured } from "@/lib/supabase/env-check";
 import { mapClienteRow, mapLeadRow, mapVendaRow } from "@/lib/supabase/mappers";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { isAdminSessionValid } from "@/lib/admin-auth/verify-session.server";
+import { normalizePaymentOrderStatus } from "@/lib/normalize-payment-order-status";
 import type { Client, Lead, Sale } from "@/types/admin";
+import { isOrderCheckoutSnapshotV1, type OrderCheckoutSnapshotV1 } from "@/types/order-snapshot";
 
 const ROW_LIMIT = 2_000;
 
@@ -28,14 +30,6 @@ function friendlyMessage(message: string, code?: string): string {
   return message || "Erro ao comunicar com o Supabase.";
 }
 
-function normalizeOrderStatus(value: unknown): Lead["paymentStatus"] {
-  const status = String(value ?? "").trim().toLowerCase();
-  if (status === "pago") return "pago";
-  if (status === "cancelado") return "cancelado";
-  if (status === "pendente") return "pendente";
-  return undefined;
-}
-
 function normalizeAmountCents(value: unknown): number | undefined {
   if (typeof value === "number" && Number.isFinite(value)) return Math.max(0, Math.round(value));
   if (typeof value === "string" && value.trim() !== "") {
@@ -43,6 +37,50 @@ function normalizeAmountCents(value: unknown): number | undefined {
     if (Number.isFinite(n)) return Math.max(0, Math.round(n));
   }
   return undefined;
+}
+
+function vendaPixCorrelationKeys(raw: Record<string, unknown>): string[] {
+  const cols = ["pedido_codigo", "id_transaction", "pix_id_transaction", "id_transacao_pix"] as const;
+  const out: string[] = [];
+  for (const c of cols) {
+    const v = raw[c];
+    if (v == null || v === "") continue;
+    const t = String(v).trim();
+    if (t) out.push(t);
+  }
+  return [...new Set(out)];
+}
+
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const batches: T[][] = [];
+  if (size <= 0) return arr.length ? [arr] : [];
+  for (let i = 0; i < arr.length; i += size) batches.push(arr.slice(i, i + size));
+  return batches;
+}
+
+type SupabaseAdminClient = NonNullable<ReturnType<typeof createSupabaseAdminClient>>;
+
+async function fetchPaidPixIdSet(admin: SupabaseAdminClient, ids: string[]): Promise<Set<string>> {
+  const paid = new Set<string>();
+  const uniq = [...new Set(ids.map((x) => x.trim()).filter(Boolean))];
+  if (uniq.length === 0) return paid;
+
+  for (const batch of chunkArray(uniq, 120)) {
+    const { data, error } = await admin
+      .from("pix_gateway_payments")
+      .select("id_transaction")
+      .eq("status", "paid")
+      .in("id_transaction", batch);
+    if (error) {
+      console.warn("[fetchAdminVendas] pix_gateway_payments:", error.message);
+      continue;
+    }
+    for (const row of data ?? []) {
+      const id = typeof row.id_transaction === "string" ? row.id_transaction.trim() : "";
+      if (id) paid.add(id);
+    }
+  }
+  return paid;
 }
 
 export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
@@ -70,6 +108,33 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
 
   const rows = toRecordRows(data).map(mapLeadRow);
 
+  const { data: snapRows, error: snapErr } = await admin
+    .from("vendas")
+    .select("lead_id, detalhes_pedido, created_at")
+    .not("lead_id", "is", null)
+    .not("detalhes_pedido", "is", null)
+    .limit(ROW_LIMIT);
+
+  if (!snapErr) {
+    const earliestSnapByLead = new Map<string, { t: number; snap: OrderCheckoutSnapshotV1 }>();
+    for (const raw of toRecordRows(snapRows)) {
+      const leadId = String(raw.lead_id ?? "").trim();
+      if (!leadId) continue;
+      const d = raw.detalhes_pedido;
+      if (!isOrderCheckoutSnapshotV1(d)) continue;
+      const createdAt = new Date(String(raw.created_at ?? "")).getTime();
+      if (Number.isNaN(createdAt)) continue;
+      const cur = earliestSnapByLead.get(leadId);
+      if (!cur || createdAt < cur.t) {
+        earliestSnapByLead.set(leadId, { t: createdAt, snap: d });
+      }
+    }
+    for (const lead of rows) {
+      const pack = earliestSnapByLead.get(lead.id);
+      if (pack) lead.orderDetails = pack.snap;
+    }
+  }
+
   const { data: vendasData, error: vendasError } = await admin
     .from("vendas")
     .select("lead_id, status_pagamento, valor, amount_cents, created_at")
@@ -85,7 +150,7 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
       const leadId = String(raw.lead_id ?? "").trim();
       if (!leadId) continue;
       const createdAt = new Date(String(raw.created_at ?? "")).getTime();
-      const status = normalizeOrderStatus(raw.status_pagamento);
+      const status = normalizePaymentOrderStatus(raw.status_pagamento);
       const amountCents = normalizeAmountCents(raw.valor ?? raw.amount_cents);
       if (!status || Number.isNaN(createdAt)) continue;
 
@@ -131,7 +196,21 @@ export async function fetchAdminVendas(): Promise<AdminFetchResult<Sale[]>> {
     return { ok: false, error: friendlyMessage(error.message, error.code), code: error.code };
   }
 
-  const rows = toRecordRows(data).map(mapVendaRow);
+  const rawRows = toRecordRows(data);
+  const corrIds: string[] = [];
+  for (const raw of rawRows) {
+    corrIds.push(...vendaPixCorrelationKeys(raw));
+  }
+  const paidByGateway = await fetchPaidPixIdSet(admin, corrIds);
+
+  const rows = rawRows.map(mapVendaRow);
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].status === "pago") continue;
+    if (vendaPixCorrelationKeys(rawRows[i]).some((k) => paidByGateway.has(k))) {
+      rows[i] = { ...rows[i], status: "pago" };
+    }
+  }
+
   rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   return { ok: true, data: rows };
 }

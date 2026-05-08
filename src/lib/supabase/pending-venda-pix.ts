@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import type { OrderCheckoutSnapshotV1 } from "@/types/order-snapshot";
 
 export type PendingPixVendaInput = {
   leadId?: string;
@@ -8,8 +9,23 @@ export type PendingPixVendaInput = {
   amountCents: number;
   productSummary: string;
   idTransaction: string;
+  /**
+   * ID nativo do Mangofy/gateway (VPAY…). Quando `idTransaction` cai no `orderRef` (fallback),
+   * o webhook ainda pode casar por esta coluna (`pix_id_transaction` / `id_transacao_pix`).
+   */
+  gatewayPixTransactionId?: string;
   shippingSummary?: string;
+  /** JSON completo do pedido para o painel admin (`vendas.detalhes_pedido`). */
+  detalhesPedido?: OrderCheckoutSnapshotV1 | null;
 };
+
+const VENDA_PIX_MATCH_COLS = ["pedido_codigo", "pix_id_transaction", "id_transacao_pix"] as const;
+
+/** Filtro PostgREST seguro para `.or(...)`: valor entre aspas duplas. */
+function orEqQuoted(columns: readonly string[], rawId: string): string {
+  const safe = rawId.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  return columns.map((c) => `${c}.eq."${safe}"`).join(",");
+}
 
 export async function insertPendingPixVenda(
   p: PendingPixVendaInput
@@ -27,7 +43,7 @@ export async function insertPendingPixVenda(
   const id = crypto.randomUUID();
 
   // Mapeamento EXATO para as colunas da tabela "vendas"
-  const row = {
+  const row: Record<string, unknown> = {
     id,
     lead_id: p.leadId || null,
     cliente_nome: p.customerName,
@@ -36,6 +52,14 @@ export async function insertPendingPixVenda(
     status_pagamento: "pendente",
     pedido_codigo: tx,
   };
+  const gw = p.gatewayPixTransactionId?.trim();
+  if (gw) {
+    row.pix_id_transaction = gw;
+    row.id_transacao_pix = gw;
+  }
+  if (p.detalhesPedido != null) {
+    row.detalhes_pedido = p.detalhesPedido;
+  }
 
   const { error } = await admin.from("vendas").insert(row);
   
@@ -59,7 +83,7 @@ export async function markPixVendaPaidByGatewayId(
   const { data, error } = await admin
     .from("vendas")
     .update({ status_pagamento: "pago" })
-    .eq("pedido_codigo", id)
+    .or(orEqQuoted(VENDA_PIX_MATCH_COLS, id))
     .select("id, lead_id");
   
   if (error) return { ok: false, updated: 0, error: error.message };
@@ -78,7 +102,7 @@ export async function markPixVendaCanceledByGatewayId(
   const { data, error } = await admin
     .from("vendas")
     .update({ status_pagamento: "cancelado" })
-    .eq("pedido_codigo", id)
+    .or(orEqQuoted(VENDA_PIX_MATCH_COLS, id))
     .select("id");
   
   if (error) return { ok: false, updated: 0, error: error.message };
@@ -109,7 +133,7 @@ export async function getVendaContextByGatewayId(
   const { data, error } = await admin
     .from("vendas")
     .select("pedido_codigo, cliente_nome, valor, produto, created_at, lead_id")
-    .eq("pedido_codigo", id)
+    .or(orEqQuoted(VENDA_PIX_MATCH_COLS, id))
     .maybeSingle();
 
   if (error) return { ok: false, error: error.message };

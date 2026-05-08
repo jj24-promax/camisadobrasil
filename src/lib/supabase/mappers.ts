@@ -1,4 +1,6 @@
-import type { Client, Lead, LeadSource, LeadStatus, OrderStatus, PaymentMethod, Sale } from "@/types/admin";
+import type { Client, Lead, LeadSource, LeadStatus, PaymentMethod, Sale } from "@/types/admin";
+import { normalizePaymentOrderStatusForSale } from "@/lib/normalize-payment-order-status";
+import { isOrderCheckoutSnapshotV1 } from "@/types/order-snapshot";
 
 function str(v: unknown, fallback = ""): string {
   if (v === null || v === undefined) return fallback;
@@ -28,12 +30,6 @@ function normLeadStatus(s: string): LeadStatus {
   const x = s.toLowerCase().replace(/\s+/g, "_");
   if (LEAD_STATUSES.includes(x as LeadStatus)) return x as LeadStatus;
   return "novo";
-}
-
-function normOrderStatus(s: string): OrderStatus {
-  const x = s.toLowerCase();
-  if (x === "pago" || x === "pendente" || x === "cancelado") return x;
-  return "pendente";
 }
 
 function normPayment(s: string): PaymentMethod {
@@ -77,6 +73,13 @@ export function mapLeadRow(r: Record<string, unknown>): Lead {
     number: str(pick(r, ["numero", "number"])),
     complement: str(pick(r, ["complemento", "complement"])),
     neighborhood: str(pick(r, ["bairro", "neighborhood"])),
+    obrigadoEm: (() => {
+      const v = pick(r, ["obrigado_em", "obrigadoEm"]);
+      if (v == null || v === "") return undefined;
+      const s = String(v).trim();
+      const d = new Date(s);
+      return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+    })(),
   };
 }
 
@@ -88,17 +91,21 @@ export function mapVendaRow(r: Record<string, unknown>): Sale {
   // A tabela pode não ter 'metodo_pagamento', inferimos se vier de cartão (prefixo CARD-) ou PIX
   const method = methodStr ? normPayment(methodStr) : (pedidoCod.startsWith("CARD") ? "cartao" : "pix");
 
+  const dpRaw = pick(r, ["detalhes_pedido", "detalhesPedido"]);
+  const orderDetails = isOrderCheckoutSnapshotV1(dpRaw) ? dpRaw : undefined;
+
   return {
     id: id || `PED-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     customer: str(pick(r, ["cliente_nome", "customer", "nome"])),
     email: str(pick(r, ["email", "e_mail", "cliente_email", "lead_email"])),
     phone: str(pick(r, ["telefone", "phone", "tel", "celular", "cliente_telefone", "lead_phone"])),
     amountCents: num(pick(r, ["valor", "amount_cents"])),
-    status: normOrderStatus(str(pick(r, ["status_pagamento", "status"]))),
+    status: normalizePaymentOrderStatusForSale(pick(r, ["status_pagamento", "status"])),
     date: isoDate(pick(r, ["created_at", "date"])),
     productName: str(pick(r, ["produto", "product_name"])),
     paymentMethod: method,
     trackingCode: str(pick(r, ["codigo_rastreio", "tracking_code", "tracking", "rastreio"])),
+    orderDetails,
   };
 }
 

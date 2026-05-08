@@ -15,6 +15,7 @@ import {
   markPixGatewayPaymentPaid,
 } from "@/lib/supabase/pix-payment-store";
 import { markCustomsFeePixPaidByGatewayId } from "@/lib/supabase/customs-fee-pix";
+import { syncUtmifyAfterMangofyPixPaid } from "@/lib/utmify-sync-on-mangofy-paid";
 
 function isMangofyPixWebhookAuthorized(req: Request): boolean {
   const expected = getMangofyWebhookSecret();
@@ -80,6 +81,10 @@ export async function POST(req: Request) {
   }
 
   if (!parsed.paid) {
+    console.info("[mangofy/webhook] inconclusive event", {
+      candidateCount: candidateIds.length,
+      primaryTx,
+    });
     return NextResponse.json({
       ok: true,
       idTransaction: primaryTx,
@@ -89,7 +94,13 @@ export async function POST(req: Request) {
     });
   }
 
-  const gwPaid = await markPixGatewayPaymentPaid(primaryTx, payload);
+  let gatewayUpsertsOk = 0;
+  const gwPaidErrors: string[] = [];
+  for (const tx of candidateIds) {
+    const gwPaid = await markPixGatewayPaymentPaid(tx, payload);
+    if (gwPaid.ok) gatewayUpsertsOk += 1;
+    else if (gwPaid.error) gwPaidErrors.push(gwPaid.error);
+  }
 
   let customsFeeUpdated = 0;
   const customsFeeErrors: string[] = [];
@@ -103,12 +114,28 @@ export async function POST(req: Request) {
   let vendaUpdated = 0;
   const convertedLeads = new Set<string>();
   const vendaErrors: string[] = [];
+  /** Transação Mangofy que efetivamente casou com uma linha em `vendas` (para UTMify e logs). */
+  let winningGatewayTx: string | undefined;
   for (const tx of candidateIds) {
     const vendaPaid = await markPixVendaPaidByGatewayId(tx);
     vendaUpdated += vendaPaid.updated;
     if (vendaPaid.error) vendaErrors.push(vendaPaid.error);
     if (vendaPaid.leadId) convertedLeads.add(vendaPaid.leadId);
-    if (vendaPaid.updated > 0) break;
+    if (vendaPaid.updated > 0) {
+      winningGatewayTx = tx;
+      break;
+    }
+  }
+
+  let utmifySync: { ok: boolean; skipped?: string; error?: string } = { ok: true };
+  if (winningGatewayTx) {
+    const utm = await syncUtmifyAfterMangofyPixPaid(winningGatewayTx);
+    if (utm.ok) {
+      utmifySync = { ok: true, ...(utm.skipped ? { skipped: utm.skipped } : {}) };
+    } else {
+      utmifySync = { ok: false, error: utm.error };
+      console.warn("[mangofy/webhook] UTMify:", utm.error);
+    }
   }
 
   const convertedLeadErrors: string[] = [];
@@ -119,15 +146,25 @@ export async function POST(req: Request) {
     }
   }
 
+  console.info("[mangofy/webhook] pix paid processed", {
+    candidateCount: candidateIds.length,
+    gatewayUpsertsOk,
+    vendaUpdated,
+    winningGatewayTx: winningGatewayTx ?? null,
+    leadsConverted: convertedLeads.size,
+  });
+
   return NextResponse.json({
     ok: true,
     idTransaction: primaryTx,
     candidateIds,
     paid: true,
-    gatewayStored: gwPaid.ok,
+    gatewayUpsertsOk,
     customsFeeUpdated,
     vendaUpdated,
+    winningGatewayTx: winningGatewayTx ?? null,
+    utmifySync,
     leadsConverted: convertedLeads.size,
-    errors: [gwPaid.error, ...customsFeeErrors, ...vendaErrors, ...convertedLeadErrors].filter(Boolean),
+    errors: [...gwPaidErrors, ...customsFeeErrors, ...vendaErrors, ...convertedLeadErrors].filter(Boolean),
   });
 }

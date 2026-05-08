@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import type { OrderCheckoutSnapshotV1 } from "@/types/order-snapshot";
 
 export type PendingCardVendaInput = {
   leadId?: string;
@@ -8,6 +9,7 @@ export type PendingCardVendaInput = {
   amountCents: number;
   productSummary: string;
   shippingSummary?: string;
+  detalhesPedido?: OrderCheckoutSnapshotV1 | null;
 };
 
 export async function insertPendingCardVenda(
@@ -21,7 +23,7 @@ export async function insertPendingCardVenda(
   const line = p.shippingSummary ? `${p.productSummary} · Entrega: ${p.shippingSummary}` : p.productSummary;
   const id = crypto.randomUUID();
 
-  const row = {
+  const row: Record<string, unknown> = {
     id,
     lead_id: p.leadId || null,
     cliente_nome: p.customerName,
@@ -30,6 +32,9 @@ export async function insertPendingCardVenda(
     status_pagamento: "pendente",
     pedido_codigo: `CARD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
   };
+  if (p.detalhesPedido != null) {
+    row.detalhes_pedido = p.detalhesPedido;
+  }
 
   const { error } = await admin.from("vendas").insert(row);
   if (error) {

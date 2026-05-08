@@ -93,6 +93,8 @@ export function extractPixGatewayPayload(data: Record<string, unknown>): {
     data.payment_id ??
     data.txId ??
     data.tx_id ??
+    data.externalReference ??
+    data.external_reference ??
     data.reference ??
     data.external_id;
   let idTransaction = idRaw == null ? undefined : String(idRaw).trim() || undefined;
@@ -104,6 +106,30 @@ export function extractPixGatewayPayload(data: Record<string, unknown>): {
   }
 
   return { paymentCode, paymentCodeBase64, idTransaction };
+}
+
+/** ID da transação Mangofy/gateway a partir da resposta bruta do `generatePix` no browser. */
+export function extractMangofyPixTransactionId(response: unknown): string | undefined {
+  const root =
+    response && typeof response === "object" && !Array.isArray(response)
+      ? (response as Record<string, unknown>)
+      : {};
+  const flat = coercePixGatewayResponseRecord(root);
+  const nested = extractPixGatewayPayload(flat).idTransaction?.trim();
+  if (nested) return nested;
+  const topKeys = [
+    "idTransaction",
+    "id_transaction",
+    "transactionId",
+    "transaction_id",
+    "paymentId",
+    "payment_id",
+  ] as const;
+  for (const k of topKeys) {
+    const v = root[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return undefined;
 }
 
 /** Base64 puro ou já `data:image/...;base64,...` — adequado para `img[src]`. */

@@ -101,7 +101,8 @@ export const PRODUCT_IMAGE_CLEAN_SRC = "/images/camisa-brasil-clean.png" as cons
 /** Resumo do pedido. */
 export const PRODUCT_IMAGE_SRC = PRODUCT_IMAGE_CLEAN_SRC;
 
-export const SIZES = ["P", "M", "G", "GG", "G1", "G2"] as const;
+/** Do P ao G2 — grade padrão; G3/G4 — plus unissex (mesma modelagem, faixa maior). */
+export const SIZES = ["P", "M", "G", "GG", "G1", "G2", "G3", "G4"] as const;
 export type Size = (typeof SIZES)[number];
 export type ProductModelId = "edicao-sagrada" | "edicao-canarinho" | "edicao-vermelha";
 
@@ -346,6 +347,11 @@ export const PRODUCT_MODELS: readonly ProductModel[] = [
 export function getProductModelById(id: string | null | undefined): ProductModel {
   const found = PRODUCT_MODELS.find((p) => p.id === id);
   return found ?? PRODUCT_MODELS[0];
+}
+
+/** Modelos disponíveis no checkout/carrinho (exclui apenas `inProduction: true`). */
+export function getSelectableProductModels(): ProductModel[] {
+  return PRODUCT_MODELS.filter((m) => !m.inProduction);
 }
 
 export type HeroEditionId = ProductModelId;

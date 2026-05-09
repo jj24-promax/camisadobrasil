@@ -24,6 +24,8 @@ export const HIGH_DEMAND_SIZE_HINT: Partial<Record<Size, string>> = {
   M: "Alta demanda",
   G: "Mais pedidos",
   GG: "Últimas unidades",
+  G3: "Plus unissex",
+  G4: "Plus unissex",
 };
 
 export function highDemandHintFor(size: Size): string | undefined {

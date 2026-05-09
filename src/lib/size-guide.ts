@@ -18,6 +18,8 @@ export const SIZE_GUIDE_ROWS: readonly SizeGuideRow[] = [
   { size: "GG", bustMin: 106, bustMax: 112, lengthLabel: "74–76", shoulderLabel: "48–50", bustDisplay: "106–112" },
   { size: "G1", bustMin: 112, bustMax: 118, lengthLabel: "76–78", shoulderLabel: "50–52", bustDisplay: "112–118" },
   { size: "G2", bustMin: 118, bustMax: 124, lengthLabel: "78–80", shoulderLabel: "52–54", bustDisplay: "118–124" },
+  { size: "G3", bustMin: 124, bustMax: 132, lengthLabel: "80–82", shoulderLabel: "54–56", bustDisplay: "124–132" },
+  { size: "G4", bustMin: 132, bustMax: 142, lengthLabel: "82–84", shoulderLabel: "56–58", bustDisplay: "132–142" },
 ] as const;
 
 export function recommendSizeFromBustCm(bust: number): { size: Size; ambiguous: boolean } | null {

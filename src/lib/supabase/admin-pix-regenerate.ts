@@ -1,5 +1,6 @@
 import "server-only";
 
+import { orderStatusFromVendaRow } from "@/lib/normalize-payment-order-status";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 
 function pick(r: Record<string, unknown>, keys: string[]): unknown {
@@ -72,15 +73,11 @@ export async function prepareAdminRegeneratePixForLead(
     };
   }
 
-  const { data: vendasRows, error: vErr } = await admin
-    .from("vendas")
-    .select("*")
-    .eq("lead_id", id)
-    .eq("status_pagamento", "pendente");
+  const { data: vendasRows, error: vErr } = await admin.from("vendas").select("*").eq("lead_id", id);
 
   if (vErr) return { ok: false, error: vErr.message };
 
-  const rows = (vendasRows ?? []) as Record<string, unknown>[];
+  const rows = (vendasRows ?? []).filter((row) => orderStatusFromVendaRow(row as Record<string, unknown>) === "pendente");
   if (rows.length === 0) {
     return { ok: false, error: "Nenhuma venda Pix pendente ligada a este lead." };
   }
@@ -97,11 +94,7 @@ export async function prepareAdminRegeneratePixForLead(
   const vendaId = str(pick(venda, ["id", "pedido_id"]));
   if (!vendaId) return { ok: false, error: "ID da venda inválido." };
 
-  const { error: updErr } = await admin
-    .from("vendas")
-    .update({ pedido_codigo: orderRef })
-    .eq("id", vendaId)
-    .eq("status_pagamento", "pendente");
+  const { error: updErr } = await admin.from("vendas").update({ pedido_codigo: orderRef }).eq("id", vendaId);
 
   if (updErr) return { ok: false, error: `Erro ao atualizar referência do pedido: ${updErr.message}` };
 
@@ -145,29 +138,25 @@ export async function syncLeadPendingVendaPedidoCodigoToGateway(
   const admin = createSupabaseAdminClient();
   if (!admin) return { ok: false, error: "SUPABASE_SERVICE_ROLE_KEY não configurada." };
 
-  const { data: rows, error: selErr } = await admin
+  const { data: allRows, error: selErr } = await admin
     .from("vendas")
-    .select("id, created_at, date")
-    .eq("lead_id", lid)
-    .eq("status_pagamento", "pendente");
+    .select("id, created_at, date, status_pagamento, status")
+    .eq("lead_id", lid);
 
   if (selErr) return { ok: false, error: selErr.message };
-  if (!rows?.length) return { ok: false, error: "Nenhuma venda pendente para este lead." };
+  const pending = (allRows ?? []).filter((row) => orderStatusFromVendaRow(row as Record<string, unknown>) === "pendente");
+  if (pending.length === 0) return { ok: false, error: "Nenhuma venda pendente para este lead." };
 
   const ts = (r: Record<string, unknown>) => {
     const raw = r.created_at ?? r.date;
     const t = raw ? new Date(String(raw)).getTime() : 0;
     return Number.isNaN(t) ? 0 : t;
   };
-  const sorted = [...(rows as Record<string, unknown>[])].sort((a, b) => ts(b) - ts(a));
+  const sorted = [...(pending as Record<string, unknown>[])].sort((a, b) => ts(b) - ts(a));
   const vendaId = str(pick(sorted[0]!, ["id"]));
   if (!vendaId) return { ok: false, error: "ID da venda inválido." };
 
-  const { error: updErr } = await admin
-    .from("vendas")
-    .update({ pedido_codigo: gw })
-    .eq("id", vendaId)
-    .eq("status_pagamento", "pendente");
+  const { error: updErr } = await admin.from("vendas").update({ pedido_codigo: gw }).eq("id", vendaId);
 
   if (updErr) return { ok: false, error: updErr.message };
   return { ok: true };

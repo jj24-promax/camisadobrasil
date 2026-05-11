@@ -2,45 +2,21 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { useCallback, useState } from "react";
-
-function normalizeAuthError(raw: string): string {
-  const m = raw.toLowerCase();
-  if (m.includes("missing email or phone"))
-    return "O e-mail não foi enviado (comum com preenchimento automático). Clique dentro dos campos, confirme o e-mail e tente novamente.";
-  if (m.includes("invalid login credentials"))
-    return "E-mail ou senha incorretos.";
-  return raw;
-}
+import { useState } from "react";
 
 export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  /** Autofill pode mostrar valores sem atualizar `.value`; `readOnly` + foco corrige Safari/Chrome mobile. */
-  const unlockAutocomplete = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    e.currentTarget.removeAttribute("readonly");
-  }, []);
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     const form = event.currentTarget;
-    const emailEl = form.elements.namedItem("email") as HTMLInputElement | null;
-    const pwdEl = form.elements.namedItem("password") as HTMLInputElement | null;
-    emailEl?.removeAttribute("readonly");
-    pwdEl?.removeAttribute("readonly");
-
-    /** Autofill/atualização nativa pode atrasar o `.value` um frame depois de remover readonly */
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-    });
-
     const fd = new FormData(form);
-    const email = String(emailEl?.value ?? fd.get("email") ?? "").trim();
-    const password = String(pwdEl?.value ?? fd.get("password") ?? "");
+    const email = String(fd.get("email") ?? "").trim();
+    const password = String(fd.get("password") ?? "");
     if (!email || !password) {
-      setError("Preencha o e-mail e a senha. Se já estão visíveis, toque dentro de cada campo e tente de novo.");
+      setError("Preencha o e-mail e a senha.");
       return;
     }
 
@@ -48,7 +24,7 @@ export default function AdminLoginPage() {
     try {
       const { error: signError } = await supabase.auth.signInWithPassword({ email, password });
       if (signError) {
-        setError(normalizeAuthError(signError.message));
+        setError(signError.message);
       }
     } finally {
       setPending(false);
@@ -85,9 +61,7 @@ export default function AdminLoginPage() {
               id="admin-login-email"
               name="email"
               type="email"
-              autoComplete="username email"
-              readOnly
-              onFocus={unlockAutocomplete}
+              autoComplete="email"
               required
               disabled={pending}
               className="admin-control"
@@ -103,8 +77,6 @@ export default function AdminLoginPage() {
               name="password"
               type="password"
               autoComplete="current-password"
-              readOnly
-              onFocus={unlockAutocomplete}
               required
               disabled={pending}
               className="admin-control"

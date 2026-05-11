@@ -388,8 +388,13 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
                     <button
                       type="button"
                       onClick={() => setPixDlg({ open: true, leadId: r.id, leadName: r.name || r.email || "Lead" })}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-gold/15 hover:text-gold"
-                      title="Gerar novo Pix (venda pendente)"
+                      disabled={r.paymentStatus !== "pendente"}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-gold/15 hover:text-gold disabled:cursor-not-allowed disabled:opacity-40"
+                      title={
+                        r.paymentStatus === "pendente"
+                          ? "Gerar novo Pix (venda pendente)"
+                          : "Só disponível quando existir venda Pix pendente para este lead."
+                      }
                     >
                       <QrCode className="h-4 w-4" />
                     </button>

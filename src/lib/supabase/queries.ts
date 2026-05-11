@@ -5,7 +5,7 @@ import { isSupabasePublicEnvConfigured } from "@/lib/supabase/env-check";
 import { mapClienteRow, mapLeadRow, mapVendaRow } from "@/lib/supabase/mappers";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { isAdminSessionValid } from "@/lib/admin-auth/verify-session.server";
-import { normalizePaymentOrderStatus } from "@/lib/normalize-payment-order-status";
+import { orderStatusFromVendaRow } from "@/lib/normalize-payment-order-status";
 import type { Client, Lead, Sale } from "@/types/admin";
 import { isOrderCheckoutSnapshotV1, type OrderCheckoutSnapshotV1 } from "@/types/order-snapshot";
 
@@ -137,7 +137,7 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
 
   const { data: vendasData, error: vendasError } = await admin
     .from("vendas")
-    .select("lead_id, status_pagamento, valor, amount_cents, created_at")
+    .select("lead_id, status_pagamento, status, valor, amount_cents, created_at")
     .not("lead_id", "is", null)
     .limit(ROW_LIMIT);
 
@@ -150,7 +150,7 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
       const leadId = String(raw.lead_id ?? "").trim();
       if (!leadId) continue;
       const createdAt = new Date(String(raw.created_at ?? "")).getTime();
-      const status = normalizePaymentOrderStatus(raw.status_pagamento);
+      const status = orderStatusFromVendaRow(raw);
       const amountCents = normalizeAmountCents(raw.valor ?? raw.amount_cents);
       if (!status || Number.isNaN(createdAt)) continue;
 

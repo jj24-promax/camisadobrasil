@@ -42,3 +42,16 @@ export function normalizePaymentOrderStatus(value: unknown): OrderStatus | undef
 export function normalizePaymentOrderStatusForSale(value: unknown): OrderStatus {
   return normalizePaymentOrderStatus(value) ?? "pendente";
 }
+
+/**
+ * Junta `status_pagamento` e `status` na tabela `vendas` (esquemas antigos só tinham `status`).
+ * Se as colunas divergem, prioriza: pago > cancelado > pendente.
+ */
+export function orderStatusFromVendaRow(row: Record<string, unknown>): OrderStatus | undefined {
+  const a = normalizePaymentOrderStatus(row.status_pagamento);
+  const b = normalizePaymentOrderStatus(row.status);
+  if (a === "pago" || b === "pago") return "pago";
+  if (a === "cancelado" || b === "cancelado") return "cancelado";
+  if (a === "pendente" || b === "pendente") return "pendente";
+  return a ?? b;
+}

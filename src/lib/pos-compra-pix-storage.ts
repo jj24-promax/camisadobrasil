@@ -1,11 +1,11 @@
 /**
- * Referência opaca (leadId legado) e/ou snapshot do cliente para Pix Mangofy,
- * para não expor mais dados do que o necessário no front-end.
+ * Referência opaca (leadId) e snapshot do cliente para Pix pós-compra,
+ * guardado em sessionStorage (sem expor dados desnecessários).
  */
 
-const STORAGE_KEY = "alpha_pos_compra_pix_client_v2";
+const STORAGE_KEY = "alpha_pos_compra_pix_client_v3";
 
-export type MangofyCustomerSnapshot = {
+export type PixCheckoutCustomerSnapshot = {
   name: string;
   email: string;
   phoneDigits: string;
@@ -17,15 +17,12 @@ export type MangofyCustomerSnapshot = {
 };
 
 export type PosCompraPixClient = {
-  /** Legado (Edge pix-create) — opcional */
   leadId?: string;
-  /** Venda principal (checkout) — para anexar upsells ao mesmo pedido no painel */
   mainVendaId?: string;
-  /** Snapshot gravado no checkout ao gerar Pix pela Mangofy */
-  mangofyCustomer?: MangofyCustomerSnapshot;
+  pixCustomer?: PixCheckoutCustomerSnapshot;
 };
 
-function validMangofySnapshot(v: unknown): v is MangofyCustomerSnapshot {
+function validPixCustomerSnapshot(v: unknown): v is PixCheckoutCustomerSnapshot {
   if (!v || typeof v !== "object" || Array.isArray(v)) return false;
   const o = v as Record<string, unknown>;
   const req = ["name", "email", "phoneDigits", "docDigits", "cep", "street", "city", "state"] as const;
@@ -61,10 +58,12 @@ export function readPosCompraPixClient(): PosCompraPixClient | null {
       mainVendaId = o.mainVendaId.trim();
     }
 
-    let mangofyCustomer: MangofyCustomerSnapshot | undefined;
-    if (validMangofySnapshot(o.mangofyCustomer)) {
-      const m = o.mangofyCustomer;
-      mangofyCustomer = {
+    const rawSnap = o.pixCustomer;
+
+    let pixCustomer: PixCheckoutCustomerSnapshot | undefined;
+    if (validPixCustomerSnapshot(rawSnap)) {
+      const m = rawSnap;
+      pixCustomer = {
         name: m.name.trim(),
         email: m.email.trim().toLowerCase(),
         phoneDigits: m.phoneDigits.replace(/\D/g, ""),
@@ -76,8 +75,8 @@ export function readPosCompraPixClient(): PosCompraPixClient | null {
       };
     }
 
-    if (!leadId && !mangofyCustomer) return null;
-    return { leadId, mainVendaId, mangofyCustomer };
+    if (!leadId && !pixCustomer) return null;
+    return { leadId, mainVendaId, pixCustomer };
   } catch {
     return null;
   }

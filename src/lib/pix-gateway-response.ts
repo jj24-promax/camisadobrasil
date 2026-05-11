@@ -57,7 +57,7 @@ export function humanizePixGatewayError(data: unknown): string | null {
   return null;
 }
 
-/** Achata `response.data` do Mangofy/SDK para um único objeto antes de `extractPixGatewayPayload`. */
+/** Achata `response.data` (quando existir) para um único objeto antes de `extractPixGatewayPayload`. */
 export function coercePixGatewayResponseRecord(response: unknown): Record<string, unknown> {
   if (!response || typeof response !== "object" || Array.isArray(response)) return {};
   const r = response as Record<string, unknown>;
@@ -69,7 +69,7 @@ export function coercePixGatewayResponseRecord(response: unknown): Record<string
 }
 
 /**
- * Normaliza respostas do Mangofy / gateway Pix (campos podem variar).
+ * Normaliza respostas do gateway Pix (campos podem variar).
  */
 export function extractPixGatewayPayload(data: Record<string, unknown>): {
   paymentCode: string;
@@ -108,8 +108,8 @@ export function extractPixGatewayPayload(data: Record<string, unknown>): {
   return { paymentCode, paymentCodeBase64, idTransaction };
 }
 
-/** ID da transação Mangofy/gateway a partir da resposta bruta do `generatePix` no browser. */
-export function extractMangofyPixTransactionId(response: unknown): string | undefined {
+/** ID da transação no gateway a partir de uma resposta JSON genérica (ex. Cash In). */
+export function extractPixGatewayTransactionId(response: unknown): string | undefined {
   const root =
     response && typeof response === "object" && !Array.isArray(response)
       ? (response as Record<string, unknown>)

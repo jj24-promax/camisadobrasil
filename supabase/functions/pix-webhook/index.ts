@@ -40,13 +40,9 @@ serve(async (req) => {
   }
 
   try {
-    const secret =
-      Deno.env.get("ROYALBANKING_WEBHOOK_SECRET")?.trim() ||
-      Deno.env.get("MANGOFY_WEBHOOK_SECRET")?.trim() ||
-      "";
+    const secret = Deno.env.get("ROYALBANKING_WEBHOOK_SECRET")?.trim() || "";
     const authHeader =
       req.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() ||
-      req.headers.get("x-mangofy-webhook-secret")?.trim() ||
       req.headers.get("x-webhook-secret")?.trim() ||
       req.headers.get("x-royal-webhook-secret")?.trim();
     

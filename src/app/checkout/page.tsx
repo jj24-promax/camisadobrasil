@@ -616,10 +616,10 @@ function CheckoutContent() {
         savePosCompraPixClient({
           leadId: j.leadId,
           mainVendaId: j.vendaId,
-          mangofyCustomer: snap,
+          pixCustomer: snap,
         });
       } else {
-        savePosCompraPixClient({ mangofyCustomer: snap });
+        savePosCompraPixClient({ pixCustomer: snap });
       }
 
       toast.success("Pix gerado! Escaneie o QR ou copie o código.");

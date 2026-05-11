@@ -52,10 +52,10 @@ function utmFromSnapshot(detalhes: unknown): Record<string, string | null> {
 }
 
 /**
- * Dispara o postback de pedido pago na UTMify quando o webhook Mangofy confirma o Pix.
+ * Dispara o postback de pedido pago na UTMify quando o webhook Pix confirma o pagamento.
  * Idempotente: usa `vendas.utmify_posted_at` para não duplicar envio.
  */
-export async function syncUtmifyAfterMangofyPixPaid(idTransaction: string): Promise<UtmifySyncOnPaidResult> {
+export async function syncUtmifyAfterPixPaid(idTransaction: string): Promise<UtmifySyncOnPaidResult> {
   const tx = idTransaction.trim();
   if (!tx) return { ok: false, error: "idTransaction vazio." };
 
@@ -113,7 +113,7 @@ export async function syncUtmifyAfterMangofyPixPaid(idTransaction: string): Prom
   const trackingParameters = utmFromSnapshot(detalhes);
 
   const payload: UtmifyServerOrderPayload = {
-    orderId: `mangofy_${tx}`,
+    orderId: `pix_${tx}`,
     paymentMethod: "pix",
     status: "paid",
     createdAt,

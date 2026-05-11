@@ -1,6 +1,6 @@
 -- Cobrança Pix da "taxa alfandegária" no rastreio (determinística no front; cobrança real via gateway).
 -- Executar no Supabase → SQL Editor. O app grava via service role na edge function `check-pix-status`.
--- Webhook Mangofy (Next) marca `paid_at` quando o Pix desta transação for pago.
+-- Webhook Pix (Next) marca `paid_at` quando o Pix desta transação for pago.
 
 create table if not exists public.customs_fee_pix (
   codigo_rastreio text primary key,

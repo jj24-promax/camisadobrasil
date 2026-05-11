@@ -1,7 +1,7 @@
 import type { OrderStatus } from "@/types/admin";
 
 /**
- * Converte `status_pagamento` (ou equivalentes Mangofy/gateway) para o enum do painel.
+ * Converte `status_pagamento` (ou equivalentes do gateway) para o enum do painel.
  * Retorna `undefined` quando o valor não é reconhecido — útil para merges que devem ignorar ruído.
  */
 export function normalizePaymentOrderStatus(value: unknown): OrderStatus | undefined {

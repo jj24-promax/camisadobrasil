@@ -18,7 +18,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
  * em `pix_gateway_payments` para algum dos IDs correlatos do pedido (webhook gravou,
  * mas o UPDATE em `vendas` falhou ou não casou na época).
  *
- * Não chama HTTP externo Mangofy — usa apenas dados já no Supabase (seguro e idempotente).
+ * Não chama HTTP externo ao gateway — usa apenas dados já no Supabase (seguro e idempotente).
  */
 export async function reconcilePendingPixVendasFromGatewayStore(options?: {
   limit?: number;

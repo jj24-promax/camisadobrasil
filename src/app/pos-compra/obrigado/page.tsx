@@ -35,7 +35,7 @@ function ObrigadoContent() {
   useEffect(() => {
     const pix = readPosCompraPixClient();
     const leadId = pix?.leadId?.trim();
-    const email = pix?.mangofyCustomer?.email?.trim().toLowerCase();
+    const email = pix?.pixCustomer?.email?.trim().toLowerCase();
     if (!leadId || !email) return;
     void fetch("/api/leads/obrigado-visit", {
       method: "POST",

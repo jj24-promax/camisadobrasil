@@ -10,7 +10,7 @@ export type PendingPixVendaInput = {
   productSummary: string;
   idTransaction: string;
   /**
-   * ID nativo do Mangofy/gateway (VPAY…). Quando `idTransaction` cai no `orderRef` (fallback),
+   * ID nativo do gateway (ex. UUID/VPAY…). Quando `idTransaction` cai no `orderRef` (fallback),
    * o webhook ainda pode casar por esta coluna (`pix_id_transaction` / `id_transacao_pix`).
    */
   gatewayPixTransactionId?: string;

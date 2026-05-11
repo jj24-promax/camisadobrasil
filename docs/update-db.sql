@@ -7,5 +7,5 @@ ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS bairro TEXT;
 -- Marca visita à página /pos-compra/obrigado (funil: checkout → obrigado).
 ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS obrigado_em TIMESTAMPTZ;
 
--- Evita postback duplicado para UTMify após webhook Mangofy (compra paga).
+-- Evita postback duplicado para UTMify após webhook Pix (compra paga).
 ALTER TABLE public.vendas ADD COLUMN IF NOT EXISTS utmify_posted_at TIMESTAMPTZ;

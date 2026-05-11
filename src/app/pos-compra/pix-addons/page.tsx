@@ -48,7 +48,7 @@ function PixAddonsContent() {
 
   const generatePix = useCallback(async () => {
     const clientRef = readPosCompraPixClient();
-    const snap = clientRef?.mangofyCustomer;
+    const snap = clientRef?.pixCustomer;
     if (!snap || !clientRef?.leadId?.trim() || !clientRef?.mainVendaId?.trim()) {
       setMissingClient(true);
       setLoading(false);

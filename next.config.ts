@@ -27,6 +27,10 @@ const nextConfig: NextConfig = {
       { source: "/retencao", destination: "/checkout/retencao", permanent: true },
     ];
   },
+  /** URL antiga de webhook → handler Royal (evita 404 em integrações já configuradas). */
+  async rewrites() {
+    return [{ source: "/api/webhooks/mangofy/pix", destination: "/api/webhooks/royalbanking/pix" }];
+  },
   /**
    * O Segment Explorer (default em Next 15.5) injeta `SegmentViewNode` no RSC e tem causado
    * erros de manifest / `__webpack_modules__` em dev, com páginas sem CSS após Fast Refresh.

@@ -3,7 +3,7 @@ import { qrDataUrlForImg } from "@/lib/pix-gateway-response";
 export type PixBrandedPdfInput = {
   leadName: string;
   pixCode: string;
-  /** Base64 puro ou data URL — mesmo formato usado no checkout / Mangofy */
+  /** Base64 puro ou data URL — mesmo formato usado no checkout (QR Pix) */
   qrImageRaw?: string;
 };
 

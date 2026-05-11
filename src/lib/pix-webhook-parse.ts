@@ -1,7 +1,7 @@
 /**
- * Interpreta webhooks de notificação Pix (Mangofy Fast API / gateway por trás do checkout).
- * Cash In pago: `status` = `paid` (ex.: { idTransaction, status: "paid" }).
- * Cash In falhou: `status` = `failed` ou `providerStatus` = `CANCELLED`.
+ * Interpreta webhooks de notificação Pix Cash In (ex.: Royal Banking).
+ * Pago: `status` = `paid` (ex.: { idTransaction, status: "paid" }).
+ * Falhou: `status` = `failed` ou `providerStatus` = `CANCELLED`.
  * Cash Out: `SaquePago`, `SaqueFalhou` — não marcam depósito Pix no checkout.
  */
 
@@ -43,7 +43,6 @@ function looksFailedStatus(s: string): boolean {
   return FAILED_HINTS.some((h) => s.includes(h));
 }
 
-/** Cash Out / eventos que não são confirmação de depósito (Cash In). */
 function isCashOutOrNonDepositEvent(status: string): boolean {
   if (!status) return false;
   if (status.includes("saque")) return true;
@@ -83,7 +82,6 @@ function deepFindId(o: unknown, depth = 0): string | undefined {
   return undefined;
 }
 
-/** Indica se o webhook é confirmação de Pix Cash In pago. */
 function isPixCashInPaid(r: Record<string, unknown>): boolean {
   const status = norm(r.status ?? r.payment_status ?? r.paymentStatus ?? r.state ?? r.providerStatus);
   if (isCashOutOrNonDepositEvent(status)) return false;
@@ -95,7 +93,6 @@ function isPixCashInPaid(r: Record<string, unknown>): boolean {
   return false;
 }
 
-/** Indica se o webhook é confirmação de Pix Cash In falhado/cancelado. */
 function isPixCashInFailed(r: Record<string, unknown>): boolean {
   const status = norm(r.status ?? r.payment_status ?? r.paymentStatus ?? r.state ?? r.providerStatus);
   if (isCashOutOrNonDepositEvent(status)) return false;
@@ -125,7 +122,7 @@ function deepCashInFailed(o: unknown, depth = 0): boolean {
   return false;
 }
 
-export function parseMangofyPixWebhook(payload: unknown): { idTransaction?: string; paid: boolean; failed: boolean } {
+export function parsePixCashInWebhook(payload: unknown): { idTransaction?: string; paid: boolean; failed: boolean } {
   if (payload == null || typeof payload !== "object") {
     return { paid: false, failed: false };
   }
@@ -159,8 +156,7 @@ function isLikelyGatewayTransactionIdString(s: string): boolean {
   return /^[a-zA-Z0-9_.:-]+$/.test(t);
 }
 
-/** Recolhe candidatos a ID de transação no corpo do webhook (vários formatos Mangofy / gateway). */
-export function collectMangofyPixWebhookTransactionIds(payload: unknown): string[] {
+export function collectPixWebhookTransactionIds(payload: unknown): string[] {
   const found = new Set<string>();
   function walk(o: unknown, depth: number) {
     if (depth > 12 || o == null) return;
@@ -184,8 +180,8 @@ export function collectMangofyPixWebhookTransactionIds(payload: unknown): string
 
 const UUID_LOOSE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Prioriza IDs nativos do gateway (ex. VPAY…) face a UUID usado como referência interna. */
-export function sortMangofyPixWebhookTransactionIds(ids: string[]): string[] {
+/** Prioriza IDs nativos do gateway face a UUID usado como referência interna. */
+export function sortPixWebhookTransactionIds(ids: string[]): string[] {
   return [...new Set(ids.map((x) => x.trim()).filter(Boolean))].sort((a, b) => {
     const au = UUID_LOOSE_RE.test(a) ? 1 : 0;
     const bu = UUID_LOOSE_RE.test(b) ? 1 : 0;

@@ -15,6 +15,7 @@ export function buildCheckoutOrderSnapshotV1(input: {
   personalizationMaster: boolean;
   shirtPaidPersonalization: boolean[];
   giftFreePersonalization: boolean;
+  preferNoPrintedNumbersFrontBack: boolean;
   customNames: string[];
   customNumbers: string[];
   retention: { active: boolean; discountCents: number; percent?: number };
@@ -66,6 +67,7 @@ export function buildCheckoutOrderSnapshotV1(input: {
       masterEnabled: input.personalizationMaster,
       paidPerShirt: [...input.shirtPaidPersonalization],
       giftShirtFreePersonalization: input.giftFreePersonalization,
+      ...(input.preferNoPrintedNumbersFrontBack ? { preferNoPrintedNumbersFrontBack: true } : {}),
       names: [...input.customNames],
       numbers: [...input.customNumbers],
     },

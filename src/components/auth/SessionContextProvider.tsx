@@ -17,6 +17,16 @@ const SessionContext = createContext<SessionContextType>({
   isLoading: true,
 });
 
+function setSbAccessTokenCookie(accessToken: string | null) {
+  if (typeof document === "undefined") return;
+  const secure = globalThis.location?.protocol === "https:" ? "; Secure" : "";
+  if (accessToken) {
+    document.cookie = `sb-access-token=${accessToken}; path=/admin; max-age=86400; SameSite=Lax${secure}`;
+    return;
+  }
+  document.cookie = `sb-access-token=; path=/admin; expires=Thu, 01 Jan 1970 00:00:00 GMT${secure}`;
+}
+
 export const SessionContextProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -29,10 +39,8 @@ export const SessionContextProvider = ({ children }: { children: React.ReactNode
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
-      
-      if (session) {
-        document.cookie = `sb-access-token=${session.access_token}; path=/admin; max-age=86400; SameSite=Lax; Secure`;
-      }
+
+      if (session) setSbAccessTokenCookie(session.access_token);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -41,9 +49,9 @@ export const SessionContextProvider = ({ children }: { children: React.ReactNode
       setIsLoading(false);
 
       if (session) {
-        document.cookie = `sb-access-token=${session.access_token}; path=/admin; max-age=86400; SameSite=Lax; Secure`;
+        setSbAccessTokenCookie(session.access_token);
       } else {
-        document.cookie = `sb-access-token=; path=/admin; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+        setSbAccessTokenCookie(null);
       }
 
       if (event === 'SIGNED_IN' && pathname.startsWith('/admin/login')) {

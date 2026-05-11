@@ -11,9 +11,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { SIZES, PRODUCT_MODELS, getProductModelById, type ProductModelId } from "@/lib/product";
+import { SIZES, getProductModelById, getSelectableProductModels, type ProductModelId } from "@/lib/product";
 import type { Size } from "@/lib/types";
-import { serializeOrderModels, serializeOrderSizes } from "@/lib/cart-sizes";
+import { MAX_ORDER_SHIRT_QUANTITY, serializeOrderModels, serializeOrderSizes } from "@/lib/cart-sizes";
 import { leve3Pague2DiscountCents } from "@/lib/offer-pricing";
 import { useCheckoutTransition } from "@/components/navigation/checkout-transition-provider";
 import { cn } from "@/lib/utils";
@@ -75,7 +75,7 @@ export function LandingCartDialog({
   checkoutParams.set("tamanho", lineSizes[0] ?? "M");
 
   const bumpQty = (delta: number) => {
-    onQuantityChange(Math.max(1, Math.min(99, safeQty + delta)));
+    onQuantityChange(Math.max(1, Math.min(MAX_ORDER_SHIRT_QUANTITY, safeQty + delta)));
   };
 
   const setSizeAt = (index: number, s: Size) => {
@@ -166,7 +166,7 @@ export function LandingCartDialog({
                           Cores:
                         </p>
                         <div className="mb-3 grid grid-cols-3 gap-1.5 sm:gap-2">
-                          {PRODUCT_MODELS.filter((m) => !m.inProduction).map((model) => {
+                          {getSelectableProductModels().map((model) => {
                             const activeModel = lineModels[index] === model.id;
                             const swatchClass =
                               model.slug === "sagrada"

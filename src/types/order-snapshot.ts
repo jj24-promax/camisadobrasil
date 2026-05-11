@@ -21,6 +21,8 @@ export type OrderSnapshotPersonalization = {
   masterEnabled: boolean;
   paidPerShirt: boolean[];
   giftShirtFreePersonalization: boolean;
+  /** Cliente pediu camisa sem número estampado na frente nem nas costas (sem custo; exclui extra pago nome+número). */
+  preferNoPrintedNumbersFrontBack?: boolean;
   names: string[];
   numbers: string[];
 };
@@ -79,6 +81,9 @@ export function orderSnapshotSearchText(s: OrderCheckoutSnapshotV1): string {
     ...s.orderBumps.map((b) => b.title),
     ...s.posCompraUpsells.flatMap((u) => u.labels),
   ];
+  if (s.personalization.preferNoPrintedNumbersFrontBack) {
+    parts.push("sem número frente costas personalização limpa");
+  }
   if (s.utm) {
     for (const [k, v] of Object.entries(s.utm)) {
       parts.push(k, v);
@@ -141,6 +146,7 @@ export function parseOrderCheckoutSnapshotFromApi(body: unknown): OrderCheckoutS
     masterEnabled: false,
     paidPerShirt: [],
     giftShirtFreePersonalization: false,
+    preferNoPrintedNumbersFrontBack: undefined,
     names: [],
     numbers: [],
   };
@@ -152,6 +158,7 @@ export function parseOrderCheckoutSnapshotFromApi(body: unknown): OrderCheckoutS
         ? (P.paidPerShirt as unknown[]).map((x) => x === true).slice(0, 24)
         : [],
       giftShirtFreePersonalization: P.giftShirtFreePersonalization === true,
+      preferNoPrintedNumbersFrontBack: P.preferNoPrintedNumbersFrontBack === true ? true : undefined,
       names: Array.isArray(P.names)
         ? (P.names as unknown[])
             .map((x) => (typeof x === "string" ? x.slice(0, 80) : ""))

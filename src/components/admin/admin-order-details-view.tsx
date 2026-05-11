@@ -50,6 +50,11 @@ export function AdminOrderDetailsView({ snapshot }: AdminOrderDetailsViewProps) 
         <p className="text-sm text-foreground/90">
           Bloco ativo: {snapshot.personalization.masterEnabled ? "sim" : "não"}
           {snapshot.personalization.giftShirtFreePersonalization ? " · presente com nome grátis" : ""}
+          {snapshot.personalization.preferNoPrintedNumbersFrontBack ? (
+            <span className="block pt-1 text-emerald-400/95">
+              Preferência: sem número na frente nem nas costas (sem custo)
+            </span>
+          ) : null}
         </p>
         {snapshot.personalization.names.some((n) => n.trim()) ? (
           <ul className="space-y-1 text-xs text-muted-foreground">

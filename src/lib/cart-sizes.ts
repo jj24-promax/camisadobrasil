@@ -2,6 +2,9 @@ import { SIZES } from "@/lib/product";
 import type { Size } from "@/lib/types";
 import type { ProductModelId } from "@/lib/product";
 
+/** Igual ao painel do carrinho (evita pedidos acidentais gigantes). */
+export const MAX_ORDER_SHIRT_QUANTITY = 99;
+
 function isSize(value: string): value is Size {
   return (SIZES as readonly string[]).includes(value);
 }

@@ -8,7 +8,9 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { 
-  ChevronLeft, 
+  ChevronLeft,
+  Minus,
+  Plus,
   Lock, 
   ShieldCheck, 
   CreditCard, 
@@ -24,10 +26,18 @@ import {
   Loader2,
   Copy,
   Trophy,
+  Shirt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getProductModelById, PRODUCT } from "@/lib/product";
-import { parseOrderModels, parseOrderSizes } from "@/lib/cart-sizes";
+import {
+  getProductModelById,
+  getSelectableProductModels,
+  PRODUCT,
+  SIZES,
+  type ProductModelId,
+  type Size,
+} from "@/lib/product";
+import { MAX_ORDER_SHIRT_QUANTITY, parseOrderModels, parseOrderSizes } from "@/lib/cart-sizes";
 import { leve3Pague2DiscountCents } from "@/lib/offer-pricing";
 import { cn } from "@/lib/utils";
 import {
@@ -49,8 +59,15 @@ import {
 } from "@/lib/pix-gateway-response";
 import { buildCheckoutOrderSnapshotV1 } from "@/lib/build-checkout-order-snapshot";
 import { savePosCompraPixClient } from "@/lib/pos-compra-pix-storage";
+import { replaceCheckoutProductLines } from "@/lib/checkout-product-query";
 
 const SalesNotifications = dynamic(() => import("@/components/landing/sales-notifications").then(m => m.SalesNotifications), { ssr: false });
+
+function editionSwatchClass(slug: "sagrada" | "canarinho" | "vermelha") {
+  if (slug === "sagrada") return "bg-[#1a2a4a]";
+  if (slug === "canarinho") return "bg-[#fbbf24]";
+  return "bg-[#b91c1c]";
+}
 
 const maskCPF = (value: string) => {
   return value
@@ -199,6 +216,8 @@ function CheckoutContent() {
     Array(quantity).fill(false)
   );
   const [giftFreePersonalization, setGiftFreePersonalization] = useState(false);
+  /** Sem número estampado na frente nem nas costas — sem custo; incompatível com nome+número pago ou grátis no presente. */
+  const [preferNoPrintedNumbersFrontBack, setPreferNoPrintedNumbersFrontBack] = useState(false);
 
   const [customNames, setCustomNames] = useState<string[]>([""]);
   const [customNumbers, setCustomNumbers] = useState<string[]>([""]);
@@ -279,6 +298,7 @@ function CheckoutContent() {
   const personalizationBump = ORDER_BUMPS.find((b) => b.id === "personalization")!;
 
   const togglePersonalizationMaster = () => {
+    setPreferNoPrintedNumbersFrontBack(false);
     setPersonalizationMaster((m) => {
       if (m) {
         setShirtPaidPersonalization(Array(quantity).fill(false));
@@ -286,6 +306,18 @@ function CheckoutContent() {
       }
       setShirtPaidPersonalization(Array(quantity).fill(false));
       return true;
+    });
+  };
+
+  const togglePreferNoPrintedNumbers = () => {
+    setPreferNoPrintedNumbersFrontBack((prev) => {
+      const next = !prev;
+      if (next) {
+        setPersonalizationMaster(false);
+        setShirtPaidPersonalization(Array(quantity).fill(false));
+        setGiftFreePersonalization(false);
+      }
+      return next;
     });
   };
 
@@ -327,6 +359,69 @@ function CheckoutContent() {
 
   const pixAwaitingConfirm = paymentMethod === "pix" && pixResult != null;
   const pixContinueDisabled = pixLoading || paymentMethod === "card" || pixAwaitingConfirm;
+  const selectionLocked = pixAwaitingConfirm || pixLoading;
+
+  const commitProductLines = useCallback(
+    (nextModels: ProductModelId[], nextSizes: Size[]) => {
+      const qs = replaceCheckoutProductLines(
+        new URLSearchParams(searchParams.toString()),
+        quantity,
+        nextModels,
+        nextSizes
+      );
+      router.replace(`/checkout?${qs}`, { scroll: false });
+    },
+    [quantity, router, searchParams]
+  );
+
+  const setLineModel = useCallback(
+    (index: number, id: ProductModelId) => {
+      const next = [...orderModels];
+      if (index < 0 || index >= next.length) return;
+      next[index] = id;
+      commitProductLines(next, [...orderSizes]);
+    },
+    [orderModels, orderSizes, commitProductLines]
+  );
+
+  const setLineSize = useCallback(
+    (index: number, sz: Size) => {
+      const next = [...orderSizes];
+      if (index < 0 || index >= next.length) return;
+      next[index] = sz;
+      commitProductLines([...orderModels], next);
+    },
+    [orderModels, orderSizes, commitProductLines]
+  );
+
+  const applyOrderQuantity = useCallback(
+    (nextQRaw: number) => {
+      const nextQ = Math.min(MAX_ORDER_SHIRT_QUANTITY, Math.max(1, Math.floor(nextQRaw)));
+      if (nextQ === quantity) return;
+
+      let nextModels = [...orderModels];
+      let nextSizes = [...orderSizes];
+      while (nextModels.length < nextQ) {
+        const lm = nextModels[nextModels.length - 1] ?? "edicao-sagrada";
+        const ls = nextSizes[nextSizes.length - 1] ?? "M";
+        nextModels.push(lm);
+        nextSizes.push(ls);
+      }
+      if (nextQ < nextModels.length) {
+        nextModels = nextModels.slice(0, nextQ);
+        nextSizes = nextSizes.slice(0, nextQ);
+      }
+
+      const qs = replaceCheckoutProductLines(
+        new URLSearchParams(searchParams.toString()),
+        nextQ,
+        nextModels,
+        nextSizes
+      );
+      router.replace(`/checkout?${qs}`, { scroll: false });
+    },
+    [quantity, orderModels, orderSizes, router, searchParams]
+  );
 
   const headerBackGoesHome = retention.active;
   const retentionHref = getRetentionHref(searchParams.toString());
@@ -375,6 +470,11 @@ function CheckoutContent() {
       return;
     }
 
+    if (preferNoPrintedNumbersFrontBack && personalizationMaster) {
+      toast.error("Escolha apenas uma opção: sem número frente/costas OU personalização paga com nome e número.");
+      return;
+    }
+
     if (personalizationMaster) {
       const paidLines = shirtPaidPersonalization.filter(Boolean).length;
       if (paidLines === 0) {
@@ -389,6 +489,11 @@ function CheckoutContent() {
         toast.error(`Preencha nome e número na camisa ${i + 1} (personalização paga marcada).`);
         return;
       }
+    }
+
+    if (preferNoPrintedNumbersFrontBack && giftFreePersonalization) {
+      toast.error("Desmarque «sem número frente/costas» ou desligue nome e número grátis no presente.");
+      return;
     }
 
     if (hasSecondShirtBump && giftFreePersonalization) {
@@ -440,6 +545,7 @@ function CheckoutContent() {
       personalizationMaster,
       shirtPaidPersonalization,
       giftFreePersonalization,
+      preferNoPrintedNumbersFrontBack,
       customNames,
       customNumbers,
       retention: {
@@ -677,15 +783,169 @@ function CheckoutContent() {
               </div>
             </div>
 
-            <div className="glass-dark flex min-w-0 flex-col gap-2 rounded-2xl px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <div className="flex min-w-0 items-center gap-3">
-                <Truck className="shrink-0 text-gold" size={20} />
-                <p className="text-xs font-bold uppercase tracking-widest text-white/90">Você está adquirindo:</p>
+            <div className="glass-dark flex min-w-0 flex-col gap-4 rounded-2xl px-4 py-4 sm:px-6">
+              <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <Truck className="shrink-0 text-gold" size={20} />
+                  <p className="text-xs font-bold uppercase tracking-widest text-white/90">Você está adquirindo:</p>
+                </div>
+                <p className="min-w-0 text-xs font-bold leading-snug text-gold-bright sm:max-w-[min(100%,22rem)] sm:text-right">
+                  {pricing.quantity} un. ({orderModels.map((m) => getProductModelById(m).name).join(", ")})
+                  {orderSizes.length === 1 ? ` · Tam. ${orderSizes[0]}` : orderSizes.length > 1 ? ` · Tams.: ${orderSizes.join(", ")}` : ""}
+                </p>
               </div>
-              <p className="min-w-0 text-xs font-bold leading-snug text-gold-bright sm:text-right">
-                {pricing.quantity} un. ({orderModels.map((m) => getProductModelById(m).name).join(", ")})
-                {orderSizes.length === 1 ? ` · Tam. ${orderSizes[0]}` : orderSizes.length > 1 ? ` · Tams.: ${orderSizes.join(", ")}` : ""}
-              </p>
+              {selectionLocked ? (
+                <p className="border-t border-white/[0.06] pt-3 text-[11px] leading-relaxed text-muted-foreground">
+                  Pix já gerado: a linha do pedido não pode ser alterada aqui. Em dúvida, fale com o suporte pelo WhatsApp do site.
+                </p>
+              ) : (
+                <>
+                  <div className="border-t border-white/[0.06] pt-4">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gold/85">
+                      Quantidade de camisas
+                    </p>
+                    <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground">
+                      A cada nova unidade, repetimos a última edição e tamanho — depois você ajusta linha por linha abaixo. Máximo {MAX_ORDER_SHIRT_QUANTITY} por pedido.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="inline-flex items-center rounded-xl border border-white/10 bg-white/[0.03] p-1">
+                        <button
+                          type="button"
+                          onClick={() => applyOrderQuantity(quantity - 1)}
+                          disabled={quantity <= 1}
+                          className="flex size-11 items-center justify-center rounded-lg text-gold transition-colors hover:bg-white/[0.06] disabled:pointer-events-none disabled:opacity-35"
+                          aria-label="Menos uma camisa"
+                        >
+                          <Minus className="size-4" strokeWidth={2.5} aria-hidden />
+                        </button>
+                        <span className="min-w-[2.75rem] text-center font-mono text-lg font-black tabular-nums text-white">
+                          {quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => applyOrderQuantity(quantity + 1)}
+                          disabled={quantity >= MAX_ORDER_SHIRT_QUANTITY}
+                          className="flex size-11 items-center justify-center rounded-lg text-gold transition-colors hover:bg-white/[0.06] disabled:pointer-events-none disabled:opacity-35"
+                          aria-label="Mais uma camisa"
+                        >
+                          <Plus className="size-4" strokeWidth={2.5} aria-hidden />
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {([2, 3, 5] as const).map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => applyOrderQuantity(n)}
+                            className={cn(
+                              "rounded-lg border px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors",
+                              quantity === n ? "border-gold/55 bg-gold/15 text-gold-bright" : "border-white/10 bg-white/[0.02] text-muted-foreground hover:border-gold/35"
+                            )}
+                          >
+                            {n} un.
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {quantity >= 3 ? (
+                      <p className="mt-3 text-[10px] font-semibold uppercase tracking-wide text-emerald-400/90">
+                        Oferta Leve 3, Pague 2 ativa neste pedido (desconto no resumo).
+                      </p>
+                    ) : (
+                      <p className="mt-3 text-[10px] text-muted-foreground/90">
+                        Com 3 ou mais camisas aplica-se automaticamente{" "}
+                        <span className="font-semibold text-emerald-400/95">Leve 3, Pague 2</span> sobre a unidade mais barata do grupo.
+                      </p>
+                    )}
+                  </div>
+                  <div className="mt-6 border-t border-white/[0.06] pt-4">
+                  <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-gold/85">
+                    Ajustar edição ou tamanho {quantity > 1 ? `(${quantity} linhas)` : ""}
+                  </p>
+                  <p className="mb-4 text-[11px] leading-relaxed text-muted-foreground">
+                    Corrija aqui sem voltar ao carrinho nem perder UTMs — o valor atualiza conforme a edição.
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    {Array.from({ length: quantity }, (_, lineIndex) => (
+                      <div
+                        key={`line-${lineIndex}`}
+                        className="rounded-xl border border-white/[0.07] bg-black/20 p-3 sm:p-4"
+                      >
+                        {quantity > 1 ? (
+                          <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-white/70">
+                            Camisa {lineIndex + 1}
+                          </p>
+                        ) : null}
+                        <div className="flex flex-col gap-4 sm:gap-5">
+                          <div className="min-w-0">
+                            <p className="mb-2 pl-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                              Edição
+                            </p>
+                            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                              {getSelectableProductModels().map((model) => {
+                                const activeModel = (orderModels[lineIndex] ?? orderModels[0]) === model.id;
+                                return (
+                                  <button
+                                    key={`${lineIndex}-${model.id}`}
+                                    type="button"
+                                    onClick={() => setLineModel(lineIndex, model.id)}
+                                    className={cn(
+                                      "flex min-h-[3.25rem] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 transition-colors",
+                                      activeModel
+                                        ? "border-gold/60 bg-gold/[0.14] text-gold-bright ring-1 ring-gold/35"
+                                        : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40 hover:bg-white/[0.06]"
+                                    )}
+                                    aria-label={`Edição ${model.name}`}
+                                    aria-pressed={activeModel}
+                                  >
+                                    <span
+                                      className={cn(
+                                        "h-3.5 w-3.5 shrink-0 rounded-full border border-white/25",
+                                        editionSwatchClass(model.slug)
+                                      )}
+                                    />
+                                    <span className="line-clamp-2 text-center text-[9px] font-bold uppercase leading-tight tracking-tight sm:text-[10px]">
+                                      {model.name.replace(/^Edição\s+/i, "")}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="mb-2 pl-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                              Tamanho
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {SIZES.map((sz) => {
+                                const activeSz = (orderSizes[lineIndex] ?? orderSizes[0]) === sz;
+                                return (
+                                  <button
+                                    key={`${lineIndex}-${sz}`}
+                                    type="button"
+                                    onClick={() => setLineSize(lineIndex, sz)}
+                                    className={cn(
+                                      "flex h-10 min-w-[2.5rem] items-center justify-center rounded-lg px-2 text-[13px] font-bold transition-all sm:h-11 sm:min-w-11 sm:text-sm",
+                                      activeSz
+                                        ? "bg-gold text-navy-deep shadow-[0_0_12px_rgba(212,175,55,0.4)]"
+                                        : "border border-white/10 bg-white/[0.03] text-muted-foreground hover:border-gold/40 hover:bg-white/[0.08]"
+                                    )}
+                                    aria-label={`Tamanho ${sz}`}
+                                    aria-pressed={activeSz}
+                                  >
+                                    {sz}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <section
@@ -765,6 +1025,62 @@ function CheckoutContent() {
               )}
             </section>
 
+            <section className="glass-dark rounded-[2rem] p-6 md:p-8">
+              <div className="mb-5 flex min-w-0 items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+                  <Shirt className="size-4" strokeWidth={2} aria-hidden />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="font-display text-lg font-bold uppercase tracking-tight text-white">Estampa da camisa</h2>
+                  <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                    Opcional — não altera o valor do pedido.
+                  </p>
+                </div>
+              </div>
+              {selectionLocked ? (
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Pix já gerado: preferências de estampa não podem ser alteradas aqui.
+                </p>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={togglePreferNoPrintedNumbers}
+                    className={cn(
+                      "flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors",
+                      preferNoPrintedNumbersFrontBack
+                        ? "border-emerald-500/45 bg-emerald-500/[0.07]"
+                        : "border-white/[0.08] bg-white/[0.02] hover:border-white/15"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
+                        preferNoPrintedNumbersFrontBack ? "border-emerald-400 bg-emerald-500 text-white" : "border-white/50 bg-white/5"
+                      )}
+                    >
+                      {preferNoPrintedNumbersFrontBack ? <Check size={12} strokeWidth={3} /> : null}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="text-[13px] font-semibold leading-snug text-white">
+                        Sem número na frente e nas costas
+                      </span>
+                      <span className="mt-1 block text-[11px] leading-relaxed text-muted-foreground">
+                        Visual mais limpo: sem número aplicado no peito nem nas costas.{" "}
+                        <span className="font-semibold text-emerald-400/95">Sem custo adicional.</span> Incompatível com o extra pago de nome + número ou com nome grátis no presente.
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-emerald-400/95">Grátis</span>
+                  </button>
+                  {personalizationMaster ? (
+                    <p className="mt-3 text-[11px] text-amber-200/90">
+                      Desligue «Personalização Nome + Número» abaixo para marcar esta opção.
+                    </p>
+                  ) : null}
+                </>
+              )}
+            </section>
+
             <section className="glass-dark overflow-hidden rounded-[2rem] p-0">
               <div className="bg-green-600/10 px-6 py-2 border-b border-green-500/20">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-green-400">🔥 OPORTUNIDADE ÚNICA</span>
@@ -839,7 +1155,17 @@ function CheckoutContent() {
 
                         {isSecondShirt && selectedBumps.includes("second_shirt") && (
                           <div className="space-y-4 border-t border-white/5 bg-white/[0.02] p-5">
-                            <button type="button" onClick={() => setGiftFreePersonalization((v) => !v)} className="flex w-full items-start gap-3 rounded-xl text-left">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setGiftFreePersonalization((v) => {
+                                  const next = !v;
+                                  if (next) setPreferNoPrintedNumbersFrontBack(false);
+                                  return next;
+                                });
+                              }}
+                              className="flex w-full items-start gap-3 rounded-xl text-left"
+                            >
                               <span className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors", giftFreePersonalization ? "border-gold bg-gold" : "border-white/50 bg-white/5 hover:border-white/70")}>
                                 {giftFreePersonalization ? <Check size={12} className="text-navy-deep" /> : null}
                               </span>
@@ -883,24 +1209,42 @@ function CheckoutContent() {
 
           <aside className="h-fit min-w-0 w-full max-w-full lg:sticky lg:top-24">
             <div className="glass-dark max-w-full min-w-0 overflow-hidden rounded-[2rem] p-4 sm:p-6 md:p-8">
-              <div className={cn("mb-6 grid w-full gap-2", quantity === 1 ? "grid-cols-1" : quantity === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3")}>
+              <div
+                className={cn(
+                  "mb-6 grid w-full gap-2 sm:gap-2.5",
+                  quantity === 1 ? "grid-cols-1" : quantity === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"
+                )}
+              >
                 {Array.from({ length: quantity }, (_, i) => {
                   const lineModel = getProductModelById(orderModels[i]);
                   const thumbSrc = lineModel.images.checkout;
+                  const lineSize = orderSizes[i] ?? orderSizes[0];
                   return (
-                    <div key={`summary-thumb-${i}-${lineModel.id}`} className="relative aspect-square w-full min-w-0 overflow-hidden rounded-2xl border border-white/10 shadow-lg bg-black/20">
-                      <Image 
-                        src={thumbSrc} 
-                        alt={`${lineModel.name} — camisa ${i + 1}`} 
-                        fill 
-                        sizes="(max-width: 640px) 45vw, 200px" 
+                    <div
+                      key={`summary-thumb-${i}-${lineModel.id}-${lineSize}`}
+                      className="relative aspect-square w-full min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-black/20 shadow-lg"
+                    >
+                      <Image
+                        src={thumbSrc}
+                        alt={`${lineModel.name} — camisa ${i + 1} — tam. ${lineSize}`}
+                        fill
+                        sizes="(max-width: 640px) 32vw, 128px)"
                         className={cn(
-                          "object-contain transition-transform duration-300", 
+                          "object-contain transition-transform duration-300",
                           lineModel.id === "edicao-vermelha" ? "scale-[0.85]" : "scale-[1.05] p-2"
-                        )} 
-                        priority={i === 0} 
+                        )}
+                        priority={i === 0}
                       />
-                      {quantity > 1 ? <span className="absolute bottom-2 left-2 rounded-md border border-white/15 bg-black/55 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-white/95 backdrop-blur-sm">Camisa {i + 1}</span> : null}
+                      {quantity > 1 ? (
+                        <>
+                          <span className="absolute bottom-1.5 left-1.5 max-w-[calc(100%-4rem)] truncate rounded-md border border-white/15 bg-black/60 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white/95 backdrop-blur-sm sm:bottom-2 sm:left-2 sm:text-[9px]">
+                            #{i + 1}
+                          </span>
+                          <span className="absolute bottom-1.5 right-1.5 rounded-md border border-gold/35 bg-black/65 px-1.5 py-0.5 text-[8px] font-black tabular-nums text-gold-bright backdrop-blur-sm sm:bottom-2 sm:right-2 sm:text-[9px]">
+                            {lineSize}
+                          </span>
+                        </>
+                      ) : null}
                     </div>
                   );
                 })}

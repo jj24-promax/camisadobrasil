@@ -61,9 +61,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Valor do pedido adulterado. Transação bloqueada." }), { status: 400, headers: corsHeaders });
     }
 
-    const apiKey =
-      Deno.env.get("MANGOFY_API_KEY")?.trim() ||
-      Deno.env.get("ROYALBANKING_API_KEY")?.trim();
+    const apiKey = Deno.env.get("ROYALBANKING_API_KEY")?.trim();
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "API Key não configurada." }), { 
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

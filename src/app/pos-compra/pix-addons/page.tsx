@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { Copy, Loader2, Lock, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { coercePixGatewayResponseRecord, extractPixGatewayPayload, qrDataUrlForImg } from "@/lib/pix-gateway-response";
+import { qrDataUrlForImg } from "@/lib/pix-gateway-response";
 import { readPosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 import { computeUpsellAddonCents, UPSELL_CAP_CENTS, UPSELL_BAG_CENTS, UPSELL_CUP_CENTS } from "@/lib/pos-compra-upsell-pricing";
 import { posCompraObrigadoQuery } from "@/lib/pos-compra-routes";
@@ -46,24 +46,10 @@ function PixAddonsContent() {
     }
   }, [addonCents, cap, bag, cup, router]);
 
-  // Mangofy Fast API — mesmo fluxo do checkout principal
-  useEffect(() => {
-    if (!pixResult?.paymentCode?.trim()) return;
-
-    (window as unknown as { paymentApproved?: () => void }).paymentApproved = () => {
-      toast.success("Pagamento confirmado!");
-      router.push(posCompraObrigadoQuery(cap, bag, cup));
-    };
-
-    return () => {
-      delete (window as unknown as { paymentApproved?: () => void }).paymentApproved;
-    };
-  }, [pixResult?.paymentCode, cap, bag, cup, router]);
-
   const generatePix = useCallback(async () => {
     const clientRef = readPosCompraPixClient();
     const snap = clientRef?.mangofyCustomer;
-    if (!snap) {
+    if (!snap || !clientRef?.leadId?.trim() || !clientRef?.mainVendaId?.trim()) {
       setMissingClient(true);
       setLoading(false);
       setError(null);
@@ -91,78 +77,46 @@ function PixAddonsContent() {
     setMissingClient(false);
 
     try {
-      const amount = Number((addonCents / 100).toFixed(2));
-      const parts: string[] = [];
-      if (cap) parts.push("Boné Alpha");
-      if (bag) parts.push("Shoulder Bag");
-      if (cup) parts.push("Copo Térmico");
-      const productSummaryAddon = parts.length > 0 ? `Adicionais pós-compra · ${parts.join(" · ")}` : "Adicionais pós-compra";
+      const rec = await fetch("/api/checkout/pos-compra-pix-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId: clientRef.leadId,
+          mainVendaId: clientRef.mainVendaId,
+          cap,
+          bag,
+          cup,
+          amountCents: addonCents,
+        }),
+      });
 
-      const gen = (window as unknown as { generatePix?: (c: unknown) => Promise<unknown> }).generatePix;
-      if (typeof gen !== "function") {
-        throw new Error("Forma de pagamento ainda a carregar. Atualize a página e tente de novo.");
-      }
-
-      const config = {
-        total_price: amount,
-        customer: {
-          name: snap.name,
-          document: snap.docDigits,
-          email: snap.email,
-          phone: snap.phoneDigits,
-        },
-        shipping: {
-          zip_code: snap.cep,
-          street: snap.street,
-          city: snap.city,
-          state: snap.state,
-          country: "BR",
-        },
-        metadata: Object.fromEntries(searchParams.entries()),
-        items: [{ name: productSummaryAddon, price: amount, quantity: 1 }],
+      const response = (await rec.json().catch(() => ({}))) as {
+        error?: string;
+        paymentCode?: string;
+        paymentCodeBase64?: string;
       };
 
-      const response = (await gen(config)) as {
-        success?: boolean;
-        message?: string;
-        pixCode?: string;
-        qrCodeImage?: string;
-      };
-
-      if (response && response.success && response.pixCode && response.qrCodeImage) {
-        const gw = extractPixGatewayPayload(coercePixGatewayResponseRecord(response));
-        const tx = gw.idTransaction?.trim() ?? "";
-        const clientRef = readPosCompraPixClient();
-        if (tx && clientRef?.leadId && clientRef?.mainVendaId) {
-          void fetch("/api/checkout/pos-compra-pix-record", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              leadId: clientRef.leadId,
-              mainVendaId: clientRef.mainVendaId,
-              cap,
-              bag,
-              cup,
-              amountCents: addonCents,
-              gatewayTransactionId: tx,
-            }),
-          }).catch(() => {});
-        }
-
-        const next: PixState = {
-          paymentCode: response.pixCode,
-          paymentCodeBase64: response.qrCodeImage,
-        };
-        setPixResult(next);
-        try {
-          sessionStorage.setItem(key, JSON.stringify(next));
-        } catch {
-          /* ignore */
-        }
-        toast.success("Pix dos adicionais gerado!");
-      } else {
-        throw new Error(response?.message || "Erro ao gerar Pix. Verifique os dados e tente novamente.");
+      if (!rec.ok) {
+        throw new Error(response?.error || "Erro ao gerar Pix. Verifique os dados e tente novamente.");
       }
+
+      const code = typeof response.paymentCode === "string" ? response.paymentCode.trim() : "";
+      const b64 = typeof response.paymentCodeBase64 === "string" ? response.paymentCodeBase64.trim() : "";
+      if (!code) {
+        throw new Error("Resposta do servidor sem código Pix.");
+      }
+
+      const next: PixState = {
+        paymentCode: code,
+        paymentCodeBase64: b64,
+      };
+      setPixResult(next);
+      try {
+        sessionStorage.setItem(key, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      toast.success("Pix dos adicionais gerado!");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Não foi possível gerar o Pix.";
       setError(msg);
@@ -170,7 +124,7 @@ function PixAddonsContent() {
     } finally {
       setLoading(false);
     }
-  }, [addonCents, cap, bag, cup, searchParams]);
+  }, [addonCents, cap, bag, cup]);
 
   useEffect(() => {
     if (addonCents === 0) return;
@@ -256,7 +210,7 @@ function PixAddonsContent() {
           <div className="mt-8 rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] px-4 py-4 text-sm text-amber-100">
             <p className="font-medium text-amber-50">Não encontramos os dados da sua compra neste dispositivo.</p>
             <p className="mt-2 text-xs leading-relaxed text-amber-100/90">
-              Gere o Pix principal no checkout neste mesmo navegador e volte aos adicionais, ou refaça o checkout para continuar.
+              Conclua o Pix principal no checkout neste mesmo navegador (para gravarmos o pedido) e volte aos adicionais, ou refaça o checkout.
             </p>
             <Button asChild className="mt-4 w-full font-bold uppercase tracking-widest" size="lg">
               <Link href="/checkout">Ir ao checkout</Link>

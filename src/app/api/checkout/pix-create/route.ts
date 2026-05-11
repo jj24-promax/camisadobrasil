@@ -2,15 +2,11 @@ import { NextResponse } from "next/server";
 
 import { getMinCheckoutAmountCents } from "@/lib/checkout-min-amount-cents";
 import { PRODUCT } from "@/lib/product";
+import { createRoyalBankingPixCashIn } from "@/lib/royal-banking-pix.server";
 import { insertCheckoutLead } from "@/lib/supabase/insert-lead-from-checkout";
 import { insertPendingPixVenda } from "@/lib/supabase/pending-venda-pix";
 import { generateMockTrackingCode } from "@/lib/tracking-utils";
 import { parseOrderCheckoutSnapshotFromApi } from "@/types/order-snapshot";
-
-/** Referência gerada no browser (`crypto.randomUUID`) ou fallback alfanumérico curto. */
-const ORDER_REF_RE = /^[a-zA-Z0-9_-]{8,80}$/;
-/** ID devolvido pelo gateway no Cash In (ex. UUID); deve coincidir com o webhook. */
-const GATEWAY_TX_RE = /^[a-zA-Z0-9_.:-]{4,128}$/;
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
@@ -28,16 +24,6 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
   }
-
-  const orderRef = isNonEmptyString(body.orderRef) ? body.orderRef.trim() : "";
-  if (!orderRef || !ORDER_REF_RE.test(orderRef)) {
-    return NextResponse.json({ error: "Referência do pedido inválida." }, { status: 400 });
-  }
-
-  const gatewayRaw = isNonEmptyString(body.gatewayTransactionId) ? body.gatewayTransactionId.trim().slice(0, 160) : "";
-  const gatewayTransactionId = GATEWAY_TX_RE.test(gatewayRaw) ? gatewayRaw : "";
-  /** Webhook casa com o ID do gateway; `orderRef` fica só em metadata do checkout. */
-  const pedidoCodigoParaWebhook = gatewayTransactionId || orderRef;
 
   const amountCents = typeof body.amountCents === "number" && Number.isFinite(body.amountCents) ? Math.round(body.amountCents) : NaN;
   const quantity = typeof body.quantity === "number" && body.quantity > 0 ? Math.floor(body.quantity) : 1;
@@ -109,8 +95,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Telefone inválido." }, { status: 400 });
   }
 
+  const amountBrl = Number((amountCents / 100).toFixed(2));
+  const royal = await createRoyalBankingPixCashIn({
+    amountBrl,
+    client: {
+      name,
+      documentDigits: docDigits,
+      telefoneDigits: phoneDigits,
+      email,
+    },
+  });
+
+  if (!royal.ok) {
+    return NextResponse.json({ error: royal.message }, { status: royal.status >= 400 && royal.status < 600 ? royal.status : 502 });
+  }
+
   const shippingSummary = `${cep.slice(0, 5)}-${cep.slice(5)} · ${endereco}, ${numero}${complemento ? ` — ${complemento}` : ""} · ${bairro} · ${cidade}/${estado}`;
   const productSummary = `${PRODUCT.name} (${quantity} un.) · Pix Royal Banking`;
+  const gwId = royal.idTransaction;
+  const pedidoCodigoParaWebhook = gwId;
 
   const leadId = crypto.randomUUID();
   const trackingCode = generateMockTrackingCode();
@@ -135,7 +138,7 @@ export async function POST(req: Request) {
   });
 
   if (!lead.ok) {
-    console.warn("[checkout/pix-record] lead não gravado:", lead.error);
+    console.warn("[checkout/pix-create] lead não gravado:", lead.error);
   }
 
   const venda = await insertPendingPixVenda({
@@ -144,7 +147,7 @@ export async function POST(req: Request) {
     amountCents,
     productSummary,
     idTransaction: pedidoCodigoParaWebhook,
-    gatewayPixTransactionId: gatewayRaw || undefined,
+    gatewayPixTransactionId: gwId,
     shippingSummary,
     detalhesPedido: orderSnapshot,
   });
@@ -153,5 +156,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: venda.error }, { status: 502 });
   }
 
-  return NextResponse.json({ ok: true, leadId, vendaId: venda.id });
+  return NextResponse.json({
+    ok: true,
+    leadId,
+    vendaId: venda.id,
+    gatewayTransactionId: gwId,
+    paymentCode: royal.paymentCode,
+    paymentCodeBase64: royal.paymentCodeBase64,
+  });
 }

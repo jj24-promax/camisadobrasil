@@ -51,12 +51,7 @@ import {
   useRetentionDiscountOnTotal,
   useRetentionBannerCountdown,
 } from "@/hooks/use-checkout-retention";
-import {
-  coercePixGatewayResponseRecord,
-  extractMangofyPixTransactionId,
-  extractPixGatewayPayload,
-  qrDataUrlForImg,
-} from "@/lib/pix-gateway-response";
+import { qrDataUrlForImg } from "@/lib/pix-gateway-response";
 import { buildCheckoutOrderSnapshotV1 } from "@/lib/build-checkout-order-snapshot";
 import { savePosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 import { replaceCheckoutProductLines } from "@/lib/checkout-product-query";
@@ -242,18 +237,6 @@ function CheckoutContent() {
 
   useEffect(() => {
     flagCheckoutVisitedThisSession();
-  }, []);
-
-  // Mangofy SDK Callback - Registrado na montagem do componente
-  useEffect(() => {
-    (window as any).paymentApproved = () => {
-      toast.success("Pagamento confirmado!");
-      window.location.href = 'https://www.alphabrasil.store/pos-compra/upsell-1';
-    };
-    
-    return () => {
-      delete (window as any).paymentApproved;
-    };
   }, []);
 
   useEffect(() => {
@@ -532,9 +515,6 @@ function CheckoutContent() {
       return;
     }
 
-    const amount = Number((finalTotalCents / 100).toFixed(2));
-    const orderRef = crypto.randomUUID();
-
     const orderSnapshot = buildCheckoutOrderSnapshotV1({
       product: { id: PRODUCT.id, name: PRODUCT.name },
       quantity,
@@ -576,107 +556,73 @@ function CheckoutContent() {
 
     setPixLoading(true);
     try {
-      const meta = Object.fromEntries(searchParams.entries()) as Record<string, string>;
-      meta.alpha_order_ref = orderRef;
+      const rec = await fetch("/api/checkout/pix-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amountCents: finalTotalCents,
+          quantity,
+          orderSnapshot,
+          name,
+          email,
+          confirmEmail: formData.confirmEmail.trim(),
+          phone: formData.phone.trim(),
+          cpf: formData.cpf.trim(),
+          cep: formData.cep.replace(/\D/g, ""),
+          endereco: formData.endereco.trim(),
+          numero: formData.numero.trim(),
+          complemento: formData.complemento.trim(),
+          bairro: formData.bairro.trim(),
+          cidade: formData.cidade.trim(),
+          estado: formData.estado.replace(/\s/g, "").toUpperCase().slice(0, 2),
+        }),
+      });
 
-      const config = {
-        total_price: amount,
-        customer: {
-            name: name,
-            document: docDigits,
-            email: email,
-            phone: phoneDigits,
-        },
-        shipping: { 
-            zip_code: formData.cep.replace(/\D/g, ""), 
-            street: formData.endereco.trim(), 
-            city: formData.cidade.trim(), 
-            state: formData.estado.trim(), 
-            country: 'BR' 
-        },
-        metadata: meta,
-        items: [
-            { name: 'CamisaBrasil', price: amount, quantity: 1 }
-        ]
+      const j = (await rec.json().catch(() => ({}))) as {
+        error?: string;
+        leadId?: string;
+        vendaId?: string;
+        paymentCode?: string;
+        paymentCodeBase64?: string;
       };
 
-      // Execução da SDK Fast API
-      const response = await (window as any).generatePix(config);
-
-      if (response && response.success) {
-        const gw = extractPixGatewayPayload(coercePixGatewayResponseRecord(response));
-        const mangofyTx = extractMangofyPixTransactionId(response) ?? gw.idTransaction;
-        setPixResult({
-          paymentCode: response.pixCode,
-          paymentCodeBase64: response.qrCodeImage,
-        });
-
-        savePosCompraPixClient({
-          mangofyCustomer: {
-            name,
-            email,
-            phoneDigits,
-            docDigits,
-            cep: formData.cep.replace(/\D/g, ""),
-            street: formData.endereco.trim(),
-            city: formData.cidade.trim(),
-            state: formData.estado.replace(/\s/g, "").toUpperCase().slice(0, 2),
-          },
-        });
-
-        void fetch("/api/checkout/pix-record", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderRef,
-            gatewayTransactionId: mangofyTx,
-            amountCents: finalTotalCents,
-            quantity,
-            orderSnapshot,
-            name,
-            email,
-            confirmEmail: formData.confirmEmail.trim(),
-            phone: formData.phone.trim(),
-            cpf: formData.cpf.trim(),
-            cep: formData.cep.replace(/\D/g, ""),
-            endereco: formData.endereco.trim(),
-            numero: formData.numero.trim(),
-            complemento: formData.complemento.trim(),
-            bairro: formData.bairro.trim(),
-            cidade: formData.cidade.trim(),
-            estado: formData.estado.replace(/\s/g, "").toUpperCase().slice(0, 2),
-          }),
-        }).then(async (rec) => {
-          const j = (await rec.json().catch(() => ({}))) as { error?: string; leadId?: string; vendaId?: string };
-          if (!rec.ok) {
-            console.warn("[checkout] registo Supabase do Pix falhou:", j.error ?? rec.status);
-            return;
-          }
-          if (j.leadId && j.vendaId) {
-            savePosCompraPixClient({
-              leadId: j.leadId,
-              mainVendaId: j.vendaId,
-              mangofyCustomer: {
-                name,
-                email,
-                phoneDigits,
-                docDigits,
-                cep: formData.cep.replace(/\D/g, ""),
-                street: formData.endereco.trim(),
-                city: formData.cidade.trim(),
-                state: formData.estado.replace(/\s/g, "").toUpperCase().slice(0, 2),
-              },
-            });
-          }
-        }).catch((err) => {
-          console.warn("[checkout] registo Supabase do Pix falhou:", err);
-        });
-
-        toast.success("Pix gerado! Escaneie o QR ou copie o código.");
-
-      } else {
-        throw new Error(response.message || "Erro ao gerar Pix. Verifique os dados e tente novamente.");
+      if (!rec.ok) {
+        throw new Error(j.error || "Erro ao gerar Pix. Verifique os dados e tente novamente.");
       }
+
+      const code = typeof j.paymentCode === "string" ? j.paymentCode.trim() : "";
+      const b64 = typeof j.paymentCodeBase64 === "string" ? j.paymentCodeBase64.trim() : "";
+      if (!code) {
+        throw new Error("Resposta do servidor sem código Pix.");
+      }
+
+      setPixResult({
+        paymentCode: code,
+        paymentCodeBase64: b64,
+      });
+
+      const snap = {
+        name,
+        email,
+        phoneDigits,
+        docDigits,
+        cep: formData.cep.replace(/\D/g, ""),
+        street: formData.endereco.trim(),
+        city: formData.cidade.trim(),
+        state: formData.estado.replace(/\s/g, "").toUpperCase().slice(0, 2),
+      };
+
+      if (j.leadId && j.vendaId) {
+        savePosCompraPixClient({
+          leadId: j.leadId,
+          mainVendaId: j.vendaId,
+          mangofyCustomer: snap,
+        });
+      } else {
+        savePosCompraPixClient({ mangofyCustomer: snap });
+      }
+
+      toast.success("Pix gerado! Escaneie o QR ou copie o código.");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Não foi possível gerar o Pix.";
       toast.error(msg);

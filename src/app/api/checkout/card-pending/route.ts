@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getMinCheckoutAmountCents } from "@/lib/checkout-min-amount-cents";
 import { PRODUCT } from "@/lib/product";
 import { insertCheckoutLead } from "@/lib/supabase/insert-lead-from-checkout";
 import { insertPendingCardVenda } from "@/lib/supabase/pending-venda-card";
@@ -85,8 +86,8 @@ export async function POST(req: Request) {
   if (!validExpiry(cardExpiry)) return NextResponse.json({ error: "Validade inválida (use MM/AA)." }, { status: 400 });
   if (!cardholderName) return NextResponse.json({ error: "Informe o nome no cartão." }, { status: 400 });
   
-  // AppSec: Trava financeira (Price Floor) para evitar manipulação client-side do valor cobrado
-  if (!Number.isFinite(amountCents) || amountCents < 4750 || amountCents > 50_000_000) {
+  const minCents = getMinCheckoutAmountCents();
+  if (!Number.isFinite(amountCents) || amountCents < minCents || amountCents > 50_000_000) {
     return NextResponse.json({ error: "Valor do pedido adulterado ou inválido. Transação bloqueada." }, { status: 400 });
   }
 

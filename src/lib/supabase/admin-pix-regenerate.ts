@@ -1,5 +1,7 @@
 import "server-only";
 
+import { getMinCheckoutAmountCents } from "@/lib/checkout-min-amount-cents";
+import { createRoyalBankingPixCashIn } from "@/lib/royal-banking-pix.server";
 import { orderStatusFromVendaRow } from "@/lib/normalize-payment-order-status";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 
@@ -16,15 +18,6 @@ function str(v: unknown): string {
   return String(v).trim();
 }
 
-/** Payload serializável para `window.generatePix` (Mangofy Fast API), alinhado ao checkout. */
-export type MangofyRegenPayload = {
-  total_price: number;
-  customer: { name: string; document: string; email: string; phone: string };
-  shipping: { zip_code: string; street: string; city: string; state: string; country: "BR" };
-  metadata: Record<string, string>;
-  items: { name: string; price: number; quantity: number }[];
-};
-
 function vendaTimestampMs(row: Record<string, unknown>): number {
   const raw = pick(row, ["created_at", "date", "criado_em"]);
   const d = raw ? new Date(String(raw)) : new Date(0);
@@ -32,12 +25,15 @@ function vendaTimestampMs(row: Record<string, unknown>): number {
 }
 
 /**
- * Prepara novo identificador de pedido na venda pendente e devolve o corpo para o SDK Mangofy no browser.
- * O `pedido_codigo` é atualizado antes do generatePix para o webhook continuar a casar com a mesma linha de venda.
+ * Gera novo Pix na Royal Banking (servidor) para a venda pendente mais recente do lead
+ * e associa `pedido_codigo` ao `idTransaction` do gateway (webhook).
  */
-export async function prepareAdminRegeneratePixForLead(
+export async function regenerateRoyalPixForLeadAdmin(
   leadId: string
-): Promise<{ ok: true; orderRef: string; mangofyPayload: MangofyRegenPayload } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; paymentCode: string; paymentCodeBase64: string; gatewayTransactionId: string }
+  | { ok: false; error: string }
+> {
   const id = leadId.trim();
   if (!id) return { ok: false, error: "Lead inválido." };
 
@@ -53,24 +49,12 @@ export async function prepareAdminRegeneratePixForLead(
   const email = str(pick(lr, ["email", "e_mail"])).toLowerCase();
   const telefone = str(pick(lr, ["telefone", "phone"])).replace(/\D/g, "");
   const cpfRaw = str(pick(lr, ["cpf", "documento"])).replace(/\D/g, "");
-  const cep = str(pick(lr, ["cep", "zipcode"])).replace(/\D/g, "");
-  const endereco = str(pick(lr, ["endereco", "address", "logradouro"]));
-  const numero = str(pick(lr, ["numero", "number"]));
-  const bairro = str(pick(lr, ["bairro", "neighborhood"]));
-  const cidade = str(pick(lr, ["cidade", "city"]));
-  const estado = str(pick(lr, ["estado", "state", "uf"])).replace(/\s/g, "").toUpperCase().slice(0, 2);
 
   if (!nome || !email || !telefone) {
     return { ok: false, error: "Lead sem nome, e-mail ou telefone." };
   }
   if (cpfRaw.length !== 11 && cpfRaw.length !== 14) {
     return { ok: false, error: "CPF/CNPJ ausente ou inválido neste lead." };
-  }
-  if (cep.length !== 8 || !endereco || !numero || !bairro || !cidade || estado.length !== 2) {
-    return {
-      ok: false,
-      error: "Endereço incompleto no lead (CEP, logradouro, número, bairro, cidade, UF). Corrija no Supabase ou refaça o checkout.",
-    };
   }
 
   const { data: vendasRows, error: vErr } = await admin.from("vendas").select("*").eq("lead_id", id);
@@ -82,50 +66,47 @@ export async function prepareAdminRegeneratePixForLead(
     return { ok: false, error: "Nenhuma venda Pix pendente ligada a este lead." };
   }
 
-  rows.sort((a, b) => vendaTimestampMs(b) - vendaTimestampMs(a));
+  rows.sort((a, b) => vendaTimestampMs(b as Record<string, unknown>) - vendaTimestampMs(a as Record<string, unknown>));
   const venda = rows[0]!;
 
-  const amountCents = Math.round(Number(venda.valor ?? 0));
-  if (!Number.isFinite(amountCents) || amountCents < 4750 || amountCents > 50_000_000) {
+  const amountCents = Math.round(Number((venda as { valor?: unknown }).valor ?? 0));
+  const minCents = getMinCheckoutAmountCents();
+  if (!Number.isFinite(amountCents) || amountCents < minCents || amountCents > 50_000_000) {
     return { ok: false, error: "Valor da venda pendente inválido." };
   }
 
-  const orderRef = crypto.randomUUID();
-  const vendaId = str(pick(venda, ["id", "pedido_id"]));
-  if (!vendaId) return { ok: false, error: "ID da venda inválido." };
-
-  const { error: updErr } = await admin.from("vendas").update({ pedido_codigo: orderRef }).eq("id", vendaId);
-
-  if (updErr) return { ok: false, error: `Erro ao atualizar referência do pedido: ${updErr.message}` };
-
-  const amount = Number((amountCents / 100).toFixed(2));
-
-  const mangofyPayload: MangofyRegenPayload = {
-    total_price: amount,
-    customer: {
+  const amountBrl = Number((amountCents / 100).toFixed(2));
+  const royal = await createRoyalBankingPixCashIn({
+    amountBrl,
+    client: {
       name: nome,
-      document: cpfRaw,
+      documentDigits: cpfRaw,
+      telefoneDigits: telefone,
       email,
-      phone: telefone,
     },
-    shipping: {
-      zip_code: cep,
-      street: endereco,
-      city: cidade,
-      state: estado,
-      country: "BR",
-    },
-    metadata: { alpha_order_ref: orderRef, source: "admin_regenerate_pix" },
-    items: [{ name: "CamisaBrasil", price: amount, quantity: 1 }],
-  };
+  });
 
-  return { ok: true, orderRef, mangofyPayload };
+  if (!royal.ok) {
+    return { ok: false, error: royal.message };
+  }
+
+  const sync = await syncLeadPendingVendaPedidoCodigoToGateway(id, royal.idTransaction);
+  if (!sync.ok) {
+    return { ok: false, error: `Pix gerado, mas falhou ao associar à venda: ${sync.error}` };
+  }
+
+  return {
+    ok: true,
+    paymentCode: royal.paymentCode,
+    paymentCodeBase64: royal.paymentCodeBase64,
+    gatewayTransactionId: royal.idTransaction,
+  };
 }
 
 const GW_ID_RE = /^[a-zA-Z0-9_.:-]{6,128}$/;
 
 /**
- * Após `generatePix` no admin, grava o `pedido_codigo` com o ID do gateway para o webhook marcar pago.
+ * Após gerar Pix no servidor, grava o `pedido_codigo` com o ID do gateway para o webhook marcar pago.
  */
 export async function syncLeadPendingVendaPedidoCodigoToGateway(
   leadId: string,

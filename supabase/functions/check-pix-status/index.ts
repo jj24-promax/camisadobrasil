@@ -156,7 +156,7 @@ serve(async (req) => {
       );
     }
 
-    const apiKey = Deno.env.get("MANGOFY_API_KEY")?.trim() || Deno.env.get("ROYALBANKING_API_KEY")?.trim();
+    const apiKey = Deno.env.get("ROYALBANKING_API_KEY")?.trim();
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "API Key do gateway não configurada." }), {
         status: 500,
@@ -170,7 +170,7 @@ serve(async (req) => {
 
     const callbackUrl =
       Deno.env.get("PIX_WEBHOOK_CALLBACK_URL")?.trim() ||
-      Deno.env.get("MANGOFY_PIX_CALLBACK_URL")?.trim() ||
+      Deno.env.get("ROYALBANKING_PIX_CALLBACK_URL")?.trim() ||
       `${supabaseUrl.replace(/\/$/, "")}/functions/v1/pix-webhook`;
 
     const upstream = await fetch("https://api.royalbanking.com.br/v1/gateway/", {

@@ -1,5 +1,5 @@
 /**
- * Rota legada — mesmo handler que `/api/webhooks/mangofy/pix`.
- * Mantém URLs já configuradas no gateway; prefere configurar Mangofy com `/api/webhooks/mangofy/pix`.
+ * Webhook Pix Cash In (Royal Banking `callbackUrl` recomendado).
+ * O path `/api/webhooks/mangofy/pix` reexporta o mesmo handler.
  */
 export { POST } from "../../mangofy/pix/route";

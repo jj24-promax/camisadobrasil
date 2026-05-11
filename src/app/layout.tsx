@@ -68,11 +68,6 @@ export default function RootLayout({
           data-utmify-prevent-subids=""
           strategy="afterInteractive"
         />
-        <Script
-          id="pix-sdk-script"
-          src="https://checkout.mangofy.com.br/js/new/fast_api.min.js?key=vstg4q2k-0f058fda-5659-4bf9-9054-1e3b9539fe6c"
-          strategy="beforeInteractive"
-        />
         <Script id="utmify-pixel" strategy="afterInteractive">
           {`
             window.pixelId = "69f8f3a75abab63de004c710";

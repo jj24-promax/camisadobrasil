@@ -1,4 +1,3 @@
-/** Temporário: repor preço normal quando for para produção final. */
 export const PRODUCT = {
   id: "camisa-brasil-estilizada",
   name: "Camisa do Brasil Estilizada",

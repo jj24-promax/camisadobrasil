@@ -4,8 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Copy, FileDown, Loader2, QrCode } from "lucide-react";
 
-import { prepareRegeneratePixAction, syncPendingVendaGatewayIdAction } from "@/app/admin/(dashboard)/leads/actions";
-import { coercePixGatewayResponseRecord, extractPixGatewayPayload } from "@/lib/pix-gateway-response";
+import { regenerateRoyalPixAction } from "@/app/admin/(dashboard)/leads/actions";
 import { downloadPixBrandedPdf } from "@/lib/admin/download-pix-branded-pdf";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,58 +57,18 @@ export function AdminRegeneratePixDialog({
     setPixCode("");
     setPixB64("");
 
-    const prep = await prepareRegeneratePixAction(leadId);
-    if (!prep.ok) {
-      setErrorMsg(prep.error);
-      toast.error(prep.error);
+    const result = await regenerateRoyalPixAction(leadId);
+    if (!result.ok) {
+      setErrorMsg(result.error);
+      toast.error(result.error);
       setBusy(false);
       return;
     }
 
-    const gen = (window as unknown as { generatePix?: (c: unknown) => Promise<unknown> }).generatePix;
-    if (typeof gen !== "function") {
-      const msg =
-        "O carregamento do pagamento (Mangofy) ainda não está disponível nesta página. Atualize e tente de novo.";
-      setErrorMsg(msg);
-      toast.error(msg);
-      setBusy(false);
-      return;
-    }
-
-    try {
-      const response = (await gen(prep.mangofyPayload)) as {
-        success?: boolean;
-        message?: string;
-        pixCode?: string;
-        qrCodeImage?: string;
-      };
-      if (response?.success && response.pixCode) {
-        setPixCode(response.pixCode);
-        setPixB64(typeof response.qrCodeImage === "string" ? response.qrCodeImage : "");
-        const gw = extractPixGatewayPayload(coercePixGatewayResponseRecord(response));
-        if (leadId && gw.idTransaction) {
-          const sync = await syncPendingVendaGatewayIdAction(leadId, gw.idTransaction);
-          if (!sync.ok) {
-            console.warn("[admin] sync pedido_codigo com gateway:", sync.error);
-            toast.error(
-              "Pix gerado, mas não foi possível associar o ID do gateway à venda. O pagamento pode não marcar como pago sozinho — contacte suporte técnico."
-            );
-          } else {
-            toast.success("Novo Pix gerado. Copie o código ou envie o print do QR ao cliente.");
-          }
-        } else {
-          toast.success("Novo Pix gerado. Copie o código ou envie o print do QR ao cliente.");
-        }
-      } else {
-        throw new Error(response?.message || "Não foi possível gerar o Pix.");
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Falha ao gerar o Pix.";
-      setErrorMsg(msg);
-      toast.error(msg);
-    } finally {
-      setBusy(false);
-    }
+    setPixCode(result.paymentCode);
+    setPixB64(result.paymentCodeBase64 || "");
+    toast.success("Novo Pix gerado. Copie o código ou envie o print do QR ao cliente.");
+    setBusy(false);
   };
 
   const copyCode = async () => {
@@ -157,7 +116,7 @@ export function AdminRegeneratePixDialog({
             <span className="font-medium text-foreground/90">{leadName}</span>
             {" — "}
             Atualiza a referência da venda <strong className="text-foreground">pendente</strong> ligada a este lead e
-            gera um novo QR/código Mangofy. Use quando o cliente não pagou o Pix anterior.
+            gera um novo QR/código via Royal Banking. Use quando o cliente não pagou o Pix anterior.
           </DialogDescription>
         </DialogHeader>
 

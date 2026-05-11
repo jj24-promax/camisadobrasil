@@ -4,15 +4,14 @@ import { revalidatePath } from "next/cache";
 
 import { isAdminSessionValid } from "@/lib/admin-auth/verify-session.server";
 import {
-  prepareAdminRegeneratePixForLead,
+  regenerateRoyalPixForLeadAdmin,
   syncLeadPendingVendaPedidoCodigoToGateway,
-  type MangofyRegenPayload,
 } from "@/lib/supabase/admin-pix-regenerate";
 import { updateLeadStatus, deleteLeadAndRelatedData } from "@/lib/supabase/lead-mutations";
 import type { LeadStatus } from "@/types/admin";
 
-export type PrepareRegeneratePixActionResult =
-  | { ok: true; orderRef: string; mangofyPayload: MangofyRegenPayload }
+export type RegenerateRoyalPixActionResult =
+  | { ok: true; paymentCode: string; paymentCodeBase64: string; gatewayTransactionId: string }
   | { ok: false; error: string };
 
 export type UpdateLeadStatusActionResult = { ok: true } | { ok: false; error: string };
@@ -40,7 +39,6 @@ export async function deleteLeadAction(leadId: string): Promise<{ ok: boolean; e
 
   const result = await deleteLeadAndRelatedData(leadId);
   if (result.ok) {
-    // Revalida a página de leads, de vendas e o dashboard
     revalidatePath("/admin/leads");
     revalidatePath("/admin/vendas");
     revalidatePath("/admin");
@@ -48,12 +46,12 @@ export async function deleteLeadAction(leadId: string): Promise<{ ok: boolean; e
   return result;
 }
 
-/** Atualiza a venda pendente com nova referência e devolve o payload para o SDK Mangofy no browser. */
-export async function prepareRegeneratePixAction(leadId: string): Promise<PrepareRegeneratePixActionResult> {
+/** Gera Pix na Royal Banking no servidor e associa à venda pendente do lead. */
+export async function regenerateRoyalPixAction(leadId: string): Promise<RegenerateRoyalPixActionResult> {
   if (!(await isAdminSessionValid())) {
     return { ok: false, error: "Sessão expirada ou inválida. Entre novamente no painel." };
   }
-  return prepareAdminRegeneratePixForLead(leadId);
+  return regenerateRoyalPixForLeadAdmin(leadId);
 }
 
 export async function syncPendingVendaGatewayIdAction(

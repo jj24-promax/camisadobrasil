@@ -1,5 +1,29 @@
 # Royal Banking — Webhooks (Pix Cash In / Cash Out)
 
+## Checklist — ligar o webhook ao dashboard (este projeto)
+
+1. **URL pública HTTPS** do teu site na Vercel (ou domínio final), por exemplo:  
+   `https://teu-dominio.com/api/webhooks/royalbanking/pix`  
+   - O **Cash In** usa o `callbackUrl` enviado em cada criação de Pix (`royal-banking-pix.server.ts` → `SITE_URL` / `APP_URL` / `ROYALBANKING_PIX_CALLBACK_URL`). Garante na **Vercel** `SITE_URL` ou `APP_URL` correto (sem barra no fim).  
+   - **Cash Out** (se usares): URL configurada no **painel Royal** — só aponta para o mesmo path se quiseres um único endpoint; o código **ignora** saques para não mexer em vendas de checkout.
+
+2. **Variáveis na Vercel** (Environment Variables):  
+   - `SUPABASE_SERVICE_ROLE_KEY` — obrigatória para gravar `pix_gateway_payments` e atualizar `vendas`.  
+   - `ROYALBANKING_WEBHOOK_SECRET` — **opcional**. Se definires, a Royal tem de enviar o **mesmo** valor num destes headers: `x-webhook-secret`, `x-royal-webhook-secret` ou `Authorization: Bearer …`. Se não enviarem, **remove** o segredo na Vercel para testar.
+
+3. **Supabase (SQL já no repo)** — executa no SQL Editor se ainda não fizeste:  
+   - `docs/supabase-pix-payments.sql`  
+   - `docs/supabase-vendas-pix.sql`  
+   - `docs/supabase-order-details.sql` (`detalhes_pedido` em `vendas`)
+
+4. **Deploy** — faz deploy na Vercel depois de alterar env; gera um **Pix novo** no checkout para o `callbackUrl` bater no URL atual.
+
+5. **Resposta do servidor** — este projeto responde **`HTTP 200`** com corpo JSON **`200`** (número), como a Royal pede. Vê `src/lib/royal-banking-webhook-response.ts` e `src/app/api/webhooks/royalbanking/pix/route.ts`.
+
+6. **Logs** — na Vercel → projeto → **Logs**, filtra `royal/webhook` ou `POST /api/webhooks/royalbanking/pix` para ver `cash-in pago`, `ack — evento ignorado`, etc.
+
+---
+
 Os webhooks permitem que o teu sistema receba **notificações automáticas** quando há mudança de estado em:
 
 - **Pix Cash In** (depósito) — URL: `callbackUrl` enviada na requisição de cash in.

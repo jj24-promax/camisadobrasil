@@ -159,7 +159,7 @@ export async function syncLeadPendingVendaPedidoCodigoToGateway(
 
   const { data: allRows, error: selErr } = await admin
     .from("vendas")
-    .select("id, created_at, status_pagamento, status")
+    .select("id, created_at, status_pagamento")
     .eq("lead_id", lid);
 
   if (selErr) return { ok: false, error: selErr.message };
@@ -167,7 +167,7 @@ export async function syncLeadPendingVendaPedidoCodigoToGateway(
   if (pending.length === 0) return { ok: false, error: "Nenhuma venda pendente para este lead." };
 
   const ts = (r: Record<string, unknown>) => {
-    const raw = r.created_at ?? r.date;
+    const raw = r.created_at;
     const t = raw ? new Date(String(raw)).getTime() : 0;
     return Number.isNaN(t) ? 0 : t;
   };

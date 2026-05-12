@@ -137,7 +137,7 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
 
   const { data: vendasData, error: vendasError } = await admin
     .from("vendas")
-    .select("lead_id, status_pagamento, status, valor, amount_cents, created_at")
+    .select("lead_id, status_pagamento, valor, amount_cents, created_at")
     .not("lead_id", "is", null)
     .limit(ROW_LIMIT);
 

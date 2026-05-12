@@ -18,16 +18,19 @@ import { cn } from "@/lib/utils";
 import { aggregateLeadGeography } from "@/lib/admin/leads-geography";
 import { getLeadRowHighlightClass, leadFunnelHighlight } from "@/lib/admin/lead-funnel-highlight";
 import { computeDashboardKpisFromData } from "@/lib/supabase/dashboard-kpis";
-import { fetchAdminLeads } from "@/lib/supabase/queries";
+import { fetchAdminLeads, fetchAdminVendas } from "@/lib/supabase/queries";
 
 export async function AdminDashboardBody() {
   const leadsRes = await fetchAdminLeads();
+  const vendasRes = await fetchAdminVendas();
 
   const warnings: string[] = [];
   if (!leadsRes.ok) warnings.push(`Leads: ${leadsRes.error}`);
+  if (!vendasRes.ok) warnings.push(`Vendas: ${vendasRes.error}`);
 
   const leads = leadsRes.ok ? leadsRes.data : [];
-  const k = computeDashboardKpisFromData(leads);
+  const sales = vendasRes.ok ? vendasRes.data : [];
+  const k = computeDashboardKpisFromData(leads, sales);
 
   const geo = aggregateLeadGeography(leads);
   const leadsRecentes = leads.slice(0, 5);
@@ -41,19 +44,19 @@ export async function AdminDashboardBody() {
           <AdminStatCard
             label="Faturamento total"
             value={formatBRL(k.revenueMonthCents)}
-            hint="Mês corrente (leads com Pix pago, valor da última venda)"
+            hint="Mês corrente (vendas pagas pela data do pedido no Supabase)"
             icon={Banknote}
           />
           <AdminStatCard
             label="Pedidos no mês"
             value={String(k.ordersMonth)}
-            hint={`${k.paidOrdersMonth} pagos · ${k.ordersMonth - k.paidOrdersMonth} Pix pendentes (leads do mês)`}
+            hint={`${k.paidOrdersMonth} pagos · ${k.ordersMonth - k.paidOrdersMonth} pendentes (vendas do mês)`}
             icon={ShoppingBag}
           />
           <AdminStatCard
             label="Ticket médio"
             value={formatBRL(k.averageTicketCents)}
-            hint="Média dos leads com Pix pago no mês"
+            hint="Média das vendas pagas no mês corrente"
             icon={Ticket}
           />
           <AdminStatCard

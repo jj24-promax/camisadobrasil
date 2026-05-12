@@ -15,7 +15,6 @@ import {
   markPixGatewayPaymentPaid,
 } from "@/lib/supabase/pix-payment-store";
 import { markCustomsFeePixPaidByGatewayId } from "@/lib/supabase/customs-fee-pix";
-import { syncUtmifyAfterPixPaid } from "@/lib/utmify-sync-on-pix-paid";
 
 function isPixWebhookAuthorized(req: Request): boolean {
   const expected = getPixWebhookSecret();
@@ -121,13 +120,6 @@ export async function POST(req: Request) {
       if (vendaPaid.updated > 0) {
         winningGatewayTx = tx;
         break;
-      }
-    }
-
-    if (winningGatewayTx) {
-      const utm = await syncUtmifyAfterPixPaid(winningGatewayTx);
-      if (!utm.ok && utm.error) {
-        console.warn("[royal/webhook] UTMify:", utm.error);
       }
     }
 

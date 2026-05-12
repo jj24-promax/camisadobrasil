@@ -367,7 +367,7 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
               getRowClassName={(r) =>
                 r.status === "pago" ? "bg-emerald-500/[0.06] hover:bg-emerald-500/[0.09]" : undefined
               }
-              tableClassName="min-w-[1020px]"
+              tableClassName="min-w-[1080px]"
               rows={items}
             emptyMessage={emptyMessage}
             footer={
@@ -465,19 +465,19 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
               {
                 key: "actions",
                 header: "",
-                className: "w-[7.5rem] text-right",
+                className: "min-w-[10.5rem] text-right",
                 cell: (r) => (
-                  <div className="flex flex-wrap justify-end gap-0.5">
+                  <div className="flex flex-wrap items-center justify-end gap-1">
                     {saleWhatsAppPendingHref(r) ? (
                       <a
                         href={saleWhatsAppPendingHref(r)!}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-emerald-500/15 hover:text-emerald-300"
-                        title="Cobrar pedido pendente no WhatsApp"
-                        aria-label="Cobrar pedido pendente no WhatsApp"
+                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-100 transition-colors hover:bg-emerald-500/20 hover:text-emerald-50"
+                        title="Abrir WhatsApp com mensagem de cobrança"
                       >
-                        <MessageCircle className="h-4 w-4" aria-hidden />
+                        <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                        WhatsApp
                       </a>
                     ) : null}
                     {saleAllowsManualPixFollowUp(r) ? (

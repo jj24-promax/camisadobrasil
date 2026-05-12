@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Trash2, Loader2, QrCode, MessageCircle, Eye } from "lucide-react";
-import { updateLeadStatusAction, deleteLeadAction } from "@/app/admin/(dashboard)/leads/actions";
+import { Trash2, Loader2, QrCode, MessageCircle, Eye, RefreshCw, CheckCircle2 } from "lucide-react";
+import { updateLeadStatusAction, deleteLeadAction, reconcilePixVendasAction, markLeadPixPaidManualAction } from "@/app/admin/(dashboard)/leads/actions";
 import { AdminRegeneratePixDialog } from "@/components/admin/admin-regenerate-pix-dialog";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
 import { AdminLeadStatusSelect } from "@/components/admin/admin-lead-status-select";
@@ -34,6 +35,7 @@ import { paginateList } from "@/lib/admin/paginate-list";
 import { formatDateTime, formatLeadSource, formatBRL } from "@/lib/admin-format";
 import { cn } from "@/lib/utils";
 import type { Lead, LeadStatus } from "@/types/admin";
+import { Button } from "@/components/ui/button";
 
 const STATUS_FILTER_OPTIONS: AdminSelectOption<LeadStatus | "all">[] = [
   { value: "all", label: "Todos os status" },
@@ -83,6 +85,7 @@ Fico à disposição para te auxiliar e garantir sua camisa! 💛💚`;
 }
 
 export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
+  const router = useRouter();
   const [localLeads, setLocalLeads] = useState<Lead[]>(leads);
   const [pixDlg, setPixDlg] = useState<{ open: boolean; leadId: string | null; leadName: string }>({
     open: false,
@@ -92,6 +95,8 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
   const [orderDlgLead, setOrderDlgLead] = useState<Lead | null>(null);
   const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
   const [deletingLeadId, setDeletingLeadId] = useState<string | null>(null);
+  const [reconciling, setReconciling] = useState(false);
+  const [markingPaidLeadId, setMarkingPaidLeadId] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
@@ -144,6 +149,53 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
     }
     setDeletingLeadId(null);
   }, []);
+
+  const handleReconcilePix = useCallback(async () => {
+    setReconciling(true);
+    const res = await reconcilePixVendasAction();
+    setReconciling(false);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success(
+      `Sincronizado com o gateway: ${res.vendaUpdates} venda(s) atualizada(s), ${res.leadsConverted} lead(s) convertido(s). ` +
+        `(${res.scanned} pendente(s) analisados, ${res.paidIdsMatched} id(s) pagos encontrados.)`
+    );
+    router.refresh();
+  }, [router]);
+
+  const handleMarkLeadPaidManual = useCallback(
+    async (lead: Lead) => {
+      const label = lead.name?.trim() || lead.email || "este lead";
+      if (
+        !window.confirm(
+          `Marcar como PAGO manualmente?\n\n${label}\n\nConfirme só se o Pix já foi recebido. As vendas Pix pendentes deste lead passam a "pago" e o status do lead vai para "convertido".`
+        )
+      ) {
+        return;
+      }
+      setMarkingPaidLeadId(lead.id);
+      const res = await markLeadPixPaidManualAction(lead.id);
+      setMarkingPaidLeadId(null);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(
+        res.leadConverted
+          ? `${res.updated} venda(s) marcada(s) como pago. Lead convertido.`
+          : `${res.updated} venda(s) marcada(s) como pago. (Aviso: não foi possível atualizar o status do lead para convertido.)`
+      );
+      setLocalLeads((list) =>
+        list.map((l) =>
+          l.id === lead.id ? { ...l, paymentStatus: "pago" as const, status: res.leadConverted ? "convertido" : l.status } : l
+        )
+      );
+      router.refresh();
+    },
+    [router]
+  );
 
   const filters: LeadsListFilters = useMemo(
     () => ({ search: deferredSearch, status }),
@@ -230,6 +282,44 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
         </div>
       </section>
 
+      <section
+        className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-4 py-4 sm:px-5"
+        aria-label="Sincronização e confirmação manual de Pix"
+      >
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 max-w-3xl space-y-2">
+            <p className="text-sm font-semibold text-amber-100/95">Webhook atrasado ou sem match?</p>
+            <p className="text-[12px] leading-relaxed text-muted-foreground sm:text-[13px]">
+              <span className="font-medium text-foreground/90">Sincronizar com gateway</span> compara vendas{" "}
+              <strong className="text-foreground/80">pendentes</strong> com o que já está como pago em{" "}
+              <code className="rounded bg-black/30 px-1 py-0.5 text-[11px]">pix_gateway_payments</code> (útil quando o
+              webhook gravou o pagamento mas não atualizou a venda). Na linha de cada lead com Pix pendente, use{" "}
+              <span className="font-medium text-foreground/90">Marcar pago</span> só depois de confirmar o recebimento
+              (comprovante, extrato ou painel Royal).
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="shrink-0 border-amber-500/35 bg-black/20 text-amber-100 hover:bg-amber-500/10 hover:text-amber-50"
+            disabled={reconciling}
+            onClick={() => void handleReconcilePix()}
+          >
+            {reconciling ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                A sincronizar…
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Sincronizar com gateway Pix
+              </>
+            )}
+          </Button>
+        </div>
+      </section>
+
       <div className="space-y-4">
         <p className="text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
           {total === localLeads.length && localLeads.length > 0 ? (
@@ -250,7 +340,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
           <AdminTableLoadingOverlay show={listLoading} />
           <AdminDataTable
             getRowKey={(r) => r.id}
-            tableClassName="min-w-[1580px] lg:min-w-[1640px]"
+            tableClassName="min-w-[1680px] lg:min-w-[1740px]"
             rows={items}
             getRowClassName={(r) => getLeadRowHighlightClass(r)}
             emptyMessage={emptyMessage}
@@ -386,9 +476,9 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
               {
                 key: "actions",
                 header: "",
-                className: "w-[7rem] text-right",
+                className: "w-[11rem] text-right",
                 cell: (r) => (
-                  <div className="flex justify-end gap-0.5">
+                  <div className="flex flex-wrap justify-end gap-0.5">
                     {leadWhatsAppPendingHref(r) ? (
                       <a
                         href={leadWhatsAppPendingHref(r)!}
@@ -400,6 +490,22 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
                       >
                         <MessageCircle className="h-4 w-4" />
                       </a>
+                    ) : null}
+                    {r.paymentStatus === "pendente" ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleMarkLeadPaidManual(r)}
+                        disabled={markingPaidLeadId === r.id}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-emerald-600/20 hover:text-emerald-300 disabled:opacity-50"
+                        title="Marcar vendas Pix pendentes como pagas (manual)"
+                        aria-label="Marcar como pago manualmente"
+                      >
+                        {markingPaidLeadId === r.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4" />
+                        )}
+                      </button>
                     ) : null}
                     <button
                       type="button"

@@ -18,6 +18,7 @@ export { AdminCollectPixView } from "./admin-collect-pix-view";
 export { AdminLeadsView } from "./admin-leads-view";
 export { AdminLeadQuickContact } from "./admin-lead-quick-contact";
 export { AdminDashboardCommercialSummary } from "./admin-dashboard-commercial-summary";
+export { AdminShirtModelBreakdown } from "./admin-shirt-model-breakdown";
 export { AdminLeadsGeography } from "./admin-leads-geography";
 export { AdminSalesView } from "./admin-sales-view";
 export { AdminStatCardsGroup } from "./admin-stat-cards-group";

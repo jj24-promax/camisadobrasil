@@ -11,6 +11,7 @@ import {
 } from "@/components/admin";
 import { AdminDashboardCommercialSummary } from "@/components/admin/admin-dashboard-commercial-summary";
 import { AdminLeadsGeography } from "@/components/admin/admin-leads-geography";
+import { AdminShirtModelBreakdown } from "@/components/admin/admin-shirt-model-breakdown";
 import { AdminErrorBanner } from "@/components/admin/admin-error-banner";
 import { mockSalesPerformanceByDay, mockSalesPerformanceByWeek } from "@/data/mock";
 import { formatBRL, formatDate } from "@/lib/admin-format";
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { aggregateLeadGeography } from "@/lib/admin/leads-geography";
 import { getLeadRowHighlightClass, leadFunnelHighlight } from "@/lib/admin/lead-funnel-highlight";
 import { computeDashboardKpisFromData } from "@/lib/supabase/dashboard-kpis";
+import { aggregateShirtModelsFromSales } from "@/lib/admin/shirt-model-sales-aggregate";
 import { fetchAdminLeads, fetchAdminVendas } from "@/lib/supabase/queries";
 
 export async function AdminDashboardBody() {
@@ -31,6 +33,8 @@ export async function AdminDashboardBody() {
   const leads = leadsRes.ok ? leadsRes.data : [];
   const sales = vendasRes.ok ? vendasRes.data : [];
   const k = computeDashboardKpisFromData(leads, sales);
+  const shirtAgg = aggregateShirtModelsFromSales(sales, { onlyPaid: true });
+  const paidOrdersCount = sales.filter((s) => s.status === "pago").length;
 
   const geo = aggregateLeadGeography(leads);
   const leadsRecentes = leads.slice(0, 5);
@@ -82,6 +86,15 @@ export async function AdminDashboardBody() {
 
       <section>
         <AdminDashboardCommercialSummary leadStatusCounts={k.leadStatusCounts} orderStatusCounts={k.orderStatusCounts} />
+      </section>
+
+      <section>
+        <AdminShirtModelBreakdown
+          rows={shirtAgg.rows}
+          totalUnits={shirtAgg.totalUnits}
+          ordersWithSnapshot={shirtAgg.ordersWithSnapshot}
+          ordersConsidered={paidOrdersCount}
+        />
       </section>
 
       <section>

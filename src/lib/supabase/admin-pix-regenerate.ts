@@ -159,7 +159,7 @@ export async function syncLeadPendingVendaPedidoCodigoToGateway(
 
   const { data: allRows, error: selErr } = await admin
     .from("vendas")
-    .select("id, created_at, date, status_pagamento, status")
+    .select("id, created_at, status_pagamento, status")
     .eq("lead_id", lid);
 
   if (selErr) return { ok: false, error: selErr.message };

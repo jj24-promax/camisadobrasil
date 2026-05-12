@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, Suspense, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useLayoutEffect, Suspense, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -55,13 +55,16 @@ import { qrDataUrlForImg } from "@/lib/pix-gateway-response";
 import { buildCheckoutOrderSnapshotV1 } from "@/lib/build-checkout-order-snapshot";
 import { savePosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 import { replaceCheckoutProductLines } from "@/lib/checkout-product-query";
+import {
+  consumeCheckoutScrollAfterQueryNavigation,
+  stashCheckoutScrollBeforeQueryNavigation,
+} from "@/lib/checkout-scroll-preserve";
 
 const SalesNotifications = dynamic(() => import("@/components/landing/sales-notifications").then(m => m.SalesNotifications), { ssr: false });
 
-function editionSwatchClass(slug: "sagrada" | "canarinho" | "vermelha") {
+function editionSwatchClass(slug: "sagrada" | "canarinho") {
   if (slug === "sagrada") return "bg-[#1a2a4a]";
-  if (slug === "canarinho") return "bg-[#fbbf24]";
-  return "bg-[#b91c1c]";
+  return "bg-[#fbbf24]";
 }
 
 const maskCPF = (value: string) => {
@@ -346,6 +349,7 @@ function CheckoutContent() {
 
   const commitProductLines = useCallback(
     (nextModels: ProductModelId[], nextSizes: Size[]) => {
+      stashCheckoutScrollBeforeQueryNavigation();
       const qs = replaceCheckoutProductLines(
         new URLSearchParams(searchParams.toString()),
         quantity,
@@ -395,6 +399,7 @@ function CheckoutContent() {
         nextSizes = nextSizes.slice(0, nextQ);
       }
 
+      stashCheckoutScrollBeforeQueryNavigation();
       const qs = replaceCheckoutProductLines(
         new URLSearchParams(searchParams.toString()),
         nextQ,
@@ -405,6 +410,13 @@ function CheckoutContent() {
     },
     [quantity, orderModels, orderSizes, router, searchParams]
   );
+
+  const checkoutQueryKey = searchParams.toString();
+  useLayoutEffect(() => {
+    const y = consumeCheckoutScrollAfterQueryNavigation();
+    if (y == null) return;
+    window.scrollTo({ top: y, left: 0, behavior: "auto" });
+  }, [checkoutQueryKey]);
 
   const headerBackGoesHome = retention.active;
   const retentionHref = getRetentionHref(searchParams.toString());
@@ -1177,7 +1189,7 @@ function CheckoutContent() {
                         sizes="(max-width: 640px) 32vw, 128px)"
                         className={cn(
                           "object-contain transition-transform duration-300",
-                          lineModel.id === "edicao-vermelha" ? "scale-[0.85]" : "scale-[1.05] p-2"
+                          "scale-[1.05] p-2"
                         )}
                         priority={i === 0}
                       />

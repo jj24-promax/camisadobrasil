@@ -39,7 +39,7 @@ export function useCheckoutBrowserBackRetention() {
       }
       flagRetentionNavigationFromCheckout();
       const q = window.location.search.replace(/^\?/, "");
-      router.replace(getRetentionHref(q));
+      router.replace(getRetentionHref(q), { scroll: false });
     };
 
     if (!pushedDummyState.current) {

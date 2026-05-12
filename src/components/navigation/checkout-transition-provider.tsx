@@ -59,7 +59,7 @@ export function CheckoutTransitionProvider({ children }: { children: ReactNode }
     const id = window.setTimeout(() => {
       pushDone.current = true;
       const merged = mergeCheckoutQueryWithMarketing(pending.current!);
-      router.push(`/checkout?${merged}`);
+      router.push(`/checkout?${merged}`, { scroll: false });
     }, OVERLAY_IN_MS);
     return () => window.clearTimeout(id);
   }, [phase, router]);

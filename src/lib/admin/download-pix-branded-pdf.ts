@@ -5,6 +5,10 @@ export type PixBrandedPdfInput = {
   pixCode: string;
   /** Base64 puro ou data URL — mesmo formato usado no checkout (QR Pix) */
   qrImageRaw?: string;
+  /** Linhas de resumo do pedido (ex.: produtos × quantidade). */
+  orderSummaryLines?: string[];
+  /** Total já formatado em BRL (ex.: `R$ 135,80`). */
+  totalFormatted?: string;
 };
 
 async function svgLogoToPngDataUrl(): Promise<string | null> {
@@ -66,6 +70,7 @@ export async function downloadPixBrandedPdf(input: PixBrandedPdfInput): Promise<
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 16;
+  const maxW = pageW - margin * 2;
   let y = 14;
 
   const logoPng = await svgLogoToPngDataUrl();
@@ -94,7 +99,39 @@ export async function downloadPixBrandedPdf(input: PixBrandedPdfInput): Promise<
   doc.text(`Cliente: ${input.leadName.replace(/\s+/g, " ").trim() || "—"}`, margin, y);
   y += 6;
   doc.text(`Emitido em: ${new Date().toLocaleString("pt-BR")}`, margin, y);
-  y += 12;
+  y += 6;
+  if (input.totalFormatted) {
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total: ${input.totalFormatted}`, margin, y);
+    doc.setFont("helvetica", "normal");
+    y += 6;
+  }
+  y += 4;
+
+  if (input.orderSummaryLines && input.orderSummaryLines.length > 0) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("Itens cobrados", margin, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(55, 55, 55);
+    for (const line of input.orderSummaryLines) {
+      if (y > 268) {
+        doc.addPage();
+        y = 20;
+      }
+      const wrapped = doc.splitTextToSize(line.replace(/\s+/g, " ").trim(), maxW);
+      for (const w of wrapped) {
+        doc.text(w, margin, y);
+        y += 4;
+      }
+    }
+    doc.setTextColor(70, 70, 70);
+    y += 6;
+  }
+
+  y += 2;
 
   const qrSrc = input.qrImageRaw ? qrDataUrlForImg(input.qrImageRaw) : null;
   if (qrSrc) {
@@ -120,7 +157,6 @@ export async function downloadPixBrandedPdf(input: PixBrandedPdfInput): Promise<
   doc.setFont("courier", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(20, 20, 20);
-  const maxW = pageW - margin * 2;
   const lines = doc.splitTextToSize(input.pixCode.replace(/\s/g, ""), maxW);
   const lh = 4.2;
   for (let i = 0; i < lines.length; i++) {

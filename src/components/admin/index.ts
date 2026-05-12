@@ -14,6 +14,7 @@ export { AdminSearchField } from "./admin-search-field";
 export { AdminFilterSelect } from "./admin-filter-select";
 export type { AdminSelectOption } from "./admin-filter-select";
 export { AdminPagination } from "./admin-pagination";
+export { AdminCollectPixView } from "./admin-collect-pix-view";
 export { AdminLeadsView } from "./admin-leads-view";
 export { AdminLeadQuickContact } from "./admin-lead-quick-contact";
 export { AdminDashboardCommercialSummary } from "./admin-dashboard-commercial-summary";

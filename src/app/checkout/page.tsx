@@ -706,13 +706,14 @@ function CheckoutContent() {
         className="group relative block w-full overflow-hidden border-b border-white/[0.06] bg-[#050a14] outline-none transition-[opacity,filter] hover:opacity-[0.96] focus-visible:ring-2 focus-visible:ring-gold/45 focus-visible:ring-inset"
         aria-label="Ir para dados pessoais"
       >
-        <div className="relative mx-auto w-full max-w-[1600px] overflow-hidden bg-[#050a14] aspect-[3/2] sm:aspect-[2/1] md:aspect-[1600/450]">
+        <div className="relative mx-auto w-full max-w-[1920px]">
           <Image
             src="/images/checkout-hero-banner.png"
             alt="Finalize sua compra — peça reservada por tempo limitado; toque para ir aos dados pessoais"
-            fill
-            className="object-cover object-[center_42%] sm:object-center transition-opacity duration-200 group-hover:opacity-95"
-            sizes="(max-width: 768px) 100vw, (max-width: 1600px) 100vw, 1600px"
+            width={1024}
+            height={576}
+            sizes="100vw"
+            className="h-auto w-full transition-opacity duration-200 group-hover:opacity-95"
             priority
           />
           <span className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden />

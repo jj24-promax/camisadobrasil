@@ -131,6 +131,10 @@ export async function POST(req: Request) {
       }
     }
 
+    if (vendaUpdated === 0) {
+      console.warn("[royal/webhook] cash-in pago mas nenhuma linha em vendas casou — ids candidatos:", candidateIds);
+    }
+
     console.info("[royal/webhook] cash-in pago", {
       primaryTx,
       candidateCount: candidateIds.length,

@@ -60,9 +60,19 @@ function pickTransactionId(r: Record<string, unknown>): string | undefined {
     r.transaction_id ??
     r.paymentId ??
     r.payment_id ??
-    r.id ??
+    r.endToEndId ??
+    r.end_to_end_id ??
+    r.EndToEndId ??
+    r.pixEndToEndId ??
+    r.pix_end_to_end_id ??
+    r.txid ??
     r.txId ??
-    r.tx_id;
+    r.tx_id ??
+    r.providerTransactionId ??
+    r.provider_transaction_id ??
+    r.id ??
+    r.codigoTransacao ??
+    r.codigo_transacao;
   if (raw == null || raw === "") return undefined;
   return String(raw).trim();
 }
@@ -148,6 +158,16 @@ const WEBHOOK_TX_KEYS = [
   "payment_id",
   "txId",
   "tx_id",
+  "txid",
+  "endToEndId",
+  "end_to_end_id",
+  "EndToEndId",
+  "pixEndToEndId",
+  "pix_end_to_end_id",
+  "providerTransactionId",
+  "provider_transaction_id",
+  "codigoTransacao",
+  "codigo_transacao",
 ] as const;
 
 function isLikelyGatewayTransactionIdString(s: string): boolean {

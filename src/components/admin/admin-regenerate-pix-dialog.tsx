@@ -115,8 +115,9 @@ export function AdminRegeneratePixDialog({
           <DialogDescription className="text-left text-muted-foreground">
             <span className="font-medium text-foreground/90">{leadName}</span>
             {" — "}
-            Atualiza a referência da venda <strong className="text-foreground">pendente</strong> ligada a este lead e
-            gera um novo QR/código via Royal Banking. Use quando o cliente não pagou o Pix anterior.
+            Atualiza a venda <strong className="text-foreground">pendente</strong> mais recente (ou cria uma nova com o
+            último valor do lead / preço do site) e gera QR/código via Royal Banking. Use para cobrança ou novo Pix
+            após pagamento anterior.
           </DialogDescription>
         </DialogHeader>
 

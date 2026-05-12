@@ -52,7 +52,7 @@ function vendaRowSortTimestampMs(raw: Record<string, unknown>): number {
 }
 
 function vendaPixCorrelationKeys(raw: Record<string, unknown>): string[] {
-  const cols = ["pedido_codigo", "id_transaction", "pix_id_transaction", "id_transacao_pix"] as const;
+  const cols = ["pedido_codigo", "pix_id_transaction", "id_transacao_pix"] as const;
   const out: string[] = [];
   for (const c of cols) {
     const v = raw[c];
@@ -69,7 +69,7 @@ const PAID_PIX_GATEWAY_ROW_CAP = 4_000;
 
 /**
  * Conjunto dos ids correlatos que já constam em algum Pix pago no armazém do gateway
- * (`id_transaction` da linha + ids extraídos de `raw_payload`).
+ * (`id_transaction` da linha em pix_gateway_payments + ids extraídos de `raw_payload`).
  */
 async function fetchPaidPixIdSet(admin: SupabaseAdminClient, ids: string[]): Promise<Set<string>> {
   const paid = new Set<string>();
@@ -160,7 +160,7 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
   const { data: vendasData, error: vendasError } = await admin
     .from("vendas")
     .select(
-      "lead_id, status_pagamento, status, valor, amount_cents, created_at, updated_at, date, criado_em, pedido_codigo, id_transaction, pix_id_transaction, id_transacao_pix"
+      "lead_id, status_pagamento, status, valor, amount_cents, created_at, updated_at, date, criado_em, pedido_codigo, pix_id_transaction, id_transacao_pix"
     )
     .not("lead_id", "is", null)
     .limit(ROW_LIMIT);

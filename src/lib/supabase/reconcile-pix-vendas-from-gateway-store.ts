@@ -19,7 +19,7 @@ const DEFAULT_LIMIT = 2000;
 const PAID_ROWS_CAP = 4_000;
 
 function vendaPixCorrelationKeys(raw: Record<string, unknown>): string[] {
-  const cols = ["pedido_codigo", "id_transaction", "pix_id_transaction", "id_transacao_pix"] as const;
+  const cols = ["pedido_codigo", "pix_id_transaction", "id_transacao_pix"] as const;
   const out: string[] = [];
   for (const c of cols) {
     const v = raw[c];
@@ -80,7 +80,7 @@ export async function reconcilePendingPixVendasFromGatewayStore(options?: {
   const { data: vendas, error: vErr } = await admin
     .from("vendas")
     .select(
-      "id, pedido_codigo, id_transaction, pix_id_transaction, id_transacao_pix, status_pagamento, lead_id, valor, created_at"
+      "id, pedido_codigo, pix_id_transaction, id_transacao_pix, status_pagamento, lead_id, valor, created_at"
     )
     .eq("status_pagamento", "pendente")
     .order("created_at", { ascending: false })

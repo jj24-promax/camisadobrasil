@@ -10,8 +10,7 @@ export type PendingPixVendaInput = {
   productSummary: string;
   idTransaction: string;
   /**
-   * ID nativo do gateway (ex. UUID/VPAY…). Quando `idTransaction` cai no `orderRef` (fallback),
-   * o webhook ainda pode casar por esta coluna (`pix_id_transaction` / `id_transacao_pix`).
+   * ID nativo do gateway (ex. UUID/VPAY…). Grava-se em `pix_id_transaction` / `id_transacao_pix` e em `pedido_codigo` no checkout.
    */
   gatewayPixTransactionId?: string;
   shippingSummary?: string;
@@ -20,7 +19,8 @@ export type PendingPixVendaInput = {
 };
 
 /** Colunas onde o id da transação pode coincidir com `pix_gateway_payments.id_transaction` (webhook / reconciliação). */
-const VENDA_PIX_MATCH_COLS = ["pedido_codigo", "id_transaction", "pix_id_transaction", "id_transacao_pix"] as const;
+/** Não incluir `id_transaction` aqui: muitas bases só têm `docs/supabase-vendas.sql` sem a coluna opcional. */
+const VENDA_PIX_MATCH_COLS = ["pedido_codigo", "pix_id_transaction", "id_transacao_pix"] as const;
 
 /** Filtro PostgREST seguro para `.or(...)`: valor entre aspas duplas. */
 function orEqQuoted(columns: readonly string[], rawId: string): string {

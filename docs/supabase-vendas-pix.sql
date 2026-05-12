@@ -6,7 +6,7 @@ alter table public.vendas add column if not exists pix_id_transaction text;
 
 alter table public.vendas add column if not exists id_transacao_pix text;
 
--- Opcional: mesmo id que o gateway grava em `pix_gateway_payments.id_transaction` (casamento webhook/reconciliação).
+-- Opcional (o código Next não depende desta coluna; casamento usa pedido_codigo + pix_id_transaction / id_transacao_pix).
 alter table public.vendas add column if not exists id_transaction text;
 
 create index if not exists vendas_pix_id_transaction_idx

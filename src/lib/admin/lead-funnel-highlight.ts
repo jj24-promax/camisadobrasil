@@ -28,6 +28,9 @@ export function leadFunnelHighlight(lead: Lead): "green" | "yellow" | null {
 }
 
 export function getLeadRowHighlightClass(lead: Lead): string | undefined {
+  if (lead.paymentStatus === "cancelado") {
+    return "shadow-[inset_0_0_0_2px_rgba(248,113,113,0.45)] bg-red-500/[0.06]";
+  }
   const tier = leadFunnelHighlight(lead);
   if (tier === "green") {
     return "shadow-[inset_0_0_0_2px_rgba(52,211,153,0.55)] bg-emerald-500/[0.07]";

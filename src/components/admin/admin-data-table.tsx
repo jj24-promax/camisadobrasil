@@ -42,7 +42,7 @@ export function AdminDataTable<T>({
                   key={String(col.key)}
                   scope="col"
                   className={cn(
-                    "whitespace-nowrap px-4 py-3.5 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/95 first:pl-5 last:pr-5 sm:px-5 sm:first:pl-6 sm:last:pr-6",
+                    "whitespace-nowrap px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/95 first:pl-5 last:pr-5 sm:px-5 sm:first:pl-6 sm:last:pr-6",
                     col.className
                   )}
                 >
@@ -51,7 +51,7 @@ export function AdminDataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="text-[13px]">
+          <tbody className="text-sm leading-snug">
             {rows.length === 0 ? (
               <tr>
                 <td

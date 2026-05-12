@@ -3,11 +3,13 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Trash2, Loader2, QrCode, MessageCircle, Eye, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Trash2, Loader2, QrCode, MessageCircle, Eye, RefreshCw, CheckCircle2, Users, Clock, Banknote, UserCircle } from "lucide-react";
 import { updateLeadStatusAction, deleteLeadAction, reconcilePixVendasAction, markLeadPixPaidManualAction } from "@/app/admin/(dashboard)/leads/actions";
 import { AdminRegeneratePixDialog } from "@/components/admin/admin-regenerate-pix-dialog";
 import { AdminBadge } from "@/components/admin/admin-badge";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
+import { AdminStatCard } from "@/components/admin/admin-stat-card";
+import { AdminStatCardsGroup } from "@/components/admin/admin-stat-cards-group";
 import { AdminLeadStatusSelect } from "@/components/admin/admin-lead-status-select";
 import { AdminSearchField } from "@/components/admin/admin-search-field";
 import { AdminFilterSelect, type AdminSelectOption } from "@/components/admin/admin-filter-select";
@@ -101,6 +103,26 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
   const [reconciling, setReconciling] = useState(false);
   const [markingPaidLeadId, setMarkingPaidLeadId] = useState<string | null>(null);
 
+  const funnelSummary = useMemo(() => {
+    let pend = 0;
+    let paid = 0;
+    let cancel = 0;
+    let emContato = 0;
+    let sumPaidCents = 0;
+    for (const l of localLeads) {
+      const pk = leadPaymentColumnKind(l);
+      if (pk === "pendente" || pk === "checkout_sem_status") pend += 1;
+      else if (pk === "pago") {
+        paid += 1;
+        if (typeof l.paymentAmountCents === "number" && Number.isFinite(l.paymentAmountCents)) {
+          sumPaidCents += l.paymentAmountCents;
+        }
+      } else if (pk === "cancelado") cancel += 1;
+      if (l.status === "em_contato") emContato += 1;
+    }
+    return { total: localLeads.length, pend, paid, cancel, emContato, sumPaidCents };
+  }, [localLeads]);
+
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const searchPending = search !== deferredSearch;
@@ -158,12 +180,19 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
     const res = await reconcilePixVendasAction();
     setReconciling(false);
     if (!res.ok) {
-      toast.error(res.error);
+      toast.error(
+        res.error ||
+          "Erro ao sincronizar com gateway Pix. Verifique as credenciais, webhook ou permissões do Supabase."
+      );
       return;
     }
+    const fp = res.fingerprintMatches > 0 ? `, ${res.fingerprintMatches} por dados do cliente (CPF/e-mail/valor)` : "";
     toast.success(
-      `Sincronizado com o gateway: ${res.vendaUpdates} venda(s) atualizada(s), ${res.leadsConverted} lead(s) convertido(s). ` +
-        `(${res.scanned} pendente(s) analisados, ${res.paidIdsMatched} id(s) pagos encontrados.)`
+      `Sincronização concluída: ${res.paidRowsAnalyzed} pagamento(s) pago(s) analisado(s) na base, ` +
+        `${res.vendaUpdates} venda(s) atualizada(s) (${res.transactionMatches} por id de transação${fp}), ` +
+        `${res.leadsConverted} lead(s) convertido(s). ` +
+        `${res.paidRowsWithoutPendingVenda} pagamento(s) sem venda pendente correspondente. ` +
+        `${res.pendingVendasStillUnpaid} venda(s) pendente(s) ainda sem match.`
     );
     router.refresh();
   }, [router]);
@@ -256,6 +285,42 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
           ) : null}
         </DialogContent>
       </Dialog>
+
+      <section className="admin-filter-surface" aria-label="Resumo dos leads">
+        <AdminStatCardsGroup columns={4} className="lg:gap-5">
+          <AdminStatCard
+            label="Total de leads"
+            value={String(funnelSummary.total)}
+            hint="Registros carregados do Supabase nesta página."
+            icon={Users}
+          />
+          <AdminStatCard
+            label="Pagamento pendente"
+            value={String(funnelSummary.pend)}
+            hint="Pix em aberto ou status a confirmar na última venda."
+            icon={Clock}
+          />
+          <AdminStatCard
+            label="Pagamento confirmado"
+            value={String(funnelSummary.paid)}
+            hint="Venda reconhecida como paga (Pix ou painel)."
+            icon={CheckCircle2}
+          />
+          <AdminStatCard
+            label="Em contato"
+            value={String(funnelSummary.emContato)}
+            hint="Leads com status “em contato” no funil."
+            icon={UserCircle}
+          />
+          <AdminStatCard
+            label="Valor pago (estimado)"
+            value={formatBRL(funnelSummary.sumPaidCents)}
+            hint="Soma dos valores da última venda por lead já marcada como paga."
+            icon={Banknote}
+          />
+        </AdminStatCardsGroup>
+      </section>
+
       <section className="admin-filter-surface" aria-label="Filtros da lista de leads">
         <div className="flex flex-col gap-5 lg:flex-row lg:flex-wrap lg:items-end lg:gap-x-8 lg:gap-y-5">
           <AdminSearchField
@@ -286,25 +351,21 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
       </section>
 
       <section
-        className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-4 py-4 sm:px-5"
+        className="rounded-2xl border border-emerald-500/[0.15] bg-gradient-to-br from-emerald-950/[0.35] via-[#070c14]/90 to-[#060910] p-5 shadow-[0_8px_40px_-20px_rgba(16,185,129,0.35)] backdrop-blur-xl sm:p-6"
         aria-label="Sincronização e confirmação manual de Pix"
       >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0 max-w-3xl space-y-2">
-            <p className="text-sm font-semibold text-amber-100/95">Webhook atrasado ou sem match?</p>
-            <p className="text-[12px] leading-relaxed text-muted-foreground sm:text-[13px]">
-              <span className="font-medium text-foreground/90">Sincronizar com gateway</span> compara vendas{" "}
-              <strong className="text-foreground/80">pendentes</strong> com o que já está como pago em{" "}
-              <code className="rounded bg-black/30 px-1 py-0.5 text-[11px]">pix_gateway_payments</code> (útil quando o
-              webhook gravou o pagamento mas não atualizou a venda). Na linha de cada lead com Pix pendente, use{" "}
-              <span className="font-medium text-foreground/90">Marcar pago</span> só depois de confirmar o recebimento
-              (comprovante, extrato ou painel Royal).
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+          <div className="min-w-0 max-w-3xl space-y-2.5">
+            <p className="text-base font-semibold tracking-tight text-white">Sincronizar com o gateway Pix</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Cruza vendas <strong className="font-medium text-foreground/90">pendentes</strong> com pagamentos já
+              confirmados em <code className="rounded-md bg-black/40 px-1.5 py-0.5 font-mono text-[13px] text-emerald-100/90">pix_gateway_payments</code> — incluindo ids encontrados no <strong className="font-medium text-foreground/90">JSON bruto</strong> do webhook, quando o id da linha difere do gravado na venda. Use{" "}
+              <span className="font-medium text-foreground/90">Marcar pago</span> só após conferir extrato ou painel da Royal.
             </p>
           </div>
           <Button
             type="button"
-            variant="outline"
-            className="shrink-0 border-amber-500/35 bg-black/20 text-amber-100 hover:bg-amber-500/10 hover:text-amber-50"
+            className="h-12 shrink-0 gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-5 text-sm font-semibold text-emerald-50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition-colors hover:bg-emerald-500/25 hover:text-white disabled:opacity-50"
             disabled={reconciling}
             onClick={() => void handleReconcilePix()}
           >
@@ -343,7 +404,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
           <AdminTableLoadingOverlay show={listLoading} />
           <AdminDataTable
             getRowKey={(r) => r.id}
-            tableClassName="min-w-[1820px] lg:min-w-[1900px]"
+            tableClassName="min-w-[1180px] lg:min-w-[1280px]"
             rows={items}
             getRowClassName={(r) => getLeadRowHighlightClass(r)}
             emptyMessage={emptyMessage}
@@ -390,12 +451,12 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
               {
                 key: "cpf",
                 header: "CPF/CNPJ",
-                cell: (r) => <span className="font-mono text-xs text-muted-foreground">{r.cpf || "—"}</span>,
+                cell: (r) => <span className="font-mono text-sm text-muted-foreground">{r.cpf || "—"}</span>,
               },
               {
                 key: "tracking",
                 header: "Código de Rastreio",
-                cell: (r) => <span className="font-mono text-xs font-bold text-gold-bright">{r.trackingCode || "—"}</span>,
+                cell: (r) => <span className="font-mono text-sm font-bold text-gold-bright">{r.trackingCode || "—"}</span>,
               },
               { key: "phone", header: "Telefone", cell: (r) => <span className="whitespace-nowrap">{r.phone}</span> },
               {
@@ -435,7 +496,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
                   if (k === "checkout_sem_status") {
                     return (
                       <span
-                        className="inline-flex max-w-[10rem] rounded-md border border-sky-500/35 bg-sky-500/12 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-sky-100"
+                        className="inline-flex max-w-[11rem] rounded-lg border border-sky-400/40 bg-sky-500/[0.14] px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-sky-100"
                         title="Checkout gravado, mas o status da venda não veio no painel (data inválida ou limite de linhas). Use Sincronizar ou confira no Supabase."
                       >
                         A confirmar

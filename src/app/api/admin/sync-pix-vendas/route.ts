@@ -5,7 +5,8 @@ import { reconcilePendingPixVendasFromGatewayStore } from "@/lib/supabase/reconc
 
 /**
  * POST — sessão admin obrigatória (cookie `sb-access-token`).
- * Reconcilia vendas `pendente` com `pix_gateway_payments.status = paid` no Supabase.
+ * Reconcilia vendas `pendente` com `pix_gateway_payments` (vários status equivalentes a “pago”)
+ * e cruza ids extraídos de `raw_payload` quando o id da linha ≠ id gravado na venda.
  * Chamada típica (painel aberto no mesmo domínio): `fetch('/api/admin/sync-pix-vendas', { method: 'POST', credentials: 'include' })`.
  */
 export async function POST(req: Request) {

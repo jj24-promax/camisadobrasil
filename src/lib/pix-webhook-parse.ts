@@ -52,6 +52,12 @@ function isCashOutOrNonDepositEvent(status: string): boolean {
 
 function pickTransactionId(r: Record<string, unknown>): string | undefined {
   const raw =
+    r.chargeId ??
+    r.charge_id ??
+    r.orderId ??
+    r.order_id ??
+    r.referenceId ??
+    r.reference_id ??
     r.externalReference ??
     r.external_reference ??
     r.idTransaction ??
@@ -156,6 +162,12 @@ const WEBHOOK_TX_KEYS = [
   "external_reference",
   "paymentId",
   "payment_id",
+  "chargeId",
+  "charge_id",
+  "orderId",
+  "order_id",
+  "referenceId",
+  "reference_id",
   "txId",
   "tx_id",
   "txid",

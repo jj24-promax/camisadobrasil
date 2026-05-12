@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { isPixGatewayPaidDbStatus } from "@/lib/pix-gateway-paid-helpers";
 
 const TABLE = "pix_gateway_payments";
 
@@ -83,10 +84,10 @@ export async function isPixGatewayPaymentPaid(idTransaction: string): Promise<bo
 
   const { data, error } = await admin
     .from(TABLE)
-    .select("status")
+    .select("id_transaction, status")
     .eq("id_transaction", id)
     .maybeSingle();
 
   if (error || !data) return false;
-  return data.status === "paid";
+  return isPixGatewayPaidDbStatus((data as Record<string, unknown>).status);
 }

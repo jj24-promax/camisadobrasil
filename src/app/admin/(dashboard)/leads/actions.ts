@@ -66,7 +66,7 @@ export async function syncPendingVendaGatewayIdAction(
   return syncLeadPendingVendaPedidoCodigoToGateway(leadId, gatewayTransactionId);
 }
 
-/** Cruza vendas pendentes com `pix_gateway_payments` (status paid) e atualiza vendas/leads. */
+/** Cruza vendas pendentes com `pix_gateway_payments` (status pago) e atualiza vendas/leads. */
 export async function reconcilePixVendasAction(): Promise<
   | {
       ok: true;
@@ -74,6 +74,12 @@ export async function reconcilePixVendasAction(): Promise<
       vendaUpdates: number;
       leadsConverted: number;
       paidIdsMatched: number;
+      paidRowsAnalyzed: number;
+      expandedPaidIdCount: number;
+      transactionMatches: number;
+      fingerprintMatches: number;
+      paidRowsWithoutPendingVenda: number;
+      pendingVendasStillUnpaid: number;
     }
   | { ok: false; error: string }
 > {
@@ -83,7 +89,12 @@ export async function reconcilePixVendasAction(): Promise<
 
   const res = await reconcilePendingPixVendasFromGatewayStore();
   if (!res.ok) {
-    return { ok: false, error: res.error ?? "Falha na reconciliação." };
+    return {
+      ok: false,
+      error:
+        res.error ??
+        "Erro ao sincronizar com gateway Pix. Verifique as credenciais, webhook ou permissões do Supabase.",
+    };
   }
 
   revalidatePath("/admin/leads");
@@ -96,6 +107,12 @@ export async function reconcilePixVendasAction(): Promise<
     vendaUpdates: res.vendaUpdates,
     leadsConverted: res.leadsConverted,
     paidIdsMatched: res.paidIdsMatched,
+    paidRowsAnalyzed: res.paidRowsAnalyzed,
+    expandedPaidIdCount: res.expandedPaidIdCount,
+    transactionMatches: res.transactionMatches,
+    fingerprintMatches: res.fingerprintMatches,
+    paidRowsWithoutPendingVenda: res.paidRowsWithoutPendingVenda,
+    pendingVendasStillUnpaid: res.pendingVendasStillUnpaid,
   };
 }
 

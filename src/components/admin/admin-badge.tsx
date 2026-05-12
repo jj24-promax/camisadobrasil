@@ -8,9 +8,9 @@ const leadStyles: Record<string, string> = {
 };
 
 const orderStyles: Record<string, string> = {
-  pago: "border-emerald-500/35 bg-emerald-500/10 text-emerald-200",
-  pendente: "border-amber-500/35 bg-amber-500/10 text-amber-200",
-  cancelado: "border-red-500/30 bg-red-500/10 text-red-200",
+  pago: "border-emerald-400/45 bg-emerald-500/[0.14] text-emerald-100 shadow-[0_0_0_1px_rgba(52,211,153,0.12)]",
+  pendente: "border-amber-400/40 bg-amber-500/[0.12] text-amber-100",
+  cancelado: "border-red-400/40 bg-red-500/[0.12] text-red-100",
 };
 
 const leadLabels: Record<string, string> = {
@@ -38,7 +38,7 @@ export function AdminBadge({ variant, value }: AdminBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex rounded-md border px-2.5 py-1 text-[11px] font-semibold leading-none tracking-wide",
+        "inline-flex rounded-md border px-2.5 py-1 text-xs font-semibold leading-none tracking-wide",
         map[value] ?? "border-white/15 bg-white/[0.06] text-muted-foreground"
       )}
     >

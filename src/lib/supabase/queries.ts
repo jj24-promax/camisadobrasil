@@ -6,6 +6,7 @@ import { mapClienteRow, mapLeadRow, mapVendaRow } from "@/lib/supabase/mappers";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { isAdminSessionValid } from "@/lib/admin-auth/verify-session.server";
 import { orderStatusFromVendaRow } from "@/lib/normalize-payment-order-status";
+import { expandPixGatewayPaidCorrelationIds, isPixGatewayPaidDbStatus } from "@/lib/pix-gateway-paid-helpers";
 import type { Client, Lead, Sale } from "@/types/admin";
 import { isOrderCheckoutSnapshotV1, type OrderCheckoutSnapshotV1 } from "@/types/order-snapshot";
 
@@ -62,34 +63,44 @@ function vendaPixCorrelationKeys(raw: Record<string, unknown>): string[] {
   return [...new Set(out)];
 }
 
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const batches: T[][] = [];
-  if (size <= 0) return arr.length ? [arr] : [];
-  for (let i = 0; i < arr.length; i += size) batches.push(arr.slice(i, i + size));
-  return batches;
-}
-
 type SupabaseAdminClient = NonNullable<ReturnType<typeof createSupabaseAdminClient>>;
 
+const PAID_PIX_GATEWAY_ROW_CAP = 4_000;
+
+/**
+ * Conjunto dos ids correlatos que já constam em algum Pix pago no armazém do gateway
+ * (`id_transaction` da linha + ids extraídos de `raw_payload`).
+ */
 async function fetchPaidPixIdSet(admin: SupabaseAdminClient, ids: string[]): Promise<Set<string>> {
   const paid = new Set<string>();
   const uniq = [...new Set(ids.map((x) => x.trim()).filter(Boolean))];
   if (uniq.length === 0) return paid;
 
-  for (const batch of chunkArray(uniq, 120)) {
-    const { data, error } = await admin
-      .from("pix_gateway_payments")
-      .select("id_transaction")
-      .eq("status", "paid")
-      .in("id_transaction", batch);
-    if (error) {
-      console.warn("[fetchAdminVendas] pix_gateway_payments:", error.message);
-      continue;
+  const { data: paidRowsRaw, error } = await admin
+    .from("pix_gateway_payments")
+    .select("id_transaction, raw_payload, status")
+    .order("updated_at", { ascending: false })
+    .limit(PAID_PIX_GATEWAY_ROW_CAP);
+
+  if (error) {
+    console.warn("[fetchAdminVendas] pix_gateway_payments:", error.message);
+    return paid;
+  }
+
+  const megaExpanded = new Set<string>();
+  for (const pr of paidRowsRaw ?? []) {
+    const row = pr as Record<string, unknown>;
+    if (!isPixGatewayPaidDbStatus(row.status)) continue;
+    for (const x of expandPixGatewayPaidCorrelationIds({
+      id_transaction: String(row.id_transaction ?? ""),
+      raw_payload: row.raw_payload,
+    })) {
+      megaExpanded.add(x);
     }
-    for (const row of data ?? []) {
-      const id = typeof row.id_transaction === "string" ? row.id_transaction.trim() : "";
-      if (id) paid.add(id);
-    }
+  }
+
+  for (const id of uniq) {
+    if (megaExpanded.has(id)) paid.add(id);
   }
   return paid;
 }

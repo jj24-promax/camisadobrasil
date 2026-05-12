@@ -110,7 +110,14 @@ export async function POST(req: Request) {
     for (const tx of candidateIds) {
       const vendaPaid = await markPixVendaPaidByGatewayId(tx);
       vendaUpdated += vendaPaid.updated;
-      if (vendaPaid.leadId) convertedLeads.add(vendaPaid.leadId);
+      const lids = vendaPaid.leadIds?.length
+        ? vendaPaid.leadIds
+        : vendaPaid.leadId
+          ? [String(vendaPaid.leadId)]
+          : [];
+      for (const lid of lids) {
+        if (lid) convertedLeads.add(lid);
+      }
       if (vendaPaid.updated > 0) {
         winningGatewayTx = tx;
         break;

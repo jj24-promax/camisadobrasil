@@ -72,9 +72,30 @@ export async function insertPendingPixVenda(
   return { ok: true, id };
 }
 
+/** Marca uma venda pendente como paga pelo `id` da linha (reconciliação por match indireto). */
+export async function markPendingPixVendaPaidByPrimaryId(
+  vendaId: string
+): Promise<{ ok: boolean; updated: number; leadId?: string; error?: string }> {
+  const vid = vendaId.trim();
+  if (!vid) return { ok: false, updated: 0, error: "id vazio" };
+
+  const admin = createSupabaseAdminClient();
+  if (!admin) return { ok: false, updated: 0, error: "SUPABASE_SERVICE_ROLE_KEY não configurada" };
+
+  const { data, error } = await admin
+    .from("vendas")
+    .update({ status_pagamento: "pago" })
+    .eq("id", vid)
+    .eq("status_pagamento", "pendente")
+    .select("id, lead_id");
+
+  if (error) return { ok: false, updated: 0, error: error.message };
+  return { ok: true, updated: data?.length || 0, leadId: data?.[0]?.lead_id };
+}
+
 export async function markPixVendaPaidByGatewayId(
   idTransaction: string
-): Promise<{ ok: boolean; updated: number; leadId?: string; error?: string }> {
+): Promise<{ ok: boolean; updated: number; leadId?: string; leadIds?: string[]; vendaIds?: string[]; error?: string }> {
   const id = idTransaction.trim();
   if (!id) return { ok: false, updated: 0, error: "id vazio" };
 
@@ -86,9 +107,23 @@ export async function markPixVendaPaidByGatewayId(
     .update({ status_pagamento: "pago" })
     .or(orEqQuoted(VENDA_PIX_MATCH_COLS, id))
     .select("id, lead_id");
-  
+
   if (error) return { ok: false, updated: 0, error: error.message };
-  return { ok: true, updated: data?.length || 0, leadId: data?.[0]?.lead_id };
+  const vendaIds = (data ?? []).map((row) => String((row as { id?: unknown }).id ?? "").trim()).filter(Boolean);
+  const leadIds = [
+    ...new Set(
+      (data ?? [])
+        .map((row) => String((row as { lead_id?: unknown }).lead_id ?? "").trim())
+        .filter(Boolean)
+    ),
+  ];
+  return {
+    ok: true,
+    updated: data?.length || 0,
+    leadId: data?.[0]?.lead_id,
+    leadIds: leadIds.length ? leadIds : undefined,
+    vendaIds,
+  };
 }
 
 export async function markPixVendaCanceledByGatewayId(

@@ -16,7 +16,6 @@ export function defaultCollectPixCart(): CollectPixCart {
   const shirts: Record<ProductModelId, number> = {
     "edicao-sagrada": 0,
     "edicao-canarinho": 0,
-    "edicao-vermelha": 0,
   };
   return { shirts, capQty: 0, bagQty: 0, cupQty: 0 };
 }

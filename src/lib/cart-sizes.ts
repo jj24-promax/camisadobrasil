@@ -35,7 +35,7 @@ export function serializeOrderSizes(sizes: Size[]): string {
   return sizes.join(",");
 }
 
-const MODEL_IDS: readonly ProductModelId[] = ["edicao-sagrada", "edicao-canarinho", "edicao-vermelha"];
+const MODEL_IDS: readonly ProductModelId[] = ["edicao-sagrada", "edicao-canarinho"];
 
 function isProductModelId(value: string): value is ProductModelId {
   return (MODEL_IDS as readonly string[]).includes(value);

@@ -22,8 +22,6 @@ export const HERO_VIDEO_MP4 = "/videos/videoazul.mp4" as const;
 
 /** Vídeo da edição Canarinho */
 export const CANARINHO_VIDEO_MP4 = "/videos/camisa-canarinho-hero.mp4" as const;
-/** Vídeo da edição Fênix */
-export const FENIX_VIDEO_MP4 = "/videos/videovermelho.mp4" as const;
 
 /** Imagem de poster / LCP enquanto o vídeo carrega. */
 export const HERO_PRODUCT_POSTER_SRC =
@@ -50,7 +48,7 @@ export type CampaignGalleryItem = {
 
 export type CampaignGalleryModel = {
   name: string;
-  slug: "sagrada" | "canarinho" | "vermelha";
+  slug: "sagrada" | "canarinho";
   modelId: ProductModelId;
   images: CampaignGalleryItem[];
 };
@@ -103,11 +101,11 @@ export const PRODUCT_IMAGE_SRC = PRODUCT_IMAGE_CLEAN_SRC;
 /** Do P ao G2 — grade padrão; G3/G4 — plus unissex (mesma modelagem, faixa maior). */
 export const SIZES = ["P", "M", "G", "GG", "G1", "G2", "G3", "G4"] as const;
 export type Size = (typeof SIZES)[number];
-export type ProductModelId = "edicao-sagrada" | "edicao-canarinho" | "edicao-vermelha";
+export type ProductModelId = "edicao-sagrada" | "edicao-canarinho";
 
 export type ProductModel = {
   id: ProductModelId;
-  slug: "sagrada" | "canarinho" | "vermelha";
+  slug: "sagrada" | "canarinho";
   name: string;
   fullName: string;
   badge: string;
@@ -243,29 +241,6 @@ const CANARINHO_GALLERY: CampaignGalleryItem[] = [
       },
     ];
 
-const FENIX_GALLERY: CampaignGalleryItem[] = [
-  {
-    src: "/images/campaign/modelo-frente.webp",
-    alt: "Modelo com camisa Alpha Brasil Edição Fênix vermelha — vista frontal em estúdio",
-    caption: "Editorial frontal da Edição Fênix.",
-  },
-  {
-    src: "/images/campaign/edicao-fenix-close-1.png",
-    alt: "Close frontal da camisa Alpha Brasil Edição Fênix, com escudo CBF e número 10 em destaque",
-    caption: "Close premium frontal da Edição Fênix.",
-  },
-  {
-    src: "/images/campaign/edicao-fenix-close-2.png",
-    alt: "Close superior da camisa Alpha Brasil Edição Fênix com foco no acabamento e textura",
-    caption: "Detalhes de acabamento da Edição Fênix.",
-  },
-  {
-    src: "/images/campaign/edicao-fenix-costas.png",
-    alt: "Modelo com camisa Alpha Brasil Edição Fênix vermelha — vista costas com nome e número",
-    caption: "Costas e personalização da Edição Fênix.",
-  },
-];
-
 export const PRODUCT_MODELS: readonly ProductModel[] = [
   {
     id: "edicao-sagrada",
@@ -314,33 +289,6 @@ export const PRODUCT_MODELS: readonly ProductModel[] = [
     },
     gallery: CANARINHO_GALLERY,
   },
-  {
-    id: "edicao-vermelha",
-    slug: "vermelha",
-    name: "Edição Fênix",
-    fullName: "Alpha Brasil — Edição Fênix Vermelha",
-    badge: "Novo",
-    price: 67.9,
-    compareAtPrice: 149,
-    description: "Nova edição em vermelho intenso. Poder e determinação em cada fibra.",
-    cta: "Garantir minha Edição Fênix",
-    sizes: SIZES,
-    images: {
-      hero: {
-        kind: "video",
-        alt: "Camisa Alpha Brasil Edição Fênix Vermelha",
-        mp4Src: FENIX_VIDEO_MP4,
-        posterSrc: "/images/campaign/modelo-frente.webp",
-      },
-      heroGallery: [
-        "/images/campaign/modelo-frente.webp",
-        "/images/campaign/edicao-fenix-costas.png",
-      ],
-      checkout: "/images/camisa-vermelha-carrinho.png",
-    },
-    gallery: FENIX_GALLERY,
-    inProduction: false,
-  },
 ] as const;
 
 export function getProductModelById(id: string | null | undefined): ProductModel {
@@ -363,7 +311,7 @@ export const HERO_EDITIONS = PRODUCT_MODELS.map((model) => ({
   shortDescription: model.description,
   ctaLabel: model.cta,
   inProduction: model.inProduction,
-  color: model.slug === "sagrada" ? "#1a2a4a" : model.slug === "canarinho" ? "#fbbf24" : "#b91c1c",
+  color: model.slug === "sagrada" ? "#1a2a4a" : "#fbbf24",
   media:
     model.images.hero.kind === "video"
       ? {
@@ -393,12 +341,6 @@ export const CAMPAIGN_GALLERY_BY_MODEL: Record<ProductModelId, CampaignGalleryMo
     slug: "canarinho",
     modelId: "edicao-canarinho",
     images: CANARINHO_GALLERY,
-  },
-  "edicao-vermelha": {
-    name: "Edição Fênix",
-    slug: "vermelha",
-    modelId: "edicao-vermelha",
-    images: FENIX_GALLERY,
   },
 };
 

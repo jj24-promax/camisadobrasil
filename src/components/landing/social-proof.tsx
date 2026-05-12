@@ -27,7 +27,7 @@ type ReviewPhotoEntry = {
   /** `table` = camisa/produto (ex. mesa); `person` = pessoa vestindo — intercalados no carrossel. */
   photoKind: "table" | "person";
   /** Cor predominante da camisa para misturar melhor a sequência visual. */
-  jerseyColor?: "azul" | "amarela" | "vermelha" | "indefinida";
+  jerseyColor?: "azul" | "amarela" | "indefinida";
   /** Itens marcados aparecem antes no loop inicial sem quebrar mistura de cor. */
   featured?: boolean;
   /** Substitui o `object-position` padrão da foto principal (ex. `object-center`). */
@@ -122,39 +122,6 @@ const ugcReviewPhotos: ReviewPhotoEntry[] = [
     imageSrc: "/images/testimonials/ugc/ugc-10.png",
     photoKind: "person",
     coverClassName: "object-[center_30%]",
-  },
-  {
-    name: "Patrícia N.",
-    text: "Peguei a Fênix e vestiu super bem no corpo. Cor linda ao vivo e tecido muito confortável.",
-    rating: 5,
-    profileImageSrc: reviewPortraitWoman(63),
-    imageSrc: "/images/testimonials/ugc/vermelha-feedback-1.png",
-    photoKind: "person",
-    jerseyColor: "vermelha",
-    featured: true,
-    coverClassName: "object-[center_40%]",
-  },
-  {
-    name: "Larissa V.",
-    text: "Usei no fim de semana e todo mundo perguntou onde comprei. Acabamento impecável!",
-    rating: 5,
-    profileImageSrc: "/images/testimonials/profiles/larissa-v.png",
-    imageSrc: "/images/testimonials/ugc/vermelha-feedback-2.png",
-    photoKind: "person",
-    jerseyColor: "vermelha",
-    featured: true,
-    coverClassName: "object-[center_36%]",
-  },
-  {
-    name: "Gabriela S.",
-    text: "A edição vermelha ficou simplesmente perfeita. Chegou rápido e a qualidade surpreendeu.",
-    rating: 5,
-    profileImageSrc: "/images/testimonials/profiles/gabriela-s.png",
-    imageSrc: "/images/testimonials/ugc/vermelha-feedback-3.png",
-    photoKind: "person",
-    jerseyColor: "vermelha",
-    featured: true,
-    coverClassName: "object-[center_34%]",
   },
 ];
 

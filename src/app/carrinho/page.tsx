@@ -11,7 +11,6 @@ import { PRODUCT, PRODUCT_IMAGE_CLEAN_SRC, getProductModelById } from "@/lib/pro
 import { parseOrderModels, parseOrderSizes } from "@/lib/cart-sizes";
 import { replaceCheckoutProductLines } from "@/lib/checkout-product-query";
 import { useCheckoutTransition } from "@/components/navigation/checkout-transition-provider";
-import { cn } from "@/lib/utils";
 
 function CarrinhoContent() {
   const { requestCheckoutNavigation } = useCheckoutTransition();
@@ -81,10 +80,7 @@ function CarrinhoContent() {
                 src={primaryModel.images.checkout ?? PRODUCT_IMAGE_CLEAN_SRC}
                 alt={primaryModel.fullName ?? PRODUCT.name}
                 fill
-                className={cn(
-                  "object-contain transition-transform duration-300 p-2",
-                  primaryModel.id === "edicao-vermelha" ? "scale-[0.88]" : "scale-[1.02]"
-                )}
+                className="object-contain transition-transform duration-300 p-2 scale-[1.02]"
                 sizes="200px"
                 loading="lazy"
               />

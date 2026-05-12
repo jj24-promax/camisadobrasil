@@ -60,20 +60,6 @@ const arteRedencaoSlides = [
     alt: "Modelo com camisa canarinho amarela vista costas",
     imageSrc: "/images/amarela-2.webp",
   },
-  {
-    id: "fenix-front",
-    edition: "edicao-vermelha",
-    label: "Fênix frontal",
-    alt: "Modelo com camisa Alpha Brasil Edição Fênix vermelha — vista frontal",
-    imageSrc: "/images/campaign/modelo-frente.webp",
-  },
-  {
-    id: "fenix-back",
-    edition: "edicao-vermelha",
-    label: "Fênix costas",
-    alt: "Modelo com camisa Alpha Brasil Edição Fênix vermelha — vista costas",
-    imageSrc: "/images/campaign/edicao-fenix-costas.png",
-  },
 ] as const;
 
 type ProductDetailsProps = {

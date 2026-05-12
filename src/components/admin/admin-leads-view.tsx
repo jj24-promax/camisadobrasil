@@ -31,7 +31,7 @@ import {
   type LeadsListFilters,
 } from "@/lib/admin/leads-list";
 import { paginateList } from "@/lib/admin/paginate-list";
-import { formatDateTime, formatLeadSource } from "@/lib/admin-format";
+import { formatDateTime, formatLeadSource, formatBRL } from "@/lib/admin-format";
 import { cn } from "@/lib/utils";
 import type { Lead, LeadStatus } from "@/types/admin";
 
@@ -250,7 +250,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
           <AdminTableLoadingOverlay show={listLoading} />
           <AdminDataTable
             getRowKey={(r) => r.id}
-            tableClassName="min-w-[1500px] lg:min-w-[1560px]"
+            tableClassName="min-w-[1580px] lg:min-w-[1640px]"
             rows={items}
             getRowClassName={(r) => getLeadRowHighlightClass(r)}
             emptyMessage={emptyMessage}
@@ -357,6 +357,22 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
                       <Eye className="h-3.5 w-3.5" />
                       Ver
                     </button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  ),
+              },
+              {
+                key: "orderValue",
+                header: "Valor",
+                className: "w-[6.5rem] whitespace-nowrap",
+                cell: (r) =>
+                  typeof r.paymentAmountCents === "number" && Number.isFinite(r.paymentAmountCents) ? (
+                    <span
+                      className="text-[13px] font-semibold tabular-nums text-gold-bright/95"
+                      title="Valor da venda mais recente ligada a este lead"
+                    >
+                      {formatBRL(r.paymentAmountCents)}
+                    </span>
                   ) : (
                     <span className="text-xs text-muted-foreground">—</span>
                   ),

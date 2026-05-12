@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { Trash2, Loader2, QrCode, MessageCircle, Eye, RefreshCw, CheckCircle2, Users, Clock, Banknote, UserCircle } from "lucide-react";
 import { updateLeadStatusAction, deleteLeadAction, reconcilePixVendasAction, markLeadPixPaidManualAction } from "@/app/admin/(dashboard)/leads/actions";
@@ -91,6 +92,8 @@ Fico à disposição para te auxiliar e garantir sua camisa! 💛💚`;
 
 export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const highlightLeadId = searchParams.get("leadId")?.trim() || null;
   const [localLeads, setLocalLeads] = useState<Lead[]>(leads);
   const [pixDlg, setPixDlg] = useState<{ open: boolean; leadId: string | null; leadName: string }>({
     open: false,
@@ -252,6 +255,20 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
+  useEffect(() => {
+    if (!highlightLeadId) return;
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(`lead-row-${highlightLeadId}`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-gold/45", "ring-offset-2", "ring-offset-[#060910]", "rounded-xl");
+      window.setTimeout(() => {
+        el.classList.remove("ring-2", "ring-gold/45", "ring-offset-2", "ring-offset-[#060910]", "rounded-xl");
+      }, 2400);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [highlightLeadId, items, safePage]);
+
   const emptyMessage = useMemo(() => {
     if (localLeads.length === 0) {
       return "Nenhum lead na base. Quando houver registros no Supabase, eles aparecerão aqui.";
@@ -287,7 +304,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
       </Dialog>
 
       <section className="admin-filter-surface" aria-label="Resumo dos leads">
-        <AdminStatCardsGroup columns={4} className="lg:gap-5">
+        <AdminStatCardsGroup columns={2} className="md:grid-cols-3 xl:grid-cols-4 xl:gap-5">
           <AdminStatCard
             label="Total de leads"
             value={String(funnelSummary.total)}
@@ -322,6 +339,13 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
       </section>
 
       <section className="admin-filter-surface" aria-label="Filtros da lista de leads">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Pedidos e valores por linha de venda:{" "}
+          <Link href="/admin/vendas" className="font-medium text-sky-300 underline-offset-4 hover:text-sky-200 hover:underline">
+            abrir aba Vendas
+          </Link>
+          .
+        </p>
         <div className="flex flex-col gap-5 lg:flex-row lg:flex-wrap lg:items-end lg:gap-x-8 lg:gap-y-5">
           <AdminSearchField
             label="Buscar"
@@ -385,6 +409,9 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
       </section>
 
       <div className="space-y-4">
+        <p className="text-xs text-muted-foreground/90 lg:hidden">
+          Em ecrãs menores usas cartões; na vista larga (lg+) aparece a tabela com scroll horizontal.
+        </p>
         <p className="text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
           {total === localLeads.length && localLeads.length > 0 ? (
             <>
@@ -402,9 +429,136 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
 
         <div className="relative">
           <AdminTableLoadingOverlay show={listLoading} />
-          <AdminDataTable
+          {items.length === 0 ? (
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] py-14 text-center text-sm text-muted-foreground lg:hidden">
+              {emptyMessage}
+            </div>
+          ) : (
+            <div className="grid gap-3 lg:hidden">
+              {items.map((r) => (
+                <article
+                  key={r.id}
+                  id={`lead-row-${r.id}`}
+                  className={cn(
+                    "rounded-2xl border border-white/[0.1] bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-4 shadow-[var(--shadow-luxe)]",
+                    getLeadRowHighlightClass(r)
+                  )}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      {leadFunnelHighlight(r) ? (
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "inline-block h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-[#0a0f18]",
+                            leadFunnelHighlight(r) === "green"
+                              ? "bg-emerald-400 ring-emerald-400/50"
+                              : "bg-amber-400 ring-amber-400/50"
+                          )}
+                        />
+                      ) : null}
+                      <span className="truncate font-semibold text-foreground">{r.name || r.email || "—"}</span>
+                    </div>
+                    <div className="shrink-0">
+                      {leadPaymentColumnKind(r) === "pago" ? <AdminBadge variant="order" value="pago" /> : null}
+                      {leadPaymentColumnKind(r) === "pendente" ? <AdminBadge variant="order" value="pendente" /> : null}
+                      {leadPaymentColumnKind(r) === "cancelado" ? <AdminBadge variant="order" value="cancelado" /> : null}
+                      {leadPaymentColumnKind(r) === "checkout_sem_status" ? (
+                        <span className="rounded-md border border-sky-400/35 bg-sky-500/12 px-2 py-0.5 text-[10px] font-semibold uppercase text-sky-100">
+                          A confirmar
+                        </span>
+                      ) : null}
+                      {leadPaymentColumnKind(r) === "none" ? <span className="text-xs text-muted-foreground">—</span> : null}
+                    </div>
+                  </div>
+                  <p className="mt-2 truncate text-xs text-muted-foreground">{r.phone || "—"}</p>
+                  <p className="truncate text-xs text-muted-foreground">{r.email || "—"}</p>
+                  {r.trackingCode ? (
+                    <p className="mt-1 font-mono text-xs font-bold text-gold-bright">{r.trackingCode}</p>
+                  ) : null}
+                  {typeof r.paymentAmountCents === "number" && Number.isFinite(r.paymentAmountCents) ? (
+                    <p className="mt-1 text-sm font-semibold text-gold-bright/95">{formatBRL(r.paymentAmountCents)}</p>
+                  ) : null}
+                  <div className="mt-3 max-w-full">
+                    <AdminLeadStatusSelect
+                      leadId={r.id}
+                      value={r.status}
+                      disabled={updatingLeadId === r.id}
+                      onChange={(next) => handleLeadStatusChange(r.id, next)}
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2 border-t border-white/[0.06] pt-3">
+                    {r.orderDetails ? (
+                      <button
+                        type="button"
+                        onClick={() => setOrderDlgLead(r)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-white/[0.12] px-2.5 py-1.5 text-xs font-medium text-foreground/90 hover:border-gold/35"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        Pedido
+                      </button>
+                    ) : null}
+                    {leadWhatsAppPendingHref(r) ? (
+                      <a
+                        href={leadWhatsAppPendingHref(r)!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 px-2.5 py-1.5 text-xs font-medium text-emerald-200"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        WhatsApp
+                      </a>
+                    ) : null}
+                    {(leadPaymentColumnKind(r) === "pendente" || leadPaymentColumnKind(r) === "checkout_sem_status") ? (
+                      <button
+                        type="button"
+                        disabled={markingPaidLeadId === r.id}
+                        onClick={() => void handleMarkLeadPaidManual(r)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-600/30 px-2.5 py-1.5 text-xs font-medium text-emerald-200 disabled:opacity-50"
+                      >
+                        {markingPaidLeadId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                        Marcar pago
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => setPixDlg({ open: true, leadId: r.id, leadName: r.name || r.email || "Lead" })}
+                      className="inline-flex items-center gap-1 rounded-lg border border-gold/30 px-2.5 py-1.5 text-xs font-medium text-gold-bright"
+                    >
+                      <QrCode className="h-3.5 w-3.5" />
+                      Pix
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteLead(r.id)}
+                      disabled={deletingLeadId === r.id}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-500/25 px-2.5 py-1.5 text-xs font-medium text-red-300 disabled:opacity-50"
+                    >
+                      {deletingLeadId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      Excluir
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+          {total > 0 ? (
+            <div className="lg:hidden">
+              <AdminPagination
+                embedded
+                page={safePage}
+                pageSize={pageSize}
+                totalItems={total}
+                onPageChange={(p) => startTransition(() => setPage(p))}
+                className="px-1 pt-4"
+              />
+            </div>
+          ) : null}
+          <div className="hidden lg:block">
+            <AdminDataTable
             getRowKey={(r) => r.id}
-            tableClassName="min-w-[1180px] lg:min-w-[1280px]"
+            getRowDomId={(r) => `lead-row-${r.id}`}
+            tableClassName="min-w-[980px] xl:min-w-[1080px]"
             rows={items}
             getRowClassName={(r) => getLeadRowHighlightClass(r)}
             emptyMessage={emptyMessage}
@@ -615,6 +769,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
               },
             ]}
           />
+          </div>
         </div>
       </div>
     </div>

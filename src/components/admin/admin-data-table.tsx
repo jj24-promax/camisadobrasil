@@ -12,6 +12,8 @@ type AdminDataTableProps<T> = {
   rows: T[];
   emptyMessage?: string;
   getRowKey: (row: T) => string;
+  /** `id` na `<tr>` (ex.: scroll desde outra página com `?leadId=`). */
+  getRowDomId?: (row: T) => string | undefined;
   /** Classes extras por linha (ex.: destacar pedidos pagos). */
   getRowClassName?: (row: T) => string | undefined;
   /** Rodapé dentro do mesmo card (ex.: paginação). */
@@ -25,13 +27,14 @@ export function AdminDataTable<T>({
   rows,
   emptyMessage = "Nenhum registro.",
   getRowKey,
+  getRowDomId,
   getRowClassName,
   footer,
   tableClassName,
 }: AdminDataTableProps<T>) {
   return (
     <div className="admin-table-surface">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
         <table
           className={cn("w-full min-w-[860px] text-left text-sm md:min-w-[960px]", tableClassName)}
         >
@@ -65,6 +68,7 @@ export function AdminDataTable<T>({
               rows.map((row) => (
                 <tr
                   key={getRowKey(row)}
+                  id={getRowDomId?.(row)}
                   className={cn(
                     "border-b border-white/[0.05] transition-colors last:border-0 hover:bg-white/[0.025]",
                     getRowClassName?.(row)

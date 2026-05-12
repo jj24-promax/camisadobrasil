@@ -54,6 +54,8 @@ export type Sale = {
   productName: string;
   paymentMethod: PaymentMethod;
   trackingCode?: string;
+  /** Quando a venda veio de um lead no checkout (`vendas.lead_id`). */
+  leadId?: string;
   orderDetails?: OrderCheckoutSnapshotV1;
 };
 

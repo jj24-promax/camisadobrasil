@@ -94,6 +94,9 @@ export function mapVendaRow(r: Record<string, unknown>): Sale {
   const dpRaw = pick(r, ["detalhes_pedido", "detalhesPedido"]);
   const orderDetails = isOrderCheckoutSnapshotV1(dpRaw) ? dpRaw : undefined;
 
+  const leadIdRaw = pick(r, ["lead_id", "leadId"]);
+  const leadId = leadIdRaw != null && String(leadIdRaw).trim() ? String(leadIdRaw).trim() : undefined;
+
   return {
     id: id || `PED-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     customer: str(pick(r, ["cliente_nome", "customer", "nome"])),
@@ -105,6 +108,7 @@ export function mapVendaRow(r: Record<string, unknown>): Sale {
     productName: str(pick(r, ["produto", "product_name"])),
     paymentMethod: method,
     trackingCode: str(pick(r, ["codigo_rastreio", "tracking_code", "tracking", "rastreio"])),
+    leadId,
     orderDetails,
   };
 }

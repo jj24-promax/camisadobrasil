@@ -15,7 +15,9 @@ async function LeadsContent() {
   return (
     <>
       {!res.ok ? <AdminErrorBanner messages={[res.error]} title="Não foi possível carregar os leads" /> : null}
-      <AdminLeadsView leads={res.ok ? res.data : []} />
+      <Suspense fallback={<div className="min-h-[12rem] animate-pulse rounded-2xl bg-white/[0.04]" aria-hidden />}>
+        <AdminLeadsView leads={res.ok ? res.data : []} />
+      </Suspense>
     </>
   );
 }

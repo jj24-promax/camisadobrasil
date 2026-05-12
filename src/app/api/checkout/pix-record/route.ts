@@ -141,6 +141,8 @@ export async function POST(req: Request) {
   const venda = await insertPendingPixVenda({
     leadId,
     customerName: name,
+    customerEmail: email,
+    customerPhone: phoneDigits,
     amountCents,
     productSummary,
     idTransaction: pedidoCodigoParaWebhook,

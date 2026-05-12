@@ -82,9 +82,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: merged.error }, { status: 400 });
   }
 
+  const { data: leadInfo } = await admin.from("leads").select("email, telefone").eq("id", leadId).maybeSingle();
+  const li = leadInfo as { email?: unknown; telefone?: unknown } | null;
+  const customerEmail =
+    li && typeof li.email === "string" && li.email.trim() ? li.email.trim().toLowerCase() : undefined;
+  const customerPhone =
+    li && typeof li.telefone === "string" && li.telefone.trim() ? li.telefone.trim().replace(/\D/g, "") : undefined;
+
   const venda = await insertPendingPixVenda({
     leadId,
     customerName: "Pós-compra (adicionais)",
+    customerEmail,
+    customerPhone,
     amountCents,
     productSummary,
     idTransaction: gatewayRaw,

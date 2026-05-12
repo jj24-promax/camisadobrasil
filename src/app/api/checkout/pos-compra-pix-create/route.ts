@@ -144,6 +144,8 @@ export async function POST(req: Request) {
   const venda = await insertPendingPixVenda({
     leadId,
     customerName: "Pós-compra (adicionais)",
+    customerEmail: email,
+    customerPhone: telefone,
     amountCents,
     productSummary,
     idTransaction: gatewayRaw,

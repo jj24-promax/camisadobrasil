@@ -88,6 +88,8 @@ export async function regenerateRoyalPixForLeadAdmin(
       const ins = await insertPendingPixVenda({
         leadId: id,
         customerName: nome,
+        customerEmail: email,
+        customerPhone: telefone,
         amountCents: prevValor > 0 ? prevValor : PRODUCT.priceCents,
         productSummary,
         idTransaction: ref,
@@ -100,6 +102,8 @@ export async function regenerateRoyalPixForLeadAdmin(
       const ins = await insertPendingPixVenda({
         leadId: id,
         customerName: nome,
+        customerEmail: email,
+        customerPhone: telefone,
         amountCents: PRODUCT.priceCents,
         productSummary: `${PRODUCT.name} (1 un.)`,
         idTransaction: ref,

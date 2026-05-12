@@ -61,21 +61,18 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <head>
-        <Script
-          id="utmify-script"
-          src="https://cdn.utmify.com.br/scripts/utms/latest.js"
-          data-utmify-prevent-xcod-sck=""
-          data-utmify-prevent-subids=""
-          strategy="afterInteractive"
-        />
-        <Script id="utmify-pixel" strategy="afterInteractive">
+        <Script id="meta-pixel" strategy="afterInteractive">
           {`
-            window.pixelId = "69f8f3a75abab63de004c710";
-            var a = document.createElement("script");
-            a.setAttribute("async", "");
-            a.setAttribute("defer", "");
-            a.setAttribute("src", "https://cdn.utmify.com.br/scripts/pixel/pixel.js");
-            document.head.appendChild(a);
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '867703813018108');
+fbq('track', 'PageView');
           `}
         </Script>
         <Script id="microsoft-clarity" strategy="afterInteractive">
@@ -90,6 +87,15 @@ export default function RootLayout({
         className={`${sans.variable} ${display.variable} font-sans min-h-[100dvh] bg-transparent text-foreground antialiased`}
         suppressHydrationWarning
       >
+        <noscript>
+          <img
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            src="https://www.facebook.com/tr?id=867703813018108&ev=PageView&noscript=1"
+            alt=""
+          />
+        </noscript>
         <Providers>
           <AmbientBackground />
           <div className="relative z-10 flex min-h-[100dvh] flex-col">{children}</div>

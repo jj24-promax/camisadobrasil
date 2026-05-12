@@ -7,7 +7,7 @@ export default function AdminDashboardPage() {
   return (
     <AdminPage
       title="Dashboard"
-      description="Visão consolidada da loja — métricas e tabelas carregadas do Supabase (gráfico de desempenho ainda em dados de referência)."
+      description="Visão consolidada da loja — métricas e leads recentes no Supabase (gráfico de desempenho ainda em dados de referência)."
     >
       <Suspense fallback={<AdminDashboardSkeletonBlocks />}>
         <AdminDashboardBody />

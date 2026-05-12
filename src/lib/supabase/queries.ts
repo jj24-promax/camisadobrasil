@@ -39,6 +39,17 @@ function normalizeAmountCents(value: unknown): number | undefined {
   return undefined;
 }
 
+/** Ordenação “última venda” mesmo quando `created_at` vem vazio ou noutra coluna. */
+function vendaRowSortTimestampMs(raw: Record<string, unknown>): number {
+  for (const key of ["created_at", "updated_at", "date", "criado_em"] as const) {
+    const v = raw[key];
+    if (v == null || v === "") continue;
+    const t = new Date(String(v)).getTime();
+    if (!Number.isNaN(t)) return t;
+  }
+  return 0;
+}
+
 function vendaPixCorrelationKeys(raw: Record<string, unknown>): string[] {
   const cols = ["pedido_codigo", "id_transaction", "pix_id_transaction", "id_transacao_pix"] as const;
   const out: string[] = [];
@@ -137,22 +148,34 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
 
   const { data: vendasData, error: vendasError } = await admin
     .from("vendas")
-    .select("lead_id, status_pagamento, valor, amount_cents, created_at")
+    .select(
+      "lead_id, status_pagamento, status, valor, amount_cents, created_at, updated_at, date, criado_em, pedido_codigo, id_transaction, pix_id_transaction, id_transacao_pix"
+    )
     .not("lead_id", "is", null)
     .limit(ROW_LIMIT);
 
   if (!vendasError) {
+    const rawVendas = toRecordRows(vendasData);
+    const corrIds: string[] = [];
+    for (const raw of rawVendas) {
+      corrIds.push(...vendaPixCorrelationKeys(raw));
+    }
+    const paidByGateway = await fetchPaidPixIdSet(admin, corrIds);
+
     const latestPaymentStatusByLead = new Map<
       string,
       { createdAt: number; status: Lead["paymentStatus"]; amountCents?: number }
     >();
-    for (const raw of toRecordRows(vendasData)) {
+    for (const raw of rawVendas) {
       const leadId = String(raw.lead_id ?? "").trim();
       if (!leadId) continue;
-      const createdAt = new Date(String(raw.created_at ?? "")).getTime();
-      const status = orderStatusFromVendaRow(raw);
+      const createdAt = vendaRowSortTimestampMs(raw);
+      let status = orderStatusFromVendaRow(raw);
+      if (status !== "pago" && vendaPixCorrelationKeys(raw).some((k) => paidByGateway.has(k))) {
+        status = "pago";
+      }
       const amountCents = normalizeAmountCents(raw.valor ?? raw.amount_cents);
-      if (!status || Number.isNaN(createdAt)) continue;
+      if (!status) continue;
 
       const current = latestPaymentStatusByLead.get(leadId);
       if (!current || createdAt >= current.createdAt) {

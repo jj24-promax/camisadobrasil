@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { Trash2, Loader2, QrCode, MessageCircle, Eye, RefreshCw, CheckCircle2 } from "lucide-react";
 import { updateLeadStatusAction, deleteLeadAction, reconcilePixVendasAction, markLeadPixPaidManualAction } from "@/app/admin/(dashboard)/leads/actions";
 import { AdminRegeneratePixDialog } from "@/components/admin/admin-regenerate-pix-dialog";
+import { AdminBadge } from "@/components/admin/admin-badge";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
 import { AdminLeadStatusSelect } from "@/components/admin/admin-lead-status-select";
 import { AdminSearchField } from "@/components/admin/admin-search-field";
@@ -23,6 +24,7 @@ import {
 import {
   getLeadRowHighlightClass,
   leadFunnelHighlight,
+  leadPaymentColumnKind,
 } from "@/lib/admin/lead-funnel-highlight";
 import {
   DEFAULT_LEADS_PAGE_SIZE,
@@ -60,7 +62,8 @@ function leadFirstName(name: string): string {
 }
 
 function leadWhatsAppPendingHref(lead: Lead): string | null {
-  if (lead.paymentStatus !== "pendente") return null;
+  const pk = leadPaymentColumnKind(lead);
+  if (pk !== "pendente" && pk !== "checkout_sem_status") return null;
   const digits = lead.phone.replace(/\D/g, "");
   if (digits.length < 10) return null;
 
@@ -340,7 +343,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
           <AdminTableLoadingOverlay show={listLoading} />
           <AdminDataTable
             getRowKey={(r) => r.id}
-            tableClassName="min-w-[1680px] lg:min-w-[1740px]"
+            tableClassName="min-w-[1820px] lg:min-w-[1900px]"
             rows={items}
             getRowClassName={(r) => getLeadRowHighlightClass(r)}
             emptyMessage={emptyMessage}
@@ -368,8 +371,8 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
                           aria-hidden
                           title={
                             tier === "green"
-                              ? "Pós-compra concluída (obrigado) ou pagamento confirmado"
-                              : "Pagamento Pix pendente — ainda não concluiu o funil"
+                              ? "Pagamento aprovado (Pix pago / webhook) ou pós-checkout (obrigado + rastreio)"
+                              : "Pix pendente, ou checkout sem status visível — use Sincronizar ou Marcar pago se já recebeu"
                           }
                           className={cn(
                             "inline-block h-3 w-3 shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-[#0a0f18]",
@@ -419,6 +422,28 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
                 cell: (r) => (
                   <span className="text-[13px] text-foreground/90">{formatLeadSource(r.source)}</span>
                 ),
+              },
+              {
+                key: "payment",
+                header: "Pagamento",
+                className: "min-w-[8.5rem]",
+                cell: (r) => {
+                  const k = leadPaymentColumnKind(r);
+                  if (k === "pago") return <AdminBadge variant="order" value="pago" />;
+                  if (k === "pendente") return <AdminBadge variant="order" value="pendente" />;
+                  if (k === "cancelado") return <AdminBadge variant="order" value="cancelado" />;
+                  if (k === "checkout_sem_status") {
+                    return (
+                      <span
+                        className="inline-flex max-w-[10rem] rounded-md border border-sky-500/35 bg-sky-500/12 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-sky-100"
+                        title="Checkout gravado, mas o status da venda não veio no painel (data inválida ou limite de linhas). Use Sincronizar ou confira no Supabase."
+                      >
+                        A confirmar
+                      </span>
+                    );
+                  }
+                  return <span className="text-xs text-muted-foreground">—</span>;
+                },
               },
               {
                 key: "status",
@@ -491,7 +516,7 @@ export function AdminLeadsView({ leads }: AdminLeadsViewProps) {
                         <MessageCircle className="h-4 w-4" />
                       </a>
                     ) : null}
-                    {r.paymentStatus === "pendente" ? (
+                    {(leadPaymentColumnKind(r) === "pendente" || leadPaymentColumnKind(r) === "checkout_sem_status") ? (
                       <button
                         type="button"
                         onClick={() => void handleMarkLeadPaidManual(r)}

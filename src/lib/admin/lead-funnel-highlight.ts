@@ -1,14 +1,29 @@
 import type { Lead } from "@/types/admin";
 
-/** Verde: pós-compra (obrigado) ou pagamento confirmado no gateway. Amarelo: Pix pendente. */
+export type LeadPaymentColumnKind = "pago" | "pendente" | "cancelado" | "checkout_sem_status" | "none";
+
+/** Valor para a coluna “Pagamento” na lista de leads (operador). */
+export function leadPaymentColumnKind(lead: Lead): LeadPaymentColumnKind {
+  const st = lead.paymentStatus;
+  if (st === "pago" || st === "pendente" || st === "cancelado") return st;
+  if (lead.orderDetails) return "checkout_sem_status";
+  return "none";
+}
+
+/**
+ * Verde: Pix pago (webhook / venda) ou pós-checkout (obrigado + rastreio).
+ * Amarelo: Pix pendente na venda, ou checkout gravado mas status da venda ainda não apareceu no merge.
+ */
 export function leadFunnelHighlight(lead: Lead): "green" | "yellow" | null {
+  if (lead.paymentStatus === "cancelado") return null;
+
+  const hasTracking = !!lead.trackingCode?.trim();
   const reachedObrigado = !!lead.obrigadoEm?.trim();
-  if (reachedObrigado || lead.paymentStatus === "pago") {
-    return "green";
-  }
-  if (lead.paymentStatus === "pendente") {
-    return "yellow";
-  }
+  const paid = lead.paymentStatus === "pago";
+  const inferredPending = !lead.paymentStatus && !!lead.orderDetails;
+
+  if (paid || (reachedObrigado && hasTracking)) return "green";
+  if (lead.paymentStatus === "pendente" || inferredPending) return "yellow";
   return null;
 }
 

@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   LogOut,
   Users,
-  ShoppingCart,
   UserRound,
   Settings,
   QrCode,
@@ -23,7 +22,6 @@ export type AdminSidebarProps = {
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/leads", label: "Leads", icon: Users, exact: false },
-  { href: "/admin/vendas", label: "Vendas", icon: ShoppingCart, exact: false },
   { href: "/admin/cobrar-pix", label: "Cobrar Pix", icon: QrCode, exact: false },
   { href: "/admin/clientes", label: "Clientes", icon: UserRound, exact: false },
   { href: "/admin/configuracoes", label: "Configurações", icon: Settings, exact: false },

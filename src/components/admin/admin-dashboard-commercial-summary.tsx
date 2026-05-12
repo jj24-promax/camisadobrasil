@@ -108,8 +108,10 @@ export function AdminDashboardCommercialSummary({
         </div>
       </div>
       <div className="admin-stat-surface">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/90">Pedidos por pagamento</p>
-        <p className="mt-1 text-[13px] text-muted-foreground">Status na base carregada ({ordersTotal} pedido{ordersTotal === 1 ? "" : "s"}).</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/90">Pagamento (leads)</p>
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          Última venda ligada a cada lead — reflete webhook Pix e funil ({ordersTotal} com status de pagamento).
+        </p>
         <div className="mt-4">
           <Bar segments={orderSegments} total={ordersTotal} />
           <Legend segments={orderSegments} />

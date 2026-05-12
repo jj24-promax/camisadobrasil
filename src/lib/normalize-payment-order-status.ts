@@ -9,6 +9,7 @@ export function normalizePaymentOrderStatus(value: unknown): OrderStatus | undef
   if (
     status === "pago" ||
     status === "paid" ||
+    status === "success" ||
     status === "approved" ||
     status === "aprovado" ||
     status === "completed" ||
@@ -32,7 +33,10 @@ export function normalizePaymentOrderStatus(value: unknown): OrderStatus | undef
     status === "pending" ||
     status === "awaiting_payment" ||
     status === "waiting" ||
-    status === "processing"
+    status === "processing" ||
+    status === "em aberto" ||
+    status === "aberto" ||
+    status === "aguardando"
   )
     return "pendente";
   return undefined;

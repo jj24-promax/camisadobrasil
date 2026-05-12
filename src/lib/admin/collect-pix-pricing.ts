@@ -2,6 +2,7 @@ import type { ProductModelId } from "@/lib/product";
 import { getSelectableProductModels } from "@/lib/product";
 import { UPSELL_BAG_CENTS, UPSELL_CAP_CENTS, UPSELL_CUP_CENTS } from "@/lib/pos-compra-upsell-pricing";
 import { formatBRL } from "@/lib/admin-format";
+import { leve3Pague2DiscountFromLinePricesCents } from "@/lib/offer-pricing";
 
 const MAX_UNIT = 50;
 
@@ -45,8 +46,8 @@ export function normalizeCollectPixCart(raw: unknown): CollectPixCart {
 }
 
 /**
- * Mesma lógica de camisas do checkout: soma das linhas e desconto = menor preço entre as linhas
- * quando há 3+ unidades. Adicionais pós-compra com preços fixos do site.
+ * Mesma lógica de camisas do checkout: soma das linhas e desconto cumulativo Leve 3, Pague 2
+ * (a cada 3 unidades, isenta-se o valor das unidades mais baratas). Adicionais pós-compra com preços fixos do site.
  */
 export function computeCollectPixTotalCents(cart: CollectPixCart): {
   totalCents: number;
@@ -65,9 +66,9 @@ export function computeCollectPixTotalCents(cart: CollectPixCart): {
   }
 
   const shirtSubtotal = lineCents.reduce((a, b) => a + b, 0);
-  const discountCents = lineCents.length >= 3 ? Math.min(...lineCents) : 0;
+  const discountCents = leve3Pague2DiscountFromLinePricesCents(lineCents);
   if (discountCents > 0) {
-    summaryParts.push(`Promoção Leve 3, Pague 2 (−${formatBRL(discountCents)} no total)`);
+    summaryParts.push(`Promoção Leve 3, Pague 2 cumulativa (−${formatBRL(discountCents)} no total)`);
   }
   const shirtTotal = shirtSubtotal - discountCents;
 

@@ -28,7 +28,7 @@ export function PromoBundle({ onBuyBundle }: PromoBundleProps) {
               Garanta o kit completo para a família ou amigos com o melhor custo-benefício da coleção. A oportunidade perfeita para vestir o manto da redenção.
             </p>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground/85">
-              Promoção não cumulativa: o benefício de uma peça isenta aplica-se uma única vez por pedido, independentemente da quantidade.
+              Promoção cumulativa: a cada 3 camisas no mesmo pedido, 1 isenta (sempre aplicada sobre as unidades de menor valor). Ex.: 6 camisas, 2 isentas; 9 camisas, 3 isentas.
             </p>
             <div className="mt-8 space-y-0">
               <Button size="xl" onClick={onBuyBundle} className="shimmer-btn w-full md:w-auto px-12">

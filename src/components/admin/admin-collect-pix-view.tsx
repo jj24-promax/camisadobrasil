@@ -166,7 +166,7 @@ export function AdminCollectPixView() {
     <div className="space-y-10 sm:space-y-12">
       <AdminSettingsSection
         title="Montar cobrança"
-        description="Escolha as quantidades com os mesmos preços do site (inclui promo Leve 3, Pague 2 nas camisas e valores dos adicionais do pós-compra). Depois preencha os dados do cliente para gerar o Pix na Royal."
+        description="Escolha as quantidades com os mesmos preços do site (inclui promo Leve 3, Pague 2 cumulativa nas camisas e valores dos adicionais do pós-compra). Depois preencha os dados do cliente para gerar o Pix na Royal."
         icon={Sparkles}
       >
         <div className="grid gap-8 lg:grid-cols-2">

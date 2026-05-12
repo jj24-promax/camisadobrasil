@@ -38,7 +38,7 @@ import {
   type Size,
 } from "@/lib/product";
 import { MAX_ORDER_SHIRT_QUANTITY, parseOrderModels, parseOrderSizes } from "@/lib/cart-sizes";
-import { leve3Pague2DiscountCents } from "@/lib/offer-pricing";
+import { leve3Pague2DiscountFromLinePricesCents } from "@/lib/offer-pricing";
 import { cn } from "@/lib/utils";
 import {
   flagCheckoutVisitedThisSession,
@@ -320,7 +320,7 @@ function CheckoutContent() {
   const pricing = useMemo(() => {
     const linePriceCents = orderModels.map((modelId) => Math.round(getProductModelById(modelId).price * 100));
     const subtotal = linePriceCents.reduce((sum, cents) => sum + cents, 0);
-    const itemDiscount = quantity >= 3 ? Math.min(...linePriceCents) : 0;
+    const itemDiscount = leve3Pague2DiscountFromLinePricesCents(linePriceCents);
     const paidPersonalizationLines = personalizationMaster ? shirtPaidPersonalization.filter(Boolean).length : 0;
     const personalizationCents = paidPersonalizationLines * personalizationBump.priceCents;
 
@@ -807,12 +807,12 @@ function CheckoutContent() {
                     </div>
                     {quantity >= 3 ? (
                       <p className="mt-3 text-[10px] font-semibold uppercase tracking-wide text-emerald-400/90">
-                        Oferta Leve 3, Pague 2 ativa neste pedido (desconto no resumo).
+                        Leve 3, Pague 2 cumulativo: a cada 3 unidades, 1 isenta (desconto no resumo).
                       </p>
                     ) : (
                       <p className="mt-3 text-[10px] text-muted-foreground/90">
                         Com 3 ou mais camisas aplica-se automaticamente{" "}
-                        <span className="font-semibold text-emerald-400/95">Leve 3, Pague 2</span> sobre a unidade mais barata do grupo.
+                        <span className="font-semibold text-emerald-400/95">Leve 3, Pague 2</span> — a cada 3 unidades, 1 isenta; com várias edições, isentam-se primeiro as mais baratas.
                       </p>
                     )}
                   </div>
@@ -1240,7 +1240,7 @@ function CheckoutContent() {
                 </div>
                 {pricing.discountValue > 0 && (
                   <div className="flex min-w-0 justify-between gap-3 text-sm font-bold text-green-400">
-                    <span className="min-w-0 shrink leading-snug">Leve 3, Pague 2 (não cumulativa)</span>
+                    <span className="min-w-0 shrink leading-snug">Leve 3, Pague 2 (cumulativa)</span>
                     <span className="shrink-0 tabular-nums">- {pricing.discount}</span>
                   </div>
                 )}

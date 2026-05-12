@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { SIZES, getProductModelById, getSelectableProductModels, type ProductModelId } from "@/lib/product";
 import type { Size } from "@/lib/types";
 import { MAX_ORDER_SHIRT_QUANTITY, serializeOrderModels, serializeOrderSizes } from "@/lib/cart-sizes";
-import { leve3Pague2DiscountCents } from "@/lib/offer-pricing";
+import { leve3Pague2DiscountFromLinePricesCents } from "@/lib/offer-pricing";
 import { useCheckoutTransition } from "@/components/navigation/checkout-transition-provider";
 import { cn } from "@/lib/utils";
 import { PurchaseTrustBlock } from "@/components/landing/purchase-trust-block";
@@ -55,7 +55,7 @@ export function LandingCartDialog({
   const pricing = useMemo(() => {
     const linePriceCents = lineModels.map((modelId) => Math.round(getProductModelById(modelId).price * 100));
     const subtotal = linePriceCents.reduce((sum, cents) => sum + cents, 0);
-    const itemDiscount = safeQty >= 3 ? Math.min(...linePriceCents) : 0;
+    const itemDiscount = leve3Pague2DiscountFromLinePricesCents(linePriceCents);
     const totalCents = subtotal - itemDiscount;
     const fmt = (cents: number) =>
       new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
@@ -264,7 +264,7 @@ export function LandingCartDialog({
               </div>
               {pricing.discountValue > 0 && (
                 <div className="flex justify-between text-sm font-bold text-green-400">
-                  <span>Oferta Leve 3, Pague 2 (não cumulativa)</span>
+                  <span>Oferta Leve 3, Pague 2 (cumulativa)</span>
                   <span>- {pricing.discountFormatted}</span>
                 </div>
               )}

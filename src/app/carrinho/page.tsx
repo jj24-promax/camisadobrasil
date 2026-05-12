@@ -11,6 +11,7 @@ import { PRODUCT, PRODUCT_IMAGE_CLEAN_SRC, getProductModelById } from "@/lib/pro
 import { parseOrderModels, parseOrderSizes } from "@/lib/cart-sizes";
 import { replaceCheckoutProductLines } from "@/lib/checkout-product-query";
 import { useCheckoutTransition } from "@/components/navigation/checkout-transition-provider";
+import { leve3Pague2DiscountFromLinePricesCents } from "@/lib/offer-pricing";
 
 function CarrinhoContent() {
   const { requestCheckoutNavigation } = useCheckoutTransition();
@@ -25,7 +26,7 @@ function CarrinhoContent() {
   const pricing = useMemo(() => {
     const linePriceCents = orderModels.map((modelId) => Math.round(getProductModelById(modelId).price * 100));
     const subtotal = linePriceCents.reduce((a, b) => a + b, 0);
-    const itemDiscount = quantity >= 3 ? Math.min(...linePriceCents) : 0;
+    const itemDiscount = leve3Pague2DiscountFromLinePricesCents(linePriceCents);
     const totalCents = subtotal - itemDiscount;
     const format = (cents: number) =>
       new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
@@ -136,7 +137,7 @@ function CarrinhoContent() {
             </div>
             {pricing.discountValue > 0 && (
               <div className="flex justify-between text-sm font-bold text-green-400">
-                <span>Oferta Leve 3, Pague 2 (não cumulativa)</span>
+                <span>Oferta Leve 3, Pague 2 (cumulativa)</span>
                 <span>- {pricing.discountFormatted}</span>
               </div>
             )}

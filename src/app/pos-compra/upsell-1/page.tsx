@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { PostPurchaseUpsellShell } from "@/components/pos-compra/post-purchase-upsell-shell";
+import { HoverZoomProductImage } from "@/components/ui/hover-zoom-product-image";
 import { POS_COMPRA } from "@/lib/pos-compra-routes";
 import { UPSELL_CAP_CENTS } from "@/lib/pos-compra-upsell-pricing";
 
@@ -29,17 +29,15 @@ export default function UpsellCapPage() {
         router.push(POS_COMPRA.upsell2);
       }}
       visual={
-        <div className="relative aspect-[4/4] md:aspect-[16/11] w-full overflow-hidden bg-[#020408]">
-          <Image
-            src="/images/upsells/cap.webp"
-            alt="Boné Oficial Alpha Brasil"
-            fill
-            className="z-0 object-cover object-center opacity-90"
-            sizes="(max-width: 768px) 100vw, 480px"
-            priority
-          />
-          <div className="absolute inset-0 z-[1] bg-gradient-to-t from-[#04070d] via-transparent to-transparent" />
-        </div>
+        <HoverZoomProductImage
+          src="/images/upsells/cap.webp"
+          alt="Boné Oficial Alpha Brasil"
+          className="aspect-[4/4] md:aspect-[16/11]"
+          priority
+          overlay={
+            <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#04070d] via-transparent to-transparent" />
+          }
+        />
       }
     />
   );

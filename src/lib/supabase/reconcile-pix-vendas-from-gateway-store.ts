@@ -46,7 +46,7 @@ export async function reconcilePendingPixVendasFromGatewayStore(options?: {
 
   const { data: vendas, error: vErr } = await admin
     .from("vendas")
-    .select("pedido_codigo, pix_id_transaction, id_transacao_pix, status_pagamento")
+    .select("pedido_codigo, id_transaction, pix_id_transaction, id_transacao_pix, status_pagamento")
     .eq("status_pagamento", "pendente")
     .limit(limit);
 
@@ -64,7 +64,7 @@ export async function reconcilePendingPixVendasFromGatewayStore(options?: {
   const rows = (vendas ?? []) as Record<string, unknown>[];
   const candidateIds = new Set<string>();
   for (const r of rows) {
-    for (const k of ["pedido_codigo", "pix_id_transaction", "id_transacao_pix"] as const) {
+    for (const k of ["pedido_codigo", "id_transaction", "pix_id_transaction", "id_transacao_pix"] as const) {
       const v = r[k];
       if (typeof v === "string" && v.trim()) candidateIds.add(v.trim());
     }

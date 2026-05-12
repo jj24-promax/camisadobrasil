@@ -19,7 +19,8 @@ export type PendingPixVendaInput = {
   detalhesPedido?: OrderCheckoutSnapshotV1 | null;
 };
 
-const VENDA_PIX_MATCH_COLS = ["pedido_codigo", "pix_id_transaction", "id_transacao_pix"] as const;
+/** Colunas onde o id da transação pode coincidir com `pix_gateway_payments.id_transaction` (webhook / reconciliação). */
+const VENDA_PIX_MATCH_COLS = ["pedido_codigo", "id_transaction", "pix_id_transaction", "id_transacao_pix"] as const;
 
 /** Filtro PostgREST seguro para `.or(...)`: valor entre aspas duplas. */
 function orEqQuoted(columns: readonly string[], rawId: string): string {

@@ -15,6 +15,8 @@ import { posCompraObrigadoQuery } from "@/lib/pos-compra-routes";
 type PixState = {
   paymentCode: string;
   paymentCodeBase64: string;
+  /** Venda Supabase do Pix dos adicionais — para polling de pagamento. */
+  vendaId?: string;
 } | null;
 
 function cacheKey(cap: boolean, bag: boolean, cup: boolean) {
@@ -34,6 +36,7 @@ function PixAddonsContent() {
   const [error, setError] = useState<string | null>(null);
   const [missingClient, setMissingClient] = useState(false);
   const fetchStartedFor = useRef<string | null>(null);
+  const navigatedForAddonPixRef = useRef<string | null>(null);
 
   const qrDataUrl = useMemo(
     () => (pixResult?.paymentCodeBase64 ? qrDataUrlForImg(pixResult.paymentCodeBase64) : null),
@@ -45,6 +48,56 @@ function PixAddonsContent() {
       router.replace(posCompraObrigadoQuery(cap, bag, cup));
     }
   }, [addonCents, cap, bag, cup, router]);
+
+  /** Após gerar Pix dos adicionais: polling até a venda extra constar como paga. */
+  useEffect(() => {
+    const vendaId = pixResult?.vendaId?.trim();
+    if (!vendaId || addonCents === 0) return;
+
+    let cancelled = false;
+    let intervalId: number | null = null;
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/checkout/pix-venda-status?vendaId=${encodeURIComponent(vendaId)}`, {
+          cache: "no-store",
+          credentials: "same-origin",
+        });
+        const j = (await res.json()) as { paid?: boolean; trackingCode?: string | null };
+        if (cancelled) return;
+        if (j.paid !== true) return;
+        if (navigatedForAddonPixRef.current === vendaId) return;
+
+        navigatedForAddonPixRef.current = vendaId;
+        if (intervalId != null) {
+          window.clearInterval(intervalId);
+          intervalId = null;
+        }
+
+        const tc = typeof j.trackingCode === "string" ? j.trackingCode.trim() : "";
+        if (tc) {
+          try {
+            sessionStorage.setItem("alpha_tracking_code", tc);
+            localStorage.setItem("alpha_tracking_code", tc);
+          } catch {
+            /* ignore */
+          }
+        }
+
+        toast.success("Pagamento dos adicionais confirmado!");
+        router.replace(posCompraObrigadoQuery(cap, bag, cup));
+      } catch {
+        /* rede intermitente */
+      }
+    };
+
+    void poll();
+    intervalId = window.setInterval(() => void poll(), 2500);
+    return () => {
+      cancelled = true;
+      if (intervalId != null) window.clearInterval(intervalId);
+    };
+  }, [pixResult?.vendaId, addonCents, cap, bag, cup, router]);
 
   const generatePix = useCallback(async () => {
     const clientRef = readPosCompraPixClient();
@@ -92,6 +145,7 @@ function PixAddonsContent() {
 
       const response = (await rec.json().catch(() => ({}))) as {
         error?: string;
+        vendaId?: string;
         paymentCode?: string;
         paymentCodeBase64?: string;
       };
@@ -106,9 +160,12 @@ function PixAddonsContent() {
         throw new Error("Resposta do servidor sem código Pix.");
       }
 
+      const vendaId = typeof response.vendaId === "string" ? response.vendaId.trim() : "";
+
       const next: PixState = {
         paymentCode: code,
         paymentCodeBase64: b64,
+        ...(vendaId ? { vendaId } : {}),
       };
       setPixResult(next);
       try {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useLayoutEffect, Suspense, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useLayoutEffect, Suspense, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -53,6 +53,7 @@ import {
 } from "@/hooks/use-checkout-retention";
 import { qrDataUrlForImg } from "@/lib/pix-gateway-response";
 import { buildCheckoutOrderSnapshotV1 } from "@/lib/build-checkout-order-snapshot";
+import { posCompraUpsellFunnelStartHref } from "@/lib/pos-compra-routes";
 import { savePosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 import { replaceCheckoutProductLines } from "@/lib/checkout-product-query";
 import {
@@ -231,7 +232,10 @@ function CheckoutContent() {
   const [pixResult, setPixResult] = useState<{
     paymentCode: string;
     paymentCodeBase64: string;
+    vendaId: string;
   } | null>(null);
+
+  const navigatedForVendaIdRef = useRef<string | null>(null);
 
   const pixQrDataUrl = useMemo(
     () => (pixResult?.paymentCodeBase64 ? qrDataUrlForImg(pixResult.paymentCodeBase64) : null),
@@ -241,6 +245,56 @@ function CheckoutContent() {
   useEffect(() => {
     flagCheckoutVisitedThisSession();
   }, []);
+
+  /** Após gerar Pix: polling até `vendas` / `pix_gateway_payments` refletirem o pagamento (webhook Royal). */
+  useEffect(() => {
+    const vendaId = pixResult?.vendaId?.trim();
+    if (!vendaId || paymentMethod !== "pix") return;
+
+    let cancelled = false;
+    let intervalId: number | null = null;
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/checkout/pix-venda-status?vendaId=${encodeURIComponent(vendaId)}`, {
+          cache: "no-store",
+          credentials: "same-origin",
+        });
+        const j = (await res.json()) as { paid?: boolean; trackingCode?: string | null };
+        if (cancelled) return;
+        if (j.paid !== true) return;
+        if (navigatedForVendaIdRef.current === vendaId) return;
+
+        navigatedForVendaIdRef.current = vendaId;
+        if (intervalId != null) {
+          window.clearInterval(intervalId);
+          intervalId = null;
+        }
+
+        const tc = typeof j.trackingCode === "string" ? j.trackingCode.trim() : "";
+        if (tc) {
+          try {
+            sessionStorage.setItem("alpha_tracking_code", tc);
+            localStorage.setItem("alpha_tracking_code", tc);
+          } catch {
+            /* quota / private mode */
+          }
+        }
+
+        toast.success("Pagamento confirmado! A redirecionar…");
+        router.replace(posCompraUpsellFunnelStartHref(searchParams.toString()));
+      } catch {
+        /* rede intermitente — próximo tick */
+      }
+    };
+
+    void poll();
+    intervalId = window.setInterval(() => void poll(), 2500);
+    return () => {
+      cancelled = true;
+      if (intervalId != null) window.clearInterval(intervalId);
+    };
+  }, [pixResult?.vendaId, paymentMethod, router, searchParams]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -608,9 +662,15 @@ function CheckoutContent() {
         throw new Error("Resposta do servidor sem código Pix.");
       }
 
+      const vendaIdRaw = typeof j.vendaId === "string" ? j.vendaId.trim() : "";
+      if (!vendaIdRaw) {
+        throw new Error("Resposta do servidor sem referência do pedido.");
+      }
+
       setPixResult({
         paymentCode: code,
         paymentCodeBase64: b64,
+        vendaId: vendaIdRaw,
       });
 
       const snap = {

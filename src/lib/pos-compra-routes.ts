@@ -25,3 +25,13 @@ export function posCompraObrigadoQuery(cap: boolean, bag: boolean, cup: boolean)
   const s = p.toString();
   return s ? `${POS_COMPRA.obrigado}?${s}` : POS_COMPRA.obrigado;
 }
+
+/**
+ * Primeira página do funil pós‑compra (upsell 1 → 2 → 3 → Pix adicionais ou obrigado).
+ * Chamado após confirmação do Pix do checkout principal.
+ * `search` — query do checkout (ex. UTMs); repassada para não perder atribuição na primeira etapa.
+ */
+export function posCompraUpsellFunnelStartHref(search?: string): string {
+  const q = (search ?? "").trim().replace(/^\?/, "");
+  return q ? `${POS_COMPRA.upsell1}?${q}` : POS_COMPRA.upsell1;
+}

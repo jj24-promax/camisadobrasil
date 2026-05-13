@@ -65,6 +65,62 @@ function vendaPixCorrelationKeys(raw: Record<string, unknown>): string[] {
 
 type SupabaseAdminClient = NonNullable<ReturnType<typeof createSupabaseAdminClient>>;
 
+function phoneDigitsLen(s: string | undefined): number {
+  return (s ?? "").replace(/\D/g, "").length;
+}
+
+/** Telefone e código de rastreio vivem no lead no checkout; denormaliza para o painel de vendas. */
+async function enrichSalesWithLeadFields(
+  admin: SupabaseAdminClient,
+  sales: Sale[]
+): Promise<Sale[]> {
+  const leadIds = new Set<string>();
+  for (const s of sales) {
+    const lid = s.leadId?.trim();
+    if (!lid) continue;
+    if (phoneDigitsLen(s.phone) < 10 || !(s.trackingCode ?? "").trim()) {
+      leadIds.add(lid);
+    }
+  }
+  if (leadIds.size === 0) return sales;
+
+  const { data, error } = await admin
+    .from("leads")
+    .select("id, telefone, codigo_rastreio")
+    .in("id", [...leadIds]);
+
+  if (error) {
+    console.warn("[fetchAdminVendas] enrich from leads:", error.message);
+    return sales;
+  }
+
+  const byLead = new Map<string, { telefone: string; codigo_rastreio: string }>();
+  for (const raw of toRecordRows(data)) {
+    const id = String(raw.id ?? "").trim();
+    if (!id) continue;
+    byLead.set(id, {
+      telefone: typeof raw.telefone === "string" ? raw.telefone.trim() : "",
+      codigo_rastreio: typeof raw.codigo_rastreio === "string" ? raw.codigo_rastreio.trim() : "",
+    });
+  }
+
+  return sales.map((s) => {
+    const lid = s.leadId?.trim();
+    if (!lid) return s;
+    const L = byLead.get(lid);
+    if (!L) return s;
+
+    let next = s;
+    if (phoneDigitsLen(s.phone) < 10 && phoneDigitsLen(L.telefone) >= 10) {
+      next = { ...next, phone: L.telefone };
+    }
+    if (!(s.trackingCode ?? "").trim() && L.codigo_rastreio) {
+      next = { ...next, trackingCode: L.codigo_rastreio };
+    }
+    return next;
+  });
+}
+
 const PAID_PIX_GATEWAY_ROW_CAP = 4_000;
 
 /**
@@ -246,7 +302,8 @@ export async function fetchAdminVendas(): Promise<AdminFetchResult<Sale[]>> {
   }
 
   rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  return { ok: true, data: rows };
+  const enriched = await enrichSalesWithLeadFields(admin, rows);
+  return { ok: true, data: enriched };
 }
 
 export async function fetchAdminClientes(): Promise<AdminFetchResult<Client[]>> {

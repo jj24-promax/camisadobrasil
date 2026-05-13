@@ -121,6 +121,8 @@ export async function POST(req: Request) {
   const result = await insertPendingCardVenda({
     leadId,
     customerName: name,
+    customerEmail: email,
+    customerPhone: phoneDigits,
     amountCents,
     productSummary: `${productSummary} · Cartão ****${cardLast4}`,
     shippingSummary,

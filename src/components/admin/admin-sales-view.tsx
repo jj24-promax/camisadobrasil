@@ -270,7 +270,12 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
                 <p className="mt-2 text-sm font-semibold tabular-nums text-gold-bright/95">{formatBRL(r.amountCents)}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(r.date)}</p>
                 {r.trackingCode ? (
-                  <p className="mt-1 font-mono text-xs font-bold text-gold-bright">{r.trackingCode}</p>
+                  <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Rastreio{" "}
+                    <span className="font-mono text-xs font-bold normal-case tracking-normal text-gold-bright">
+                      {r.trackingCode}
+                    </span>
+                  </p>
                 ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {r.leadId ? (
@@ -297,10 +302,14 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
                       href={saleWhatsAppPendingHref(r)!}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 px-2.5 py-1.5 text-xs font-medium text-emerald-200"
+                      className={cn(
+                        "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#25D366] text-white shadow-md transition-colors hover:bg-[#20bd5a]",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35"
+                      )}
+                      title="Cobrar pedido pendente no WhatsApp"
+                      aria-label="Cobrar pedido pendente no WhatsApp"
                     >
-                      <MessageCircle className="h-3.5 w-3.5" aria-hidden />
-                      WhatsApp
+                      <MessageCircle className="h-4 w-4" aria-hidden />
                     </a>
                   ) : null}
                   {saleAllowsManualPixFollowUp(r) ? (
@@ -413,7 +422,15 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
               {
                 key: "tracking",
                 header: "Rastreio",
-                cell: (r) => <span className="font-mono text-xs font-bold text-gold-bright">{r.trackingCode || "—"}</span>,
+                className: "min-w-[7.5rem] max-w-[11rem]",
+                cell: (r) => (
+                  <span
+                    className="block truncate font-mono text-[11px] font-bold text-gold-bright"
+                    title={r.trackingCode || undefined}
+                  >
+                    {r.trackingCode || "—"}
+                  </span>
+                ),
               },
               {
                 key: "status",
@@ -467,17 +484,20 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
                 header: "",
                 className: "min-w-[10.5rem] text-right",
                 cell: (r) => (
-                  <div className="flex flex-wrap items-center justify-end gap-1">
+                  <div className="flex flex-wrap items-center justify-end gap-0.5">
                     {saleWhatsAppPendingHref(r) ? (
                       <a
                         href={saleWhatsAppPendingHref(r)!}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-100 transition-colors hover:bg-emerald-500/20 hover:text-emerald-50"
-                        title="Abrir WhatsApp com mensagem de cobrança"
+                        className={cn(
+                          "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#25D366] text-white shadow-md transition-colors hover:bg-[#20bd5a]",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35"
+                        )}
+                        title="Cobrar pedido pendente no WhatsApp"
+                        aria-label="Cobrar pedido pendente no WhatsApp"
                       >
-                        <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                        WhatsApp
+                        <MessageCircle className="h-4 w-4" aria-hidden />
                       </a>
                     ) : null}
                     {saleAllowsManualPixFollowUp(r) ? (
@@ -549,7 +569,11 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
                       href={saleWhatsAppPendingHref(selectedSale)!}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-100 hover:bg-emerald-500/20"
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-2 text-xs font-medium text-white shadow-md transition-colors hover:bg-[#20bd5a]",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35"
+                      )}
+                      title="Cobrar pedido pendente no WhatsApp"
                     >
                       <MessageCircle className="h-4 w-4 shrink-0" aria-hidden />
                       WhatsApp

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { expandPixGatewayPaidCorrelationIds, isPixGatewayPaidDbStatus } from "@/lib/pix-gateway-paid-helpers";
+import { collectVendaPixGatewayCorrelationKeys, findPaidGatewayIdTransactionMatchingVenda } from "@/lib/pix-gateway-paid-correlation-set";
+import { isPixGatewayPaidDbStatus } from "@/lib/pix-gateway-paid-helpers";
 import { orderStatusFromVendaRow } from "@/lib/normalize-payment-order-status";
 import {
   markPendingPixVendaPaidByPrimaryId,
@@ -9,25 +10,6 @@ import {
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function gatewayMatchIds(row: Record<string, unknown>): string[] {
-  const out = new Set<string>();
-  for (const k of ["pedido_codigo", "pix_id_transaction", "id_transacao_pix"] as const) {
-    const t = String(row[k] ?? "").trim();
-    if (t) out.add(t);
-  }
-  const det = row.detalhes_pedido;
-  if (det && typeof det === "object" && !Array.isArray(det)) {
-    const arr = (det as Record<string, unknown>)._pixCorrelationIds;
-    if (Array.isArray(arr)) {
-      for (const x of arr) {
-        const t = String(x ?? "").trim();
-        if (t) out.add(t);
-      }
-    }
-  }
-  return [...out];
-}
 
 /** Variações de caixa para `.in("id_transaction", …)` (Postgres text é sensível a maiúsculas). */
 function distinctKeyVariants(ids: readonly string[]): string[] {
@@ -53,8 +35,8 @@ async function syncVendaPaidAfterGatewayHit(vendaPk: string, gatewayTxId: string
 }
 
 /**
- * Confirma se o Pix está pago (linha `vendas` ou `pix_gateway_payments`) e tenta alinhar `vendas`
- * quando o webhook gravou outro `id_transaction` mas o payload contém o id do pedido.
+ * Confirma se o Pix está pago (`vendas` ou `pix_gateway_payments`) e alinha `vendas` quando o webhook
+ * gravou correlatos só no payload — **mesma lógica de merge** que `fetchAdminVendas` no painel.
  */
 async function resolvePixPaidForVendaRow(
   admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
@@ -63,9 +45,8 @@ async function resolvePixPaidForVendaRow(
 ): Promise<boolean> {
   if (orderStatusFromVendaRow(r) === "pago") return true;
 
-  const baseKeys = gatewayMatchIds(r);
-  const keyLower = new Set(baseKeys.map((k) => k.trim().toLowerCase()).filter(Boolean));
-  if (keyLower.size === 0) return false;
+  const baseKeys = collectVendaPixGatewayCorrelationKeys(r);
+  if (baseKeys.length === 0) return false;
 
   const inKeys = distinctKeyVariants(baseKeys);
   if (inKeys.length === 0) return false;
@@ -84,33 +65,17 @@ async function resolvePixPaidForVendaRow(
     }
   }
 
-  const since = new Date(Date.now() - 72 * 3600 * 1000).toISOString();
-  const { data: recent, error: rErr } = await admin
-    .from("pix_gateway_payments")
-    .select("id_transaction, status, raw_payload, updated_at")
-    .gte("updated_at", since)
-    .order("updated_at", { ascending: false })
-    .limit(500);
-
-  if (rErr || !Array.isArray(recent)) return false;
-
-  for (const gw of recent) {
-    const rec = gw as Record<string, unknown>;
-    if (!isPixGatewayPaidDbStatus(rec.status)) continue;
-    const expanded = expandPixGatewayPaidCorrelationIds({
-      id_transaction: String(rec.id_transaction ?? ""),
-      raw_payload: rec.raw_payload,
-    });
-    const hit = expanded.find((x) => keyLower.has(String(x).trim().toLowerCase()));
-    if (hit) {
-      const tx = String(rec.id_transaction ?? "").trim() || hit;
-      await syncVendaPaidAfterGatewayHit(vendaPk, tx);
-      return true;
-    }
+  const gwTx = await findPaidGatewayIdTransactionMatchingVenda(admin, r);
+  if (gwTx) {
+    await syncVendaPaidAfterGatewayHit(vendaPk, gwTx);
+    return true;
   }
 
   return false;
 }
+
+const debugPixVendaStatus =
+  process.env.NODE_ENV === "development" || process.env.DEBUG_CHECKOUT_PIX_STATUS === "1";
 
 /**
  * Estado de pagamento da venda (checkout) — usado pelo browser a fazer polling após gerar Pix.
@@ -144,11 +109,31 @@ export async function GET(req: Request) {
   }
 
   if (!row) {
-    return NextResponse.json({ paid: false, trackingCode: null as string | null });
+    if (debugPixVendaStatus) {
+      console.info("[checkout/pix-venda-status] venda não encontrada", { vendaId });
+    }
+    return NextResponse.json({
+      paid: false,
+      state: "not_found" as const,
+      trackingCode: null as string | null,
+    });
   }
 
   const r = row as Record<string, unknown>;
+  const rowPaidBefore = orderStatusFromVendaRow(r) === "pago";
   const paid = await resolvePixPaidForVendaRow(admin, r, vendaId);
+
+  if (debugPixVendaStatus) {
+    const keys = collectVendaPixGatewayCorrelationKeys(r);
+    console.info("[checkout/pix-venda-status]", {
+      vendaId,
+      rowPaidBefore,
+      resolvedPaid: paid,
+      status_pagamento: r.status_pagamento,
+      status: r.status,
+      correlationKeyCount: keys.length,
+    });
+  }
 
   let trackingCode: string | null = null;
   if (paid) {
@@ -162,5 +147,7 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({ paid, trackingCode });
+  const state = paid ? ("paid" as const) : ("pending" as const);
+
+  return NextResponse.json({ paid, state, trackingCode });
 }

@@ -260,8 +260,12 @@ function CheckoutContent() {
           cache: "no-store",
           credentials: "same-origin",
         });
-        const j = (await res.json()) as { paid?: boolean; trackingCode?: string | null };
+        const j = (await res.json()) as { paid?: boolean; trackingCode?: string | null; state?: string };
         if (cancelled) return;
+        if (process.env.NODE_ENV === "development") {
+          // Diagnóstico: remover ou manter só em dev
+          console.debug("[checkout/pix-poll]", { vendaId, httpOk: res.ok, paid: j.paid, state: j.state });
+        }
         if (j.paid !== true) return;
         if (navigatedForVendaIdRef.current === vendaId) return;
 

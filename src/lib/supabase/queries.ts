@@ -6,7 +6,11 @@ import { mapClienteRow, mapLeadRow, mapVendaRow } from "@/lib/supabase/mappers";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { isAdminSessionValid } from "@/lib/admin-auth/verify-session.server";
 import { orderStatusFromVendaRow } from "@/lib/normalize-payment-order-status";
-import { expandPixGatewayPaidCorrelationIds, isPixGatewayPaidDbStatus } from "@/lib/pix-gateway-paid-helpers";
+import {
+  buildPaidPixCorrelationMegaSetLowercase,
+  collectVendaPixGatewayCorrelationKeys,
+  PAID_PIX_GATEWAY_SCAN_CAP,
+} from "@/lib/pix-gateway-paid-correlation-set";
 import type { Client, Lead, Sale } from "@/types/admin";
 import { isOrderCheckoutSnapshotV1, type OrderCheckoutSnapshotV1 } from "@/types/order-snapshot";
 
@@ -49,18 +53,6 @@ function vendaRowSortTimestampMs(raw: Record<string, unknown>): number {
     if (!Number.isNaN(t)) return t;
   }
   return 0;
-}
-
-function vendaPixCorrelationKeys(raw: Record<string, unknown>): string[] {
-  const cols = ["pedido_codigo", "pix_id_transaction", "id_transacao_pix"] as const;
-  const out: string[] = [];
-  for (const c of cols) {
-    const v = raw[c];
-    if (v == null || v === "") continue;
-    const t = String(v).trim();
-    if (t) out.push(t);
-  }
-  return [...new Set(out)];
 }
 
 type SupabaseAdminClient = NonNullable<ReturnType<typeof createSupabaseAdminClient>>;
@@ -121,8 +113,6 @@ async function enrichSalesWithLeadFields(
   });
 }
 
-const PAID_PIX_GATEWAY_ROW_CAP = 4_000;
-
 /**
  * Conjunto dos ids correlatos que já constam em algum Pix pago no armazém do gateway
  * (`id_transaction` da linha em pix_gateway_payments + ids extraídos de `raw_payload`).
@@ -132,31 +122,10 @@ async function fetchPaidPixIdSet(admin: SupabaseAdminClient, ids: string[]): Pro
   const uniq = [...new Set(ids.map((x) => x.trim()).filter(Boolean))];
   if (uniq.length === 0) return paid;
 
-  const { data: paidRowsRaw, error } = await admin
-    .from("pix_gateway_payments")
-    .select("id_transaction, raw_payload, status")
-    .order("updated_at", { ascending: false })
-    .limit(PAID_PIX_GATEWAY_ROW_CAP);
-
-  if (error) {
-    console.warn("[fetchAdminVendas] pix_gateway_payments:", error.message);
-    return paid;
-  }
-
-  const megaExpanded = new Set<string>();
-  for (const pr of paidRowsRaw ?? []) {
-    const row = pr as Record<string, unknown>;
-    if (!isPixGatewayPaidDbStatus(row.status)) continue;
-    for (const x of expandPixGatewayPaidCorrelationIds({
-      id_transaction: String(row.id_transaction ?? ""),
-      raw_payload: row.raw_payload,
-    })) {
-      megaExpanded.add(x);
-    }
-  }
+  const megaLower = await buildPaidPixCorrelationMegaSetLowercase(admin, PAID_PIX_GATEWAY_SCAN_CAP);
 
   for (const id of uniq) {
-    if (megaExpanded.has(id)) paid.add(id);
+    if (megaLower.has(id.trim().toLowerCase())) paid.add(id);
   }
   return paid;
 }
@@ -225,7 +194,7 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
     const rawVendas = toRecordRows(vendasData);
     const corrIds: string[] = [];
     for (const raw of rawVendas) {
-      corrIds.push(...vendaPixCorrelationKeys(raw));
+      corrIds.push(...collectVendaPixGatewayCorrelationKeys(raw));
     }
     const paidByGateway = await fetchPaidPixIdSet(admin, corrIds);
 
@@ -238,7 +207,7 @@ export async function fetchAdminLeads(): Promise<AdminFetchResult<Lead[]>> {
       if (!leadId) continue;
       const createdAt = vendaRowSortTimestampMs(raw);
       let status = orderStatusFromVendaRow(raw);
-      if (status !== "pago" && vendaPixCorrelationKeys(raw).some((k) => paidByGateway.has(k))) {
+      if (status !== "pago" && collectVendaPixGatewayCorrelationKeys(raw).some((k) => paidByGateway.has(k))) {
         status = "pago";
       }
       const amountCents = normalizeAmountCents(raw.valor ?? raw.amount_cents);
@@ -289,14 +258,14 @@ export async function fetchAdminVendas(): Promise<AdminFetchResult<Sale[]>> {
   const rawRows = toRecordRows(data);
   const corrIds: string[] = [];
   for (const raw of rawRows) {
-    corrIds.push(...vendaPixCorrelationKeys(raw));
+    corrIds.push(...collectVendaPixGatewayCorrelationKeys(raw));
   }
   const paidByGateway = await fetchPaidPixIdSet(admin, corrIds);
 
   const rows = rawRows.map(mapVendaRow);
   for (let i = 0; i < rows.length; i++) {
     if (rows[i].status === "pago") continue;
-    if (vendaPixCorrelationKeys(rawRows[i]).some((k) => paidByGateway.has(k))) {
+    if (collectVendaPixGatewayCorrelationKeys(rawRows[i]).some((k) => paidByGateway.has(k))) {
       rows[i] = { ...rows[i], status: "pago" };
     }
   }

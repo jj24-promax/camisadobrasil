@@ -1,5 +1,6 @@
 import "server-only";
 
+import { collectVendaPixGatewayCorrelationKeys } from "@/lib/pix-gateway-paid-correlation-set";
 import {
   expandPixGatewayPaidCorrelationIds,
   extractPixWebhookClientFingerprint,
@@ -17,18 +18,6 @@ import {
 
 const DEFAULT_LIMIT = 2000;
 const PAID_ROWS_CAP = 4_000;
-
-function vendaPixCorrelationKeys(raw: Record<string, unknown>): string[] {
-  const cols = ["pedido_codigo", "pix_id_transaction", "id_transacao_pix"] as const;
-  const out: string[] = [];
-  for (const c of cols) {
-    const v = raw[c];
-    if (v == null || v === "") continue;
-    const t = String(v).trim();
-    if (t) out.push(t);
-  }
-  return [...new Set(out)];
-}
 
 export type ReconcilePixVendasFromGatewayResult = {
   ok: boolean;
@@ -133,7 +122,7 @@ export async function reconcilePendingPixVendasFromGatewayStore(options?: {
 
   const pendingCorrelationPool = new Set<string>();
   for (const r of rows) {
-    for (const k of vendaPixCorrelationKeys(r)) pendingCorrelationPool.add(k);
+    for (const k of collectVendaPixGatewayCorrelationKeys(r)) pendingCorrelationPool.add(k);
   }
 
   let paidRowsWithoutPendingVenda = 0;
@@ -152,7 +141,7 @@ export async function reconcilePendingPixVendasFromGatewayStore(options?: {
   for (const r of rows) {
     const vid = String(r.id ?? "").trim();
     if (!vid || handledVendaIds.has(vid)) continue;
-    const keys = vendaPixCorrelationKeys(r);
+    const keys = collectVendaPixGatewayCorrelationKeys(r);
     const hit = keys.find((k) => megaExpanded.has(k));
     if (!hit) continue;
 
@@ -175,7 +164,7 @@ export async function reconcilePendingPixVendasFromGatewayStore(options?: {
 
   const distinctTxHits = new Set<string>();
   for (const r of rows) {
-    const hit = vendaPixCorrelationKeys(r).find((k) => megaExpanded.has(k));
+    const hit = collectVendaPixGatewayCorrelationKeys(r).find((k) => megaExpanded.has(k));
     if (hit) distinctTxHits.add(hit);
   }
 

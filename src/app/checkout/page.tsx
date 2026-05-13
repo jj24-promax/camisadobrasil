@@ -737,6 +737,20 @@ function CheckoutContent() {
     }
   };
 
+  /** Não usar `<a href="#…">` aqui: com o `pushState` da retenção, âncora na mesma página pode disparar `popstate` e redirecionar à retencão. */
+  const scrollToPersonalDataSection = useCallback(() => {
+    const el = document.getElementById("checkout-dados-pessoais");
+    if (!el) return;
+    const reduce =
+      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    try {
+      el.focus({ preventScroll: true });
+    } catch {
+      /* focus opcional */
+    }
+  }, []);
+
   return (
     <motion.div
       className="min-h-screen w-full max-w-full overflow-x-clip bg-[#04070d] text-foreground pb-20"
@@ -785,9 +799,10 @@ function CheckoutContent() {
         </div>
       </header>
 
-      <a
-        href="#checkout-dados-pessoais"
-        className="group relative block w-full overflow-hidden border-b border-white/[0.06] bg-[#050a14] outline-none transition-[opacity,filter] hover:opacity-[0.96] focus-visible:ring-2 focus-visible:ring-gold/45 focus-visible:ring-inset"
+      <button
+        type="button"
+        onClick={scrollToPersonalDataSection}
+        className="group relative block w-full cursor-pointer overflow-hidden border-0 border-b border-white/[0.06] bg-[#050a14] p-0 text-left outline-none transition-[opacity,filter] hover:opacity-[0.96] focus-visible:ring-2 focus-visible:ring-gold/45 focus-visible:ring-inset"
         aria-label="Ir para dados pessoais"
       >
         <div className="relative mx-auto w-full max-w-[1920px]">
@@ -802,7 +817,7 @@ function CheckoutContent() {
           />
           <span className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden />
         </div>
-      </a>
+      </button>
 
       <main className="mx-auto mt-8 max-w-7xl px-4 sm:px-5 lg:mt-12">
         <div className="grid min-w-0 gap-8 lg:grid-cols-[1fr_400px]">
@@ -992,7 +1007,8 @@ function CheckoutContent() {
 
             <section
               id="checkout-dados-pessoais"
-              className="glass-dark scroll-mt-[calc(10rem+env(safe-area-inset-top,0px))] rounded-[2rem] p-6 md:p-8"
+              tabIndex={-1}
+              className="glass-dark scroll-mt-[calc(10rem+env(safe-area-inset-top,0px))] rounded-[2rem] p-6 md:p-8 outline-none focus-visible:ring-2 focus-visible:ring-gold/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[#04070d]"
             >
               <SectionHeader number={1} title="Dados Pessoais" />
               <div className="grid gap-4 md:grid-cols-2">

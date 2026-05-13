@@ -19,7 +19,8 @@ import {
  * - No `popstate`, navega para `/checkout/retencao` (com a query atual) e grava `pending` no
  *   sessionStorage; ao montar a retencão, `tryCommitRetentionVisitFromCheckout` marca "já viu"
  *   e o próximo acesso ao checkout não reinstala o guard.
- * - Não instala se já viu a retenção nesta sessão ou se o desconto de retenção já foi aceite.
+ * - Não uses `<a href="#…">` no mesmo `/checkout` para saltos internos: em alguns browsers isso dispara
+ *   `popstate` após este `pushState` e redireciona à retencão à frente do utilizador. Preferir `scrollIntoView`.
  */
 export function useCheckoutBrowserBackRetention() {
   const router = useRouter();

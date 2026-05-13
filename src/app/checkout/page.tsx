@@ -233,9 +233,11 @@ function CheckoutContent() {
     paymentCode: string;
     paymentCodeBase64: string;
     vendaId: string;
+    gatewayTransactionId?: string;
   } | null>(null);
 
   const navigatedForVendaIdRef = useRef<string | null>(null);
+  const pixPollHttpErrorLoggedRef = useRef(false);
 
   const pixQrDataUrl = useMemo(
     () => (pixResult?.paymentCodeBase64 ? qrDataUrlForImg(pixResult.paymentCodeBase64) : null),
@@ -251,15 +253,30 @@ function CheckoutContent() {
     const vendaId = pixResult?.vendaId?.trim();
     if (!vendaId || paymentMethod !== "pix") return;
 
+    pixPollHttpErrorLoggedRef.current = false;
+
     let cancelled = false;
     let intervalId: number | null = null;
 
     const poll = async () => {
       try {
-        const res = await fetch(`/api/checkout/pix-venda-status?vendaId=${encodeURIComponent(vendaId)}`, {
+        const qs = new URLSearchParams({ vendaId });
+        const gw = pixResult?.gatewayTransactionId?.trim();
+        if (gw) qs.set("gatewayTxId", gw);
+        const res = await fetch(`/api/checkout/pix-venda-status?${qs.toString()}`, {
           cache: "no-store",
           credentials: "same-origin",
         });
+        if (!res.ok) {
+          if (!pixPollHttpErrorLoggedRef.current) {
+            pixPollHttpErrorLoggedRef.current = true;
+            void res
+              .clone()
+              .text()
+              .then((t) => console.warn("[checkout/pix-poll] HTTP", res.status, t.slice(0, 500)));
+          }
+          return;
+        }
         const j = (await res.json()) as { paid?: boolean; trackingCode?: string | null; state?: string };
         if (cancelled) return;
         if (process.env.NODE_ENV === "development") {
@@ -298,7 +315,7 @@ function CheckoutContent() {
       cancelled = true;
       if (intervalId != null) window.clearInterval(intervalId);
     };
-  }, [pixResult?.vendaId, paymentMethod, router, searchParams]);
+  }, [pixResult?.vendaId, pixResult?.gatewayTransactionId, paymentMethod, router, searchParams]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -652,6 +669,7 @@ function CheckoutContent() {
         error?: string;
         leadId?: string;
         vendaId?: string;
+        gatewayTransactionId?: string;
         paymentCode?: string;
         paymentCodeBase64?: string;
       };
@@ -671,10 +689,12 @@ function CheckoutContent() {
         throw new Error("Resposta do servidor sem referência do pedido.");
       }
 
+      const gwRaw = typeof j.gatewayTransactionId === "string" ? j.gatewayTransactionId.trim() : "";
       setPixResult({
         paymentCode: code,
         paymentCodeBase64: b64,
         vendaId: vendaIdRaw,
+        ...(gwRaw ? { gatewayTransactionId: gwRaw } : {}),
       });
 
       const snap = {

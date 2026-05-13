@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { collectVendaPixGatewayCorrelationKeys, findPaidGatewayIdTransactionMatchingVenda } from "@/lib/pix-gateway-paid-correlation-set";
+import {
+  collectVendaPixGatewayCorrelationKeys,
+  fetchPaidGatewayTransactionIfPaid,
+  findPaidGatewayIdTransactionMatchingVenda,
+} from "@/lib/pix-gateway-paid-correlation-set";
 import { isPixGatewayPaidDbStatus } from "@/lib/pix-gateway-paid-helpers";
 import { orderStatusFromVendaRow } from "@/lib/normalize-payment-order-status";
 import {
@@ -41,9 +45,19 @@ async function syncVendaPaidAfterGatewayHit(vendaPk: string, gatewayTxId: string
 async function resolvePixPaidForVendaRow(
   admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
   r: Record<string, unknown>,
-  vendaPk: string
+  vendaPk: string,
+  gatewayTxHint: string | null
 ): Promise<boolean> {
   if (orderStatusFromVendaRow(r) === "pago") return true;
+
+  const hint = gatewayTxHint?.trim() ?? "";
+  if (hint) {
+    const directTx = await fetchPaidGatewayTransactionIfPaid(admin, hint);
+    if (directTx) {
+      await syncVendaPaidAfterGatewayHit(vendaPk, directTx);
+      return true;
+    }
+  }
 
   const baseKeys = collectVendaPixGatewayCorrelationKeys(r);
   if (baseKeys.length === 0) return false;
@@ -74,6 +88,16 @@ async function resolvePixPaidForVendaRow(
   return false;
 }
 
+const NO_STORE_JSON = {
+  headers: {
+    "Cache-Control": "no-store, no-cache, must-revalidate, private",
+    "CDN-Cache-Control": "no-store",
+    "Vercel-CDN-Cache-Control": "no-store",
+  },
+} as const;
+
+export const dynamic = "force-dynamic";
+
 const debugPixVendaStatus =
   process.env.NODE_ENV === "development" || process.env.DEBUG_CHECKOUT_PIX_STATUS === "1";
 
@@ -85,14 +109,16 @@ const debugPixVendaStatus =
  * quebrava www/apex e alguns browsers móveis (polling ficava sempre “pendente”).
  */
 export async function GET(req: Request) {
-  const vendaId = new URL(req.url).searchParams.get("vendaId")?.trim() ?? "";
+  const url = new URL(req.url);
+  const vendaId = url.searchParams.get("vendaId")?.trim() ?? "";
+  const gatewayTxId = url.searchParams.get("gatewayTxId")?.trim() ?? "";
   if (!UUID_RE.test(vendaId)) {
-    return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
+    return NextResponse.json({ error: "Pedido inválido." }, { status: 400, ...NO_STORE_JSON });
   }
 
   const admin = createSupabaseAdminClient();
   if (!admin) {
-    return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
+    return NextResponse.json({ error: "Serviço indisponível." }, { status: 503, ...NO_STORE_JSON });
   }
 
   const { data: row, error } = await admin
@@ -105,28 +131,33 @@ export async function GET(req: Request) {
 
   if (error) {
     console.warn("[checkout/pix-venda-status]", error.message);
-    return NextResponse.json({ error: "Erro ao consultar pedido." }, { status: 502 });
+    return NextResponse.json({ error: "Erro ao consultar pedido." }, { status: 502, ...NO_STORE_JSON });
   }
 
   if (!row) {
     if (debugPixVendaStatus) {
       console.info("[checkout/pix-venda-status] venda não encontrada", { vendaId });
     }
-    return NextResponse.json({
-      paid: false,
-      state: "not_found" as const,
-      trackingCode: null as string | null,
-    });
+    return NextResponse.json(
+      {
+        paid: false,
+        state: "not_found" as const,
+        trackingCode: null as string | null,
+      },
+      NO_STORE_JSON
+    );
   }
 
   const r = row as Record<string, unknown>;
   const rowPaidBefore = orderStatusFromVendaRow(r) === "pago";
-  const paid = await resolvePixPaidForVendaRow(admin, r, vendaId);
+  const gatewayHint = gatewayTxId || null;
+  const paid = await resolvePixPaidForVendaRow(admin, r, vendaId, gatewayHint);
 
   if (debugPixVendaStatus) {
     const keys = collectVendaPixGatewayCorrelationKeys(r);
     console.info("[checkout/pix-venda-status]", {
       vendaId,
+      gatewayTxHint: gatewayHint ? "[presente]" : "[ausente]",
       rowPaidBefore,
       resolvedPaid: paid,
       status_pagamento: r.status_pagamento,
@@ -149,5 +180,5 @@ export async function GET(req: Request) {
 
   const state = paid ? ("paid" as const) : ("pending" as const);
 
-  return NextResponse.json({ paid, state, trackingCode });
+  return NextResponse.json({ paid, state, trackingCode }, NO_STORE_JSON);
 }

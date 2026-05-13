@@ -32,6 +32,17 @@ export function isPixGatewayPaidDbStatus(status: unknown): boolean {
   return false;
 }
 
+function parseJsonObjectIfNeeded(v: unknown): unknown {
+  if (v != null && typeof v === "string") {
+    try {
+      return JSON.parse(v) as unknown;
+    } catch {
+      return v;
+    }
+  }
+  return v;
+}
+
 /** IDs correlatos: chave primária da linha + todos os candidatos extraídos do payload bruto do webhook. */
 export function expandPixGatewayPaidCorrelationIds(row: {
   id_transaction: string;
@@ -40,16 +51,17 @@ export function expandPixGatewayPaidCorrelationIds(row: {
   const out = new Set<string>();
   const main = String(row.id_transaction ?? "").trim();
   if (main) out.add(main);
+  const rawParsed = parseJsonObjectIfNeeded(row.raw_payload);
   const merged: Record<string, unknown> = {};
-  if (row.raw_payload && typeof row.raw_payload === "object" && !Array.isArray(row.raw_payload)) {
-    Object.assign(merged, row.raw_payload as Record<string, unknown>);
+  if (rawParsed && typeof rawParsed === "object" && !Array.isArray(rawParsed)) {
+    Object.assign(merged, rawParsed as Record<string, unknown>);
   }
   if (main) merged.gatewayStoredId = main;
   for (const x of collectPixWebhookTransactionIds(merged)) {
     const t = x.trim();
     if (t) out.add(t);
   }
-  for (const x of collectPixWebhookTransactionIds(row.raw_payload)) {
+  for (const x of collectPixWebhookTransactionIds(rawParsed)) {
     const t = x.trim();
     if (t) out.add(t);
   }

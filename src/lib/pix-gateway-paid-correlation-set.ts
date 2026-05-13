@@ -105,10 +105,16 @@ export async function buildPaidPixCorrelationMegaSetLowercase(
   for (const pr of rows) {
     const row = pr as Record<string, unknown>;
     if (!isPixGatewayPaidDbStatus(row.status)) continue;
-    for (const x of expandPixGatewayPaidCorrelationIds({
-      id_transaction: String(row.id_transaction ?? ""),
-      raw_payload: row.raw_payload,
-    })) {
+    let expanded: string[];
+    try {
+      expanded = expandPixGatewayPaidCorrelationIds({
+        id_transaction: String(row.id_transaction ?? ""),
+        raw_payload: row.raw_payload,
+      });
+    } catch {
+      expanded = [String(row.id_transaction ?? "").trim()].filter(Boolean);
+    }
+    for (const x of expanded) {
       const t = x.trim();
       if (t) mega.add(t.toLowerCase());
     }
@@ -146,10 +152,15 @@ export async function findPaidGatewayIdTransactionMatchingVenda(
     if (!isPixGatewayPaidDbStatus(row.status)) continue;
     const gwTx = String(row.id_transaction ?? "").trim();
     if (!gwTx) continue;
-    const expanded = expandPixGatewayPaidCorrelationIds({
-      id_transaction: gwTx,
-      raw_payload: row.raw_payload,
-    });
+    let expanded: string[];
+    try {
+      expanded = expandPixGatewayPaidCorrelationIds({
+        id_transaction: gwTx,
+        raw_payload: row.raw_payload,
+      });
+    } catch {
+      expanded = [gwTx];
+    }
     const hit = expanded.some((x) => keyLower.has(String(x).trim().toLowerCase()));
     if (hit) return gwTx;
   }

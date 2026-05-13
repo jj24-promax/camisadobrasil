@@ -47,8 +47,22 @@ export async function insertPendingPixVenda(
   const line = p.shippingSummary ? `${base} · Entrega: ${p.shippingSummary}` : base;
   const id = crypto.randomUUID();
 
-  // Mapeamento EXATO para as colunas da tabela "vendas"
-  const row: Record<string, unknown> = {
+  const gw = p.gatewayPixTransactionId?.trim();
+  /** Só chaves suportadas por `vendas` neste projeto — nunca `email`/`telefone` (ficam em `leads`). */
+  type VendaPixInsert = {
+    id: string;
+    lead_id: string | null;
+    cliente_nome: string;
+    produto: string;
+    valor: number;
+    status_pagamento: "pendente";
+    pedido_codigo: string;
+    pix_id_transaction?: string;
+    id_transacao_pix?: string;
+    detalhes_pedido?: OrderCheckoutSnapshotV1;
+  };
+
+  const row: VendaPixInsert = {
     id,
     lead_id: p.leadId || null,
     cliente_nome: p.customerName,
@@ -57,19 +71,20 @@ export async function insertPendingPixVenda(
     status_pagamento: "pendente",
     pedido_codigo: tx,
   };
-  const gw = p.gatewayPixTransactionId?.trim();
   if (gw) {
     row.pix_id_transaction = gw;
     row.id_transacao_pix = gw;
   }
   if (p.detalhesPedido != null) {
-    row.detalhes_pedido = p.detalhesPedido;
+    row.detalhes_pedido = JSON.parse(JSON.stringify(p.detalhesPedido)) as OrderCheckoutSnapshotV1;
   }
 
   const { error } = await admin.from("vendas").insert(row);
-  
+
   if (error) {
-    console.error("[pending-venda-pix] erro ao inserir:", error.message);
+    console.error("[pending-venda-pix] erro ao inserir:", error.message, {
+      payloadKeys: Object.keys(row),
+    });
     return { ok: false, error: error.message };
   }
 

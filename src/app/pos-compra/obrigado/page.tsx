@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 import { readPosCompraPixClient } from "@/lib/pos-compra-pix-storage";
 import { generateMockTrackingCode } from "@/lib/tracking-utils";
 
-const TRACKING_SITE_BASE_URL = "https://userastrear.site";
+const TRACKING_SITE_BASE_URL = "https://userastrear.online";
 
 function ObrigadoContent() {
   const searchParams = useSearchParams();

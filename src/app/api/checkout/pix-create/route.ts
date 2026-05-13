@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getMinCheckoutAmountCents } from "@/lib/checkout-min-amount-cents";
 import { PRODUCT } from "@/lib/product";
 import { extractPixEmvCorrelationIds } from "@/lib/pix-emv-correlation";
-import { createRoyalBankingPixCashIn } from "@/lib/royal-banking-pix.server";
+import { createRoyalBankingPixCashIn, getRoyalBankingPixCallbackUrl, listRoyalBankingPixWebhookUrlCandidates } from "@/lib/royal-banking-pix.server";
 import { insertCheckoutLead } from "@/lib/supabase/insert-lead-from-checkout";
 import { insertPendingPixVenda } from "@/lib/supabase/pending-venda-pix";
 import { generateMockTrackingCode } from "@/lib/tracking-utils";
@@ -171,5 +171,8 @@ export async function POST(req: Request) {
     gatewayTransactionId: gwId,
     paymentCode: royal.paymentCode,
     paymentCodeBase64: royal.paymentCodeBase64,
+    /** O mesmo URL enviado à Royal em `callbackUrl` — deve coincidir com o webhook no painel Royal. */
+    webhookCallbackUrlUsed: getRoyalBankingPixCallbackUrl(),
+    webhookCallbackUrlCandidates: listRoyalBankingPixWebhookUrlCandidates(),
   });
 }

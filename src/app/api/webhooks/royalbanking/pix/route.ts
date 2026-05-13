@@ -1,3 +1,5 @@
+import { NextResponse } from "next/server";
+
 import { getPixWebhookSecret } from "@/lib/pix-webhook-env";
 import {
   collectPixWebhookTransactionIds,
@@ -16,6 +18,33 @@ import {
   markPixGatewayPaymentPaid,
 } from "@/lib/supabase/pix-payment-store";
 import { markCustomsFeePixPaidByGatewayId } from "@/lib/supabase/customs-fee-pix";
+import { getRoyalBankingPixCallbackUrl, listRoyalBankingPixWebhookUrlCandidates } from "@/lib/royal-banking-pix.server";
+
+/**
+ * GET público: mostra qual URL o servidor usa como `callbackUrl` nos novos Pix e todas as candidatas.
+ * Usa para alinhar o painel Royal (muitos casos: Royal envia para .vercel.app mas o site é www).
+ */
+export function GET() {
+  const callbackUrl = getRoyalBankingPixCallbackUrl();
+  const candidates = listRoyalBankingPixWebhookUrlCandidates();
+  const secretOn = Boolean(getPixWebhookSecret());
+  return NextResponse.json(
+    {
+      ok: true,
+      message:
+        "Configure na Royal Banking **exatamente** um destes URLs (idealmente o primeiro). O POST do webhook não usa este GET.",
+      callbackUrlUsedForNewPix: callbackUrl,
+      allCandidateWebhookUrls: candidates,
+      alternatePathSameHandler: "/api/webhooks/mangofy/pix",
+      webhookAuth: secretOn
+        ? "ROYALBANKING_WEBHOOK_SECRET definido — o POST deve enviar x-webhook-secret (ou equivalente) igual ao valor da Vercel."
+        : "Sem ROYALBANKING_WEBHOOK_SECRET — POST aceite sem header.",
+      fixHint:
+        "Na Vercel define ROYALBANKING_PIX_CALLBACK_URL=https://www.TEUDOMINIO.com/api/webhooks/royalbanking/pix para forçar o host certo.",
+    },
+    { headers: { "Cache-Control": "no-store, max-age=0" } }
+  );
+}
 
 function isPixWebhookAuthorized(req: Request): boolean {
   const expected = getPixWebhookSecret();

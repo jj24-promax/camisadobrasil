@@ -20,20 +20,68 @@ export function getRoyalBankingApiKey(): string | undefined {
   return process.env.ROYALBANKING_API_KEY?.trim() || undefined;
 }
 
+const WEBHOOK_PATH = "/api/webhooks/royalbanking/pix";
+
+function normalizeHttpsBase(raw: string): string {
+  let s = raw.trim().replace(/\/$/, "");
+  if (!s) return "";
+  if (!/^https?:\/\//i.test(s)) s = `https://${s.replace(/^\/\//, "")}`;
+  return s.replace(/\/$/, "");
+}
+
+/**
+ * Bases públicas candidatas (ordem de prioridade para o `callbackUrl` da Royal).
+ * `VERCEL_URL` (.vercel.app) fica por último — em produção com domínio próprio a Royal deve bater nesse domínio.
+ */
+function royalWebhookBaseCandidates(): string[] {
+  const vProd = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  const vUrl = process.env.VERCEL_URL?.trim();
+  return [
+    process.env.NEXT_PUBLIC_SITE_URL?.trim(),
+    process.env.NEXT_PUBLIC_APP_URL?.trim(),
+    process.env.SITE_URL?.trim(),
+    process.env.APP_URL?.trim(),
+    vProd ? `https://${vProd.replace(/^https?:\/\//, "").replace(/\/$/, "")}` : "",
+    vUrl ? `https://${vUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")}` : "",
+  ].filter((x): x is string => typeof x === "string" && x.length > 0);
+}
+
+/**
+ * Lista de URLs completas do webhook (únicas) — útil para alinhar manualmente no painel Royal
+ * se o `callbackUrl` automático estiver a apontar para outro host.
+ */
+export function listRoyalBankingPixWebhookUrlCandidates(): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const push = (u: string) => {
+    const n = u.replace(/\/$/, "");
+    const k = n.toLowerCase();
+    if (!k || seen.has(k)) return;
+    seen.add(k);
+    out.push(n);
+  };
+
+  const explicit = process.env.ROYALBANKING_PIX_CALLBACK_URL?.trim();
+  if (explicit) push(explicit.replace(/\/$/, ""));
+
+  for (const raw of royalWebhookBaseCandidates()) {
+    const base = normalizeHttpsBase(raw);
+    if (base) push(`${base}${WEBHOOK_PATH}`);
+  }
+  push(absoluteUrl(WEBHOOK_PATH));
+  return out;
+}
+
 /** URL absoluta do webhook Pix (Cash In) — Royal Banking `callbackUrl`. */
 export function getRoyalBankingPixCallbackUrl(): string {
   const explicit = process.env.ROYALBANKING_PIX_CALLBACK_URL?.trim();
   if (explicit) return explicit.replace(/\/$/, "");
-  const siteUrl =
-    process.env.SITE_URL?.trim() ||
-    process.env.APP_URL?.trim() ||
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (siteUrl) {
-    const base = siteUrl.replace(/\/$/, "");
-    return `${base}/api/webhooks/royalbanking/pix`;
+
+  for (const raw of royalWebhookBaseCandidates()) {
+    const base = normalizeHttpsBase(raw);
+    if (base) return `${base}${WEBHOOK_PATH}`;
   }
-  return absoluteUrl("/api/webhooks/royalbanking/pix");
+  return absoluteUrl(WEBHOOK_PATH);
 }
 
 export async function createRoyalBankingPixCashIn(args: {

@@ -70,6 +70,11 @@ export type OrderCheckoutSnapshotV1 = {
   shipping: OrderSnapshotShipping;
   posCompraUpsells: PosCompraUpsellSnapshot[];
   utm?: Record<string, string>;
+  /**
+   * Servidor: ids extraídos do EMV + id do gateway na criação — conciliação com webhook
+   * quando o id na URL do Pix (ex. onlyup) difere do `idTransaction` do JSON.
+   */
+  _pixCorrelationIds?: string[];
 };
 
 export type OrderCheckoutSnapshot = OrderCheckoutSnapshotV1;

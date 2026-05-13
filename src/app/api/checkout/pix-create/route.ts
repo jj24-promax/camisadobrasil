@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getMinCheckoutAmountCents } from "@/lib/checkout-min-amount-cents";
 import { PRODUCT } from "@/lib/product";
+import { extractPixEmvCorrelationIds } from "@/lib/pix-emv-correlation";
 import { createRoyalBankingPixCashIn } from "@/lib/royal-banking-pix.server";
 import { insertCheckoutLead } from "@/lib/supabase/insert-lead-from-checkout";
 import { insertPendingPixVenda } from "@/lib/supabase/pending-venda-pix";
@@ -141,6 +142,11 @@ export async function POST(req: Request) {
     console.warn("[checkout/pix-create] lead não gravado:", lead.error);
   }
 
+  const code = royal.paymentCode.trim();
+  const fromEmv = extractPixEmvCorrelationIds(code);
+  const _pixCorrelationIds = [...new Set([gwId, ...fromEmv].map((x) => x.trim()).filter(Boolean))].slice(0, 24);
+  const detalhesPedido = { ...orderSnapshot, _pixCorrelationIds };
+
   const venda = await insertPendingPixVenda({
     leadId,
     customerName: name,
@@ -151,7 +157,7 @@ export async function POST(req: Request) {
     idTransaction: pedidoCodigoParaWebhook,
     gatewayPixTransactionId: gwId,
     shippingSummary,
-    detalhesPedido: orderSnapshot,
+    detalhesPedido,
   });
 
   if (!venda.ok) {

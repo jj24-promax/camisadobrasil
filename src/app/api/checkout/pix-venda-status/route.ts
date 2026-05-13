@@ -2,19 +2,54 @@ import { NextResponse } from "next/server";
 
 import { expandPixGatewayPaidCorrelationIds, isPixGatewayPaidDbStatus } from "@/lib/pix-gateway-paid-helpers";
 import { orderStatusFromVendaRow } from "@/lib/normalize-payment-order-status";
-import { markPixVendaPaidByGatewayId } from "@/lib/supabase/pending-venda-pix";
+import {
+  markPendingPixVendaPaidByPrimaryId,
+  markPixVendaPaidByGatewayId,
+} from "@/lib/supabase/pending-venda-pix";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function gatewayMatchIds(row: Record<string, unknown>): string[] {
-  const keys = ["pedido_codigo", "pix_id_transaction", "id_transacao_pix"] as const;
   const out = new Set<string>();
-  for (const k of keys) {
+  for (const k of ["pedido_codigo", "pix_id_transaction", "id_transacao_pix"] as const) {
     const t = String(row[k] ?? "").trim();
     if (t) out.add(t);
   }
+  const det = row.detalhes_pedido;
+  if (det && typeof det === "object" && !Array.isArray(det)) {
+    const arr = (det as Record<string, unknown>)._pixCorrelationIds;
+    if (Array.isArray(arr)) {
+      for (const x of arr) {
+        const t = String(x ?? "").trim();
+        if (t) out.add(t);
+      }
+    }
+  }
   return [...out];
+}
+
+/** Variações de caixa para `.in("id_transaction", …)` (Postgres text é sensível a maiúsculas). */
+function distinctKeyVariants(ids: readonly string[]): string[] {
+  const s = new Set<string>();
+  for (const raw of ids) {
+    const id = raw.trim();
+    if (!id) continue;
+    s.add(id);
+    s.add(id.toLowerCase());
+    s.add(id.toUpperCase());
+  }
+  return [...s];
+}
+
+async function syncVendaPaidAfterGatewayHit(vendaPk: string, gatewayTxId: string): Promise<void> {
+  const sync = await markPixVendaPaidByGatewayId(gatewayTxId);
+  if (sync.updated === 0 && vendaPk) {
+    const byId = await markPendingPixVendaPaidByPrimaryId(vendaPk);
+    if (!byId.ok && byId.error) {
+      console.warn("[checkout/pix-venda-status] mark por id da venda:", byId.error);
+    }
+  }
 }
 
 /**
@@ -23,24 +58,28 @@ function gatewayMatchIds(row: Record<string, unknown>): string[] {
  */
 async function resolvePixPaidForVendaRow(
   admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
-  r: Record<string, unknown>
+  r: Record<string, unknown>,
+  vendaPk: string
 ): Promise<boolean> {
   if (orderStatusFromVendaRow(r) === "pago") return true;
 
-  const keys = gatewayMatchIds(r);
-  const keySet = new Set(keys);
-  if (keySet.size === 0) return false;
+  const baseKeys = gatewayMatchIds(r);
+  const keyLower = new Set(baseKeys.map((k) => k.trim().toLowerCase()).filter(Boolean));
+  if (keyLower.size === 0) return false;
+
+  const inKeys = distinctKeyVariants(baseKeys);
+  if (inKeys.length === 0) return false;
 
   const { data: gwRows, error: gwErr } = await admin
     .from("pix_gateway_payments")
     .select("id_transaction, status, raw_payload")
-    .in("id_transaction", keys);
+    .in("id_transaction", inKeys);
 
   if (!gwErr && Array.isArray(gwRows)) {
     for (const gw of gwRows) {
       if (!isPixGatewayPaidDbStatus((gw as { status?: unknown }).status)) continue;
       const tx = String((gw as { id_transaction?: unknown }).id_transaction ?? "").trim();
-      if (tx) void markPixVendaPaidByGatewayId(tx);
+      if (tx) await syncVendaPaidAfterGatewayHit(vendaPk, tx);
       return true;
     }
   }
@@ -51,7 +90,7 @@ async function resolvePixPaidForVendaRow(
     .select("id_transaction, status, raw_payload, updated_at")
     .gte("updated_at", since)
     .order("updated_at", { ascending: false })
-    .limit(200);
+    .limit(500);
 
   if (rErr || !Array.isArray(recent)) return false;
 
@@ -62,12 +101,10 @@ async function resolvePixPaidForVendaRow(
       id_transaction: String(rec.id_transaction ?? ""),
       raw_payload: rec.raw_payload,
     });
-    const hitId = expanded.find((x) => keySet.has(x));
-    if (hitId) {
-      const sync = await markPixVendaPaidByGatewayId(hitId);
-      if (sync.error) {
-        console.warn("[checkout/pix-venda-status] mark após match expandido:", sync.error);
-      }
+    const hit = expanded.find((x) => keyLower.has(String(x).trim().toLowerCase()));
+    if (hit) {
+      const tx = String(rec.id_transaction ?? "").trim() || hit;
+      await syncVendaPaidAfterGatewayHit(vendaPk, tx);
       return true;
     }
   }
@@ -95,7 +132,9 @@ export async function GET(req: Request) {
 
   const { data: row, error } = await admin
     .from("vendas")
-    .select("id, status_pagamento, status, pedido_codigo, pix_id_transaction, id_transacao_pix, lead_id")
+    .select(
+      "id, status_pagamento, status, pedido_codigo, pix_id_transaction, id_transacao_pix, lead_id, detalhes_pedido"
+    )
     .eq("id", vendaId)
     .maybeSingle();
 
@@ -109,7 +148,7 @@ export async function GET(req: Request) {
   }
 
   const r = row as Record<string, unknown>;
-  const paid = await resolvePixPaidForVendaRow(admin, r);
+  const paid = await resolvePixPaidForVendaRow(admin, r, vendaId);
 
   let trackingCode: string | null = null;
   if (paid) {

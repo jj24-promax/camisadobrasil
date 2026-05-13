@@ -30,6 +30,7 @@ import {
   type SalesListFilters,
 } from "@/lib/admin/sales-list";
 import { formatBRL, formatDateTime, formatPaymentMethod, formatRelativeTimePt } from "@/lib/admin-format";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { OrderSnapshotShipping } from "@/types/order-snapshot";
 import type { OrderStatus, Sale } from "@/types/admin";
@@ -84,6 +85,15 @@ Fico à disposição para te auxiliar e garantir sua camisa! 💛💚`;
   return `https://wa.me/${withCountry}?text=${encodeURIComponent(message)}`;
 }
 
+/** Rótulo legível para `YYYY-MM-DD` escolhido no filtro (calendário em pt-BR). */
+function formatDayFilterLabelPt(ymd: string): string {
+  const parts = ymd.split("-").map((x) => parseInt(x, 10));
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return ymd;
+  const [y, m, d] = parts;
+  const utc = Date.UTC(y, m - 1, d, 12, 0, 0);
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeZone: "America/Sao_Paulo" }).format(new Date(utc));
+}
+
 function formatShippingLine(s: OrderSnapshotShipping): string {
   const bits: string[] = [];
   if (s.street) bits.push(s.street);
@@ -113,6 +123,8 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
 
   const [status, setStatus] = useState<OrderStatus | "all">("all");
   const [sortDate, setSortDate] = useState<SaleSortByDate>("desc");
+  /** `YYYY-MM-DD` (input type=date) — dia do pedido em horário de Brasília. */
+  const [dayFilter, setDayFilter] = useState("");
   const [page, setPage] = useState(1);
   const [uiPending, startTransition] = useTransition();
 
@@ -121,8 +133,8 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
   }, [sales]);
 
   const filters: SalesListFilters = useMemo(
-    () => ({ search: deferredSearch, status }),
-    [deferredSearch, status]
+    () => ({ search: deferredSearch, status, dayYmd: dayFilter }),
+    [deferredSearch, status, dayFilter]
   );
 
   const filtered = useMemo(() => filterSales(localSales, filters), [localSales, filters]);
@@ -137,7 +149,7 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
 
   useEffect(() => {
     setPage(1);
-  }, [deferredSearch, status, sortDate]);
+  }, [deferredSearch, status, sortDate, dayFilter]);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -148,10 +160,13 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
       return "Nenhum pedido na base. Quando houver vendas no Supabase, elas aparecerão aqui.";
     }
     if (filtered.length === 0) {
+      if (dayFilter.trim()) {
+        return `Nenhum pedido em ${formatDayFilterLabelPt(dayFilter.trim())}. Experimenta outro dia ou limpa o filtro de data.`;
+      }
       return "Nenhum pedido corresponde à busca ou ao status de pagamento. Tente outros termos ou limpe os filtros.";
     }
     return "Nenhum registro nesta página.";
-  }, [sales.length, filtered.length]);
+  }, [sales.length, filtered.length, dayFilter]);
 
   const handleMarkVendaPaidManual = useCallback(
     async (sale: Sale) => {
@@ -222,6 +237,38 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
             options={SORT_OPTIONS}
             className="w-full lg:w-[min(100%,260px)]"
           />
+          <div className="w-full min-w-0 lg:w-[min(100%,280px)]">
+            <label htmlFor="sales-day-filter" className="admin-field-label">
+              Dia do pedido
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                id="sales-day-filter"
+                type="date"
+                value={dayFilter}
+                onChange={(e) => startTransition(() => setDayFilter(e.target.value))}
+                className={cn(
+                  "admin-control min-w-0 flex-1 font-mono text-[13px] tabular-nums sm:max-w-[14rem]",
+                  "[color-scheme:dark]"
+                )}
+                title="Filtra pela data do pedido em horário de Brasília (o mesmo critério da coluna Histórico)."
+              />
+              {dayFilter ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-11 shrink-0 border-white/[0.12] px-3 text-xs"
+                  onClick={() => startTransition(() => setDayFilter(""))}
+                >
+                  Limpar dia
+                </Button>
+              ) : null}
+            </div>
+            <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground/85">
+              Só mostra vendas desse dia; a ordenação (acima) continua a aplicar-se à lista filtrada.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -230,7 +277,11 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
           Vista em cartões neste tamanho de ecrã. Em ecrã maior vês a tabela completa com scroll horizontal.
         </p>
         <p className="text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
-          {status === "all" && deferredSearch === "" && total === localSales.length && localSales.length > 0 ? (
+          {status === "all" &&
+          deferredSearch === "" &&
+          !dayFilter.trim() &&
+          total === localSales.length &&
+          localSales.length > 0 ? (
             <>
               <strong className="text-foreground">{total}</strong> pedido{total === 1 ? "" : "s"} na base.
             </>
@@ -239,7 +290,14 @@ export function AdminSalesView({ sales }: AdminSalesViewProps) {
           ) : (
             <>
               <strong className="text-foreground">{total}</strong> resultado{total === 1 ? "" : "s"} com os filtros
-              atuais <span className="text-foreground/50">(base: {sales.length})</span>
+              atuais
+              {dayFilter.trim() ? (
+                <>
+                  {" "}
+                  <span className="text-foreground/80">· dia {formatDayFilterLabelPt(dayFilter.trim())}</span>
+                </>
+              ) : null}{" "}
+              <span className="text-foreground/50">(base: {sales.length})</span>
             </>
           )}
         </p>

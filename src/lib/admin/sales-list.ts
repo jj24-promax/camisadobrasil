@@ -1,10 +1,27 @@
 import type { OrderStatus, Sale } from "@/types/admin";
 import { orderSnapshotSearchText } from "@/types/order-snapshot";
 
+/** Calendário do pedido no painel (alinhado ao horário de Brasília). */
+const SALES_DAY_TZ = "America/Sao_Paulo";
+
+/** `YYYY-MM-DD` da data do pedido em `SALES_DAY_TZ` (para filtro por dia). */
+export function saleDateYmdBrazil(sale: Sale): string {
+  const t = new Date(sale.date).getTime();
+  if (Number.isNaN(t)) return "";
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: SALES_DAY_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(t));
+}
+
 /** Filtros de listagem — espelho de query string ou RPC no Supabase (`status`, `q`). */
 export type SalesListFilters = {
   search: string;
   status: OrderStatus | "all";
+  /** `YYYY-MM-DD` em Brasília; vazio = qualquer dia. */
+  dayYmd: string;
 };
 
 export const DEFAULT_SALES_PAGE_SIZE = 8;
@@ -52,8 +69,11 @@ export function sortSalesByDate(sales: Sale[], order: SaleSortByDate): Sale[] {
 }
 
 export function filterSales(sales: Sale[], filters: SalesListFilters): Sale[] {
+  const day = filters.dayYmd.trim();
   return sales.filter((sale) => {
     if (filters.status !== "all" && sale.status !== filters.status) return false;
-    return saleMatchesCustomerProductSearch(sale, filters.search);
+    if (!saleMatchesCustomerProductSearch(sale, filters.search)) return false;
+    if (day && saleDateYmdBrazil(sale) !== day) return false;
+    return true;
   });
 }

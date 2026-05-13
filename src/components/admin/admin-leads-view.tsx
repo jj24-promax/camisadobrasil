@@ -72,7 +72,7 @@ function leadWhatsAppPendingHref(lead: Lead): string | null {
 
   const withCountry = digits.length <= 11 ? `55${digits}` : digits;
   const amount = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-    (lead.paymentAmountCents ?? 6790) / 100
+    (lead.paymentAmountCents ?? 100) / 100
   );
   const firstName = leadFirstName(lead.name);
   const message = `Olá, ${firstName}! Tudo bem? 😊

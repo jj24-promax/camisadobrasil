@@ -6,9 +6,9 @@ import type { OrderCheckoutSnapshotV1 } from "@/types/order-snapshot";
 export type PendingPixVendaInput = {
   leadId?: string;
   customerName: string;
-  /** Mantido na API por compatibilidade; não grava em `vendas` se a base não tiver colunas (usar `lead_id` + `leads`). */
+  /** Opcional (ex. chamadores antigos); contacto fica em `leads`, não se grava em `vendas`. */
   customerEmail?: string;
-  /** Mantido na API por compatibilidade; não grava em `vendas` se a base não tiver colunas. */
+  /** Opcional; idem — use `lead_id` + `leads`. */
   customerPhone?: string;
   amountCents: number;
   productSummary: string;
@@ -65,10 +65,6 @@ export async function insertPendingPixVenda(
   if (p.detalhesPedido != null) {
     row.detalhes_pedido = p.detalhesPedido;
   }
-  const em = p.customerEmail?.trim();
-  if (em) row.email = em.toLowerCase();
-  const phDigits = (p.customerPhone ?? "").replace(/\D/g, "");
-  if (phDigits.length >= 10) row.telefone = phDigits;
 
   const { error } = await admin.from("vendas").insert(row);
   

@@ -6,7 +6,9 @@ import type { OrderCheckoutSnapshotV1 } from "@/types/order-snapshot";
 export type PendingCardVendaInput = {
   leadId?: string;
   customerName: string;
+  /** Opcional; não se persiste em `vendas` — contacto via `lead_id` → `leads`. */
   customerEmail?: string;
+  /** Opcional; idem. */
   customerPhone?: string;
   amountCents: number;
   productSummary: string;
@@ -37,10 +39,6 @@ export async function insertPendingCardVenda(
   if (p.detalhesPedido != null) {
     row.detalhes_pedido = p.detalhesPedido;
   }
-  const em = p.customerEmail?.trim();
-  if (em) row.email = em.toLowerCase();
-  const phDigits = (p.customerPhone ?? "").replace(/\D/g, "");
-  if (phDigits.length >= 10) row.telefone = phDigits;
 
   const { error } = await admin.from("vendas").insert(row);
   if (error) {
